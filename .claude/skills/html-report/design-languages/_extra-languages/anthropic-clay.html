@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Anthropic Clay — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Claude product UI palette (warmer, terracotta-led) */
+      --terracotta:      #cc7a5a;
+      --terracotta-deep: #a85d3f;
+      --terracotta-soft: #f4e1d6;
+      --cream:           #f9f7f2;
+      --cream-warm:      #f1ece2;
+      --surface:         #ebe6da;
+      --amber:           #c08a3c;
+      --amber-soft:      #f3e6cb;
+
+      /* Working tokens */
+      --bg:        var(--cream);
+      --bg-soft:   var(--cream-warm);
+      --bg-card:   #fdfbf6;
+      --bg-code:   #ede8dc;
+
+      --ink:       #1a1614;
+      --ink-soft:  #4d4640;
+      --ink-faint: #847c72;
+      --ink-ghost: #b4ab9e;
+
+      --rule:        #ddd5c5;
+      --rule-soft:   #ebe5d6;
+      --rule-strong: #beb4a0;
+
+      --warn:      var(--amber);
+      --warn-soft: var(--amber-soft);
+
+      /* Diagram-kit aliases */
+      --accent:         var(--terracotta);
+      --accent-soft:    var(--terracotta-soft);
+      --secondary:      var(--terracotta-deep);
+      --secondary-soft: rgba(168, 93, 63, 0.14);
+
+      --sans:  "Inter", "Söhne", "Helvetica Neue", -apple-system, sans-serif;
+      --mono:  "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 15.5px;
+      line-height: 1.65;
+      position: relative;
+      font-feature-settings: "ss01", "cv11";
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 15% 10%, rgba(204, 122, 90, 0.05) 0, transparent 42%),
+        radial-gradient(circle at 85% 90%, rgba(204, 122, 90, 0.04) 0, transparent 38%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--terracotta);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--terracotta);
+      color: var(--cream);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc; }
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 7px 12px;
+      margin-left: -12px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+      font-weight: 400;
+    }
+
+    aside.toc a:hover { background: var(--terracotta-soft); color: var(--terracotta-deep); }
+    aside.toc a.active { background: var(--terracotta-soft); color: var(--terracotta-deep); }
+    aside.toc a.active::before { color: var(--terracotta); }
+
+    @media (max-width: 980px) { aside.toc { position: static; max-height: none; padding-top: 0; } }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background:
+        radial-gradient(ellipse at 70% 30%, rgba(204, 122, 90, 0.12) 0, transparent 55%),
+        linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 72px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--terracotta-deep);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .eyebrow .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--terracotta);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: clamp(40px, 5.4vw, 64px);
+      line-height: 1.08;
+      letter-spacing: -0.028em;
+      margin: 0 0 24px;
+      color: var(--ink);
+    }
+    h1.title em {
+      font-style: normal;
+      font-weight: 500;
+      color: var(--terracotta);
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-weight: 400;
+      font-size: clamp(18px, 1.9vw, 21px);
+      line-height: 1.55;
+      color: var(--ink-soft);
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+    .meta-row .v { font-family: var(--sans); font-size: 14px; color: var(--ink); }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--terracotta);
+      letter-spacing: 0.14em;
+      font-weight: 500;
+    }
+    @media (max-width: 980px) { .num { position: static; display: block; margin-bottom: 8px; } }
+
+    h2 {
+      font-family: var(--sans);
+      font-size: 32px;
+      font-weight: 600;
+      line-height: 1.15;
+      letter-spacing: -0.022em;
+      margin: 0 0 24px;
+      color: var(--ink);
+    }
+    h3 {
+      font-family: var(--sans);
+      font-size: 21px;
+      font-weight: 600;
+      line-height: 1.25;
+      letter-spacing: -0.015em;
+      margin: 40px 0 12px;
+      color: var(--ink);
+    }
+    h4 {
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--terracotta); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; text-decoration-color: rgba(204, 122, 90, 0.4); }
+    a:hover { color: var(--terracotta-deep); text-decoration-color: var(--terracotta-deep); }
+
+    .card {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 1px 0 rgba(255, 255, 255, 0.6) inset, 0 8px 22px rgba(80, 50, 30, 0.045);
+    }
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+    .grid > .card { margin: 0; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .callout {
+      border: 1px solid var(--terracotta);
+      border-left-width: 4px;
+      background: var(--terracotta-soft);
+      padding: 18px 20px;
+      border-radius: 12px;
+      margin: 22px 0;
+    }
+    .callout.warn {
+      border-color: var(--amber);
+      background: var(--amber-soft);
+    }
+    .callout.success {
+      border-color: var(--terracotta-deep);
+      background: rgba(168, 93, 63, 0.10);
+    }
+    .callout strong { font-weight: 600; }
+
+    .quote {
+      font-family: var(--sans);
+      font-style: normal;
+      font-weight: 500;
+      font-size: 22px;
+      line-height: 1.4;
+      color: var(--terracotta-deep);
+      border-left: 3px solid var(--terracotta);
+      padding-left: 24px;
+      margin: 30px 0;
+      max-width: 60ch;
+      letter-spacing: -0.012em;
+    }
+
+    details {
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      background: var(--bg-card);
+      padding: 14px 18px;
+      margin: 10px 0;
+    }
+    summary {
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--ink);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before {
+      content: "›";
+      display: inline-block;
+      font-family: var(--mono);
+      color: var(--terracotta);
+      transition: transform 0.18s ease;
+      transform-origin: center;
+      font-size: 20px;
+      line-height: 1;
+    }
+    details[open] > summary::before { transform: rotate(90deg); }
+    details[open] { background: var(--bg-card); }
+    details p { margin-top: 12px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      overflow: hidden;
+      margin: 22px 0;
+    }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--rule-soft); vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: rgba(204, 122, 90, 0.04); }
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+      background: var(--bg-soft);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+    pre .kw   { color: var(--terracotta-deep); font-weight: 500; }
+    pre .str  { color: #6e8a4a; }
+    pre .com  { color: var(--ink-faint); font-style: italic; }
+    pre .n    { color: var(--amber); }
+    pre .fn   { color: var(--terracotta); }
+    pre .type { color: #7a5b9a; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+      background: rgba(237, 232, 220, 0.95);
+      color: var(--terracotta-deep);
+      padding: 2px 7px;
+      border-radius: 5px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      padding: 4px 11px;
+      background: var(--terracotta-soft);
+      border: 1px solid rgba(204, 122, 90, 0.35);
+      border-radius: 999px;
+      color: var(--terracotta-deep);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--sans);
+      font-style: normal;
+      color: var(--ink-faint);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+      letter-spacing: -0.005em;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--bg-card);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+    .contract .label {
+      color: var(--terracotta);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--ink-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+    .swatch { border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; background: var(--bg-card); }
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--ink); font-weight: 500; }
+    .swatch .label span { color: var(--ink-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 3px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+        <li><a href="#exemplars">Exemplar reports</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Anthropic Clay, <em>the product warmth</em></h1>
+          <p class="lede">The product-UI register — sans-only Inter on warm cream, terracotta lead everywhere. The language a Claude product page would feel like if it had to render a long report.</p>
+          <div class="meta">
+            <span class="pill">Status: candidate</span>
+            <span class="pill">Audience: product-internal</span>
+            <span class="pill">v0.1</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Inter throughout (no serif), <code>&lt;em&gt;</code> as upright terracotta accent (not italic), warm cream <code>#F9F7F2</code> background with radial terracotta glow on hero.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> or <code>.meta</code>.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Anthropic Clay is the product-UI register. It feels like a long-form page lifted from Claude's own product surfaces: warm cream backgrounds, generous terracotta presence, soft-cornered cards with a quiet inset highlight, no serif in sight. Where <code>anthropic-paper</code> is the company speaking, Clay is the product speaking — operator docs, internal release notes, runbooks for a feature team, anything that should feel native to the Claude UI it sits next to.</p>
+        <div class="quote">If Anthropic Paper is a research bulletin, Clay is the surface around the chat box — warmer, more handled, more terracotta.</div>
+        <p>Lead accent is <code>--terracotta</code>: links, eyebrow text, active TOC pill, primary diagram nodes, callout borders, code keywords. Secondary is <code>--terracotta-deep</code> for hover/active deepening — a shade not a separate hue. Warn is <code>--amber</code>, the only non-terracotta accent in the language and reserved for the warn callout and warn diagram nodes.</p>
+        <p>No serif. The absence of Lora is intentional: this is product UI, not editorial. Italic emphasis becomes upright terracotta instead — a treatment that reads as "highlighted in the UI" rather than "italicized in a paragraph."</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>The report lives adjacent to product UI — feature runbooks, operator references for Claude product features, internal release notes that link back to product surfaces, design-review documents for in-product changes. Short to medium length (5–15 minutes reading time) where the cream warmth and soft-card chrome don't fatigue the reader.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The report is for external publication — pick <code>anthropic-paper</code> (corporate brand canonical). The report is an AI-safety preprint or academic write-up — pick <code>anthropic-research</code>. The report is a 20+ minute engineering ramp-up with citation density — <code>editorial-parchment</code> handles that better.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Two faces only: Inter for everything, JetBrains Mono for code and labels. No serif. The absence of a third font is part of the language's identity — it keeps the document feeling like a product page rather than a publication.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--sans</span>: <span class="str">"Inter"</span>, <span class="str">"Söhne"</span>, <span class="str">"Helvetica Neue"</span>, -apple-system, sans-serif;
+<span class="kw">--mono</span>: <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;
+<span class="com">/* no --serif token — intentional */</span></pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose, headings, ledes, summaries</td><td><code>var(--sans)</code> — Inter</td><td>15.5px body; weight 500–600 for display; <code>ss01</code> + <code>cv11</code> features on for a/g forms</td></tr>
+            <tr><td>Quotes and italic-em phrases</td><td><code>var(--sans)</code> — Inter</td><td>Upright weight 500 in <code>--terracotta-deep</code>, not italicized. This is the language's hard rule.</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills</td><td><code>var(--mono)</code> — JetBrains Mono</td><td>11–13px with letter-spacing for caps</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Inter everywhere except code. No serif emphasis — <code>&lt;em&gt;</code> becomes upright terracotta, not italic.</li>
+          <li>Inter feature settings <code>ss01</code> (alt a) and <code>cv11</code> (single-storey g) lend a softer product feel; both are part of the locked brand stack.</li>
+          <li>Mono caps with letter-spacing for eyebrows, meta-row labels, marginalia counter, pill text.</li>
+          <li>Pull quotes are sans-serif weight 500 in <code>--terracotta-deep</code>, set off by a 3px terracotta left rule — not a hairline.</li>
+          <li>The eyebrow dot is always <code>--terracotta</code> at 7px (one pixel larger than Paper's 6px) — the language wears its lead color confidently.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>Terracotta-led, amber-warned, cream-grounded. The shift from Paper's <code>#d97757</code> to Clay's <code>#cc7a5a</code> is intentional — Clay's terracotta is a touch more saturated to read confidently on UI-style surfaces.</p>
+
+        <h3>Product accent family</h3>
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #cc7a5a"></div><div class="label"><strong>--terracotta</strong><span>#cc7a5a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #a85d3f"></div><div class="label"><strong>--terracotta-deep</strong><span>#a85d3f</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f4e1d6"></div><div class="label"><strong>--terracotta-soft</strong><span>#f4e1d6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #c08a3c"></div><div class="label"><strong>--amber</strong><span>#c08a3c</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f3e6cb"></div><div class="label"><strong>--amber-soft</strong><span>#f3e6cb</span></div></div>
+        </div>
+
+        <h3>Cream surface family</h3>
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #f9f7f2"></div><div class="label"><strong>--cream / --bg</strong><span>#f9f7f2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f1ece2"></div><div class="label"><strong>--cream-warm / --bg-soft</strong><span>#f1ece2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #fdfbf6"></div><div class="label"><strong>--bg-card</strong><span>#fdfbf6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ede8dc"></div><div class="label"><strong>--bg-code</strong><span>#ede8dc</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ebe6da"></div><div class="label"><strong>--surface</strong><span>#ebe6da</span></div></div>
+        </div>
+
+        <h3>Ink and rule family</h3>
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #1a1614"></div><div class="label"><strong>--ink</strong><span>#1a1614</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #4d4640"></div><div class="label"><strong>--ink-soft</strong><span>#4d4640</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #847c72"></div><div class="label"><strong>--ink-faint</strong><span>#847c72</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #b4ab9e"></div><div class="label"><strong>--ink-ghost</strong><span>#b4ab9e</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ddd5c5"></div><div class="label"><strong>--rule</strong><span>#ddd5c5</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ebe5d6"></div><div class="label"><strong>--rule-soft</strong><span>#ebe5d6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #beb4a0"></div><div class="label"><strong>--rule-strong</strong><span>#beb4a0</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--terracotta</span>);
+<span class="kw">--accent-soft</span>:    var(<span class="kw">--terracotta-soft</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--terracotta-deep</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">168</span>, <span class="n">93</span>, <span class="n">63</span>, <span class="n">0.14</span>);
+<span class="kw">--warn</span>:           var(<span class="kw">--amber</span>);
+<span class="kw">--warn-soft</span>:      var(<span class="kw">--amber-soft</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Resist the urge to add blue or green for variety. The whole point of Clay is monochromatic terracotta warmth with amber for caution. A blue accent here would break the "product surface, not press release" identity.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No serif fonts. No Lora, no Source Serif, no Georgia fallback as a body face. Inter is the body face.</li>
+          <li>No italic emphasis. <code>&lt;em&gt;</code> renders upright in <code>--terracotta-deep</code>; the geometry "italic body text" does not exist in this language.</li>
+          <li>No blue, green, purple, or pink anywhere. Terracotta + amber + cream is the complete palette.</li>
+          <li>No dark themes — cream is load-bearing.</li>
+          <li>No saturated/web-1.0 terracotta (<code>#cc4400</code>-style). Clay's terracotta is muted — read OKLCH lightness ≈ 0.70, chroma ≈ 0.14.</li>
+          <li>No shadows heavier than <code>0 8px 22px rgba(80, 50, 30, 0.045)</code>. The card chrome is soft, not a Material elevation.</li>
+          <li>No emoji in headings, callouts, or pills.</li>
+          <li>No icon library imports — icons, if any, are inline SVG with terracotta stroke.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, in Clay's product-UI register.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The top of every report. The hero above shows the locked elements: Inter h1 weight 600, upright terracotta <code>&lt;em&gt;</code>, Inter lede, mono eyebrow with 7px terracotta dot, cream background with radial terracotta glow.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter h1 weight 600, upright terracotta <code>&lt;em&gt;</code> (not italic), Inter lede, mono eyebrow in <code>--terracotta-deep</code> with 7px terracotta dot, radial gradient on hero.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> or <code>.meta</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Section headings are Inter weight 600 at 32px with tighter tracking than Paper. Marginalia <code>.num</code> uses <code>--terracotta</code> directly (not blue) — Clay's gutter wears the lead color.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter h2 weight 600 at ~32px, terracotta mono number, <code>position: absolute; left: -64px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span><code>left</code> offset (±8px), h2 font-weight (500–700), section rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Cards in Clay carry a soft inset highlight at the top edge — a subtle white inset shadow that catches the cream and reads as "this is a UI surface, not a slab of paper." Border-radius is tighter (14px) than Paper's 18px.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-card</code> fill, <code>1px solid var(--rule)</code>, inset top highlight <code>0 1px 0 rgba(255,255,255,0.6) inset</code>, drop shadow <code>0 8px 22px rgba(80,50,30,0.045)</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (12–16px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use <code>--terracotta-soft</code> background with a full <code>--terracotta</code> border and a 4px left edge. The full border (not just a left bar) is Clay's product-UI tell.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant uses amber — the only non-terracotta accent. Reserve for deprecation, failure paths, and known gaps.
+          </div>
+          <div class="callout success">
+            <strong>Done:</strong> Success uses <code>--terracotta-deep</code> on a deeper terracotta wash. Clay does not have a green success — the depth of terracotta carries the signal.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Full 1px border + 4px left edge. Default = terracotta family; warn = amber; success = terracotta-deep family. No green.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius, padding, presence of bold label.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — the one a skimming reader must absorb. One per section maximum.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter weight 500 (not italic) in <code>--terracotta-deep</code>, 22px, 3px terracotta left rule (not hairline).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (20–24px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Each <code>details</code> is a bordered, rounded card with a rotating chevron marker. The marker is terracotta; the summary text is ink (not terracotta) — Clay reserves the terracotta on summaries for the marker only.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>The chevron rotates 90° on open. This is Clay's product-UI animation language — small, soft, terracotta.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Bordered rounded card per <code>details</code>, terracotta chevron marker that rotates on open, ink summary text (not terracotta).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius, padding, exact summary font-weight (500–600).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead><tr><th>Column A</th><th>Column B</th><th>Column C</th></tr></thead>
+            <tbody>
+              <tr><td>Feature row 1</td><td>Active</td><td><code>120 ms</code></td></tr>
+              <tr><td>Feature row 2</td><td>Inactive</td><td><code>—</code></td></tr>
+              <tr><td>Feature row 3</td><td>Pending</td><td><code>54 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Rounded outer border (12px), mono uppercase <code>th</code> on <code>bg-soft</code>, terracotta-tinted row hover.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, striping (default: none, hover handles row-tracking).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host): <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Token roles: <code>kw</code> (terracotta-deep weight 500), <code>str</code> (warm green), <code>com</code> (italic ink-faint), <code>n</code> (amber), <code>fn</code> (terracotta), <code>type</code> (muted plum).</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-code</code> fill, <code>var(--rule)</code> border, JetBrains Mono 13px, terracotta family for <code>kw</code>/<code>fn</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (10–14px), exact token shades.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes. Inline code wears the <code>bg-code</code> wash and <code>--terracotta-deep</code> ink at slightly larger padding than Paper — Clay's chips are chunkier.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono 0.9em, <code>bg-code</code> wash, <code>--terracotta-deep</code> ink, 5px radius, <code>2px 7px</code> padding.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact wash opacity, padding within ±2px.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>. Clay's pills wear a terracotta-soft background — they are filled, not outlined. Paper's outline-only pill would feel too quiet on Clay's warm surface.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>terracotta-soft</code> fill + faint terracotta border + <code>terracotta-deep</code> ink, mono 12px, pill shape.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), border opacity.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See §07 for live diagrams. Each is a <code>&lt;figure class="card diagram"&gt;</code> wrapper with an inline SVG. Captions in Clay are sans (Inter), not italic — consistent with the no-serif rule.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Inter (not italic) in <code>--ink-faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid for "X vs Y" comparisons (see §02 above).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>Add siblings for 4-up; language controls <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at 720px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams in Clay feel like Claude product diagrams — soft, warm, terracotta-led. Text inside diagrams uses Inter (matching body) so the diagram and the surrounding prose share a typographic register. The role map leans heavily on terracotta variants rather than introducing new hues.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--bg-card)</code></td><td><code>var(--rule)</code></td><td>1.5px stroke, <code>rx="14"</code>.</td></tr>
+            <tr><td><code>hot</code></td><td><code>var(--terracotta-soft)</code></td><td><code>var(--terracotta)</code></td><td>Focus step / hot path.</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--bg-soft)</code></td><td><code>var(--rule-strong)</code></td><td>2px stroke.</td></tr>
+            <tr><td><code>external</code></td><td><code>rgba(168, 93, 63, 0.14)</code></td><td><code>var(--terracotta-deep)</code></td><td>Deep-terracotta family — still warm.</td></tr>
+            <tr><td><code>warn</code></td><td><code>var(--amber-soft)</code></td><td><code>var(--amber)</code></td><td>The only amber appearance.</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--bg)</code></td><td><code>var(--ink-ghost)</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 500 14px "Inter", sans-serif; fill: var(--ink); }
+              .small { font: 400 12px "Inter", sans-serif; fill: var(--ink-soft); }
+              .default  { fill: var(--bg-card);        stroke: var(--rule); }
+              .hot      { fill: var(--terracotta-soft); stroke: var(--terracotta); }
+              .store    { fill: var(--bg-soft);        stroke: var(--rule-strong); }
+              .external { fill: rgba(168, 93, 63, 0.14); stroke: var(--terracotta-deep); }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: var(--terracotta); stroke-width: 2; fill: none; marker-end: url(#ac-arrow); }
+            </style>
+            <defs>
+              <marker id="ac-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--terracotta)"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70" rx="14"/>
+            <text class="txt"   x="40"  y="67">Trigger</text>
+            <text class="small" x="40"  y="88">user input</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="230" y="67">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="430" y="67">Persist</text>
+            <text class="small" x="430" y="88">cache write</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70" rx="14"/>
+            <text class="txt"   x="630" y="67">Notify</text>
+            <text class="small" x="630" y="88">third party</text>
+          </svg>
+          <figcaption class="caption">Architecture flow — every accent stays within the terracotta family.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 500 14px "Inter", sans-serif; fill: var(--ink); }
+              .small      { font: 400 12px "Inter", sans-serif; fill: var(--ink-soft); }
+              .note       { font: 500 12px "Inter", sans-serif; fill: var(--terracotta-deep); }
+              .step       { font: 500 11px "JetBrains Mono", monospace; fill: var(--terracotta); letter-spacing: 0.14em; }
+              .alert-txt  { font: 600 11px "JetBrains Mono", monospace; fill: var(--amber); letter-spacing: 0.14em; }
+              .default  { fill: var(--bg-card); stroke: var(--rule); }
+              .hot      { fill: var(--terracotta-soft); stroke: var(--terracotta); }
+              .external { fill: rgba(168, 93, 63, 0.14); stroke: var(--terracotta-deep); }
+              .box   { stroke-width: 1.5; }
+              .arrow       { stroke: var(--terracotta);      stroke-width: 2;   fill: none; marker-end: url(#ac-arrow3); }
+              .arrow-muted { stroke: var(--rule-strong);     stroke-width: 1.5; fill: none; marker-end: url(#ac-arrow-muted3); }
+              .arrow-warn  { stroke: var(--amber);           stroke-width: 2;   fill: none; marker-end: url(#ac-arrow-warn3); }
+              .arrow-async { stroke: var(--terracotta);      stroke-width: 2;   fill: none; stroke-dasharray: 6 3; marker-end: url(#ac-arrow3); }
+            </style>
+            <defs>
+              <marker id="ac-arrow3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--terracotta)"/>
+              </marker>
+              <marker id="ac-arrow-muted3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--rule-strong)"/>
+              </marker>
+              <marker id="ac-arrow-warn3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--amber)"/>
+              </marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="120" y="52" text-anchor="middle">Client</text>
+            <rect class="box default"  x="260" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="320" y="52" text-anchor="middle">API</text>
+            <rect class="box hot"      x="440" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="500" y="52" text-anchor="middle">Worker</text>
+            <rect class="box external" x="620" y="20" width="200" height="50" rx="12"/>
+            <text class="txt" x="720" y="52" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="90" rx="12"
+                  fill="rgba(192, 138, 60, 0.07)" stroke="var(--amber)" stroke-width="1" stroke-dasharray="4 3"/>
+
+            <path class="arrow-warn" d="M720 320 H500"/>
+            <text class="alert-txt" x="610" y="315" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="32" rx="8"
+                  fill="var(--amber-soft)" stroke="var(--amber)" stroke-width="1"/>
+            <circle cx="378" cy="361" r="3" fill="var(--amber)"/>
+            <text class="alert-txt" x="390" y="365">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="365">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="413">04</text>
+            <path class="arrow" d="M500 410 H720"/>
+            <text class="small" x="610" y="405" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 455 H500"/>
+            <text class="small" x="610" y="450" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="15" y="498">05</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 495 H120"/>
+            <text class="small" x="310" y="513" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — Inter throughout, terracotta step numbers, amber alert region.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">500</span> <span class="n">14</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--ink</span>); }
+<span class="kw">.small</span> { font: <span class="n">400</span> <span class="n">12</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--ink-soft</span>); }
+<span class="kw">.note</span>  { font: <span class="n">500</span> <span class="n">12</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--terracotta-deep</span>); }
+<span class="kw">.step</span>  { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--terracotta</span>); letter-spacing: <span class="n">0.14</span>em; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Inter for all diagram text including notes (no italic, no serif); terracotta-deep ink for emphasis lines; mono step numbers in <code>--terracotta</code>; alert text in <code>--amber</code>.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Whether to use step numbers; annotation placement.</span></div>
+        </aside>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">08</span>
+        <h2>Exemplar reports</h2>
+        <p>Exemplars do not yet exist for this candidate language. Once Clay is promoted, the first reports to use it should be Claude product feature runbooks or internal release notes that link back to product surfaces.</p>
+        <ul>
+          <li>Expected first use: a Claude feature operator runbook (e.g., "Memory ops reference" or "Skills runtime mechanics for on-call").</li>
+          <li>Expected second use: an internal release note that wants to feel like a product page.</li>
+        </ul>
+        <div class="quote">If two reports in Clay don't feel like they belong adjacent to a Claude product surface, one of them has drifted into Paper territory.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

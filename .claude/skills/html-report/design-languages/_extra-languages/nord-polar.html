@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nord Polar — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Polar Night */
+      --nord0:  #2e3440;
+      --nord1:  #3b4252;
+      --nord2:  #434c5e;
+      --nord3:  #4c566a;
+      /* Snow Storm */
+      --nord4:  #d8dee9;
+      --nord5:  #e5e9f0;
+      --nord6:  #eceff4;
+      /* Frost */
+      --nord7:  #8fbcbb;
+      --nord8:  #88c0d0;
+      --nord9:  #81a1c1;
+      --nord10: #5e81ac;
+      /* Aurora */
+      --nord11: #bf616a;
+      --nord12: #d08770;
+      --nord13: #ebcb8b;
+      --nord14: #a3be8c;
+      --nord15: #b48ead;
+
+      /* Semantic */
+      --bg:        var(--nord0);
+      --bg-soft:   #353c4a;
+      --bg-card:   var(--nord1);
+      --bg-code:   #353c4a;
+
+      --ink:       var(--nord6);
+      --ink-soft:  var(--nord4);
+      --ink-faint: var(--nord3);
+      --ink-ghost: #5b6478;
+
+      --rule:        #434c5e;
+      --rule-soft:   #3b4252;
+      --rule-strong: var(--nord3);
+
+      --accent:         var(--nord8);
+      --accent-soft:    rgba(136, 192, 208, 0.18);
+      --secondary:      var(--nord9);
+      --secondary-soft: rgba(129, 161, 193, 0.18);
+
+      --warn:      var(--nord11);
+      --warn-soft: rgba(191, 97, 106, 0.16);
+
+      --sans: "Inter", "Helvetica Neue", -apple-system, system-ui, sans-serif;
+      --mono: "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      position: relative;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(136, 192, 208, 0.04) 0, transparent 38%),
+        radial-gradient(circle at 82% 88%, rgba(129, 161, 193, 0.035) 0, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--accent);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--accent);
+      color: var(--nord0);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--nord7); }
+    aside.toc a.active { color: var(--accent); }
+    aside.toc a.active::before { color: var(--secondary); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, var(--nord1) 0%, var(--nord0) 100%);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 72px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--secondary);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--sans);
+      font-weight: 300;
+      font-size: clamp(44px, 6vw, 78px);
+      line-height: 1.04;
+      letter-spacing: -0.025em;
+      margin: 0 0 28px;
+      color: var(--nord6);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--accent);
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-weight: 300;
+      font-size: clamp(19px, 2vw, 23px);
+      line-height: 1.5;
+      color: var(--ink-soft);
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .meta-row .v {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 7px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--secondary);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--sans);
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin: 0 0 24px;
+      color: var(--nord6);
+    }
+
+    h3 {
+      font-family: var(--sans);
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.25;
+      letter-spacing: -0.012em;
+      margin: 40px 0 12px;
+      color: var(--nord6);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+      color: var(--nord6);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--nord7); }
+
+    .card {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 8px 24px rgba(20, 25, 35, 0.22);
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: var(--accent-soft);
+      padding: 18px 20px;
+      border-radius: 10px;
+      margin: 22px 0;
+      color: var(--ink);
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 600; color: var(--nord6); }
+
+    .quote {
+      font-family: var(--sans);
+      font-style: normal;
+      font-weight: 300;
+      font-size: 24px;
+      line-height: 1.4;
+      letter-spacing: -0.01em;
+      color: var(--accent);
+      border-left: 1px solid var(--rule);
+      padding-left: 24px;
+      margin: 30px 0;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 1px solid var(--rule);
+      padding: 16px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--accent);
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: var(--mono); color: var(--secondary); margin-right: 6px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      margin: 22px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+      background: var(--bg-soft);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--nord9); }
+    pre .str  { color: var(--nord14); }
+    pre .com  { color: var(--nord3); font-style: italic; }
+    pre .n    { color: var(--nord15); }
+    pre .fn   { color: var(--nord8); }
+    pre .type { color: var(--nord7); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: rgba(136, 192, 208, 0.10);
+      color: var(--nord8);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--secondary);
+      border-radius: 999px;
+      color: var(--secondary);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--sans);
+      font-style: italic;
+      font-weight: 300;
+      color: var(--ink-faint);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--bg-card);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--ink-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--ink); font-weight: 500; }
+    .swatch .label span { color: var(--ink-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+        <li><a href="#exemplars">Exemplar reports</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Nord Polar, <em>arctic minimalism in long form</em></h1>
+          <p class="lede">A cool, restrained register for developer documentation, changelogs, and open-source project sites — Scandinavian code-editor calm transposed to a technical document.</p>
+          <div class="meta">
+            <span class="pill">Status: candidate</span>
+            <span class="pill">Mode: dark</span>
+            <span class="pill">v1</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Inter 300 h1 with bright-teal italic <code>&lt;em&gt;</code>, Inter 300 lede, mono caps eyebrow with <code>--nord9</code> slate-blue dot, <code>nord1 → nord0</code> linear gradient.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> key/values or <code>.meta</code> pill chips.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Nord Polar feels like a Scandinavian code editor opened in a long-form document. The Frost layer — four shades of desaturated teal-to-slate-blue — creates an immediately recognizable cool coherence. Nothing is warm. Inter sans for prose and headings gives it the geometric calm of clean developer documentation; JetBrains Mono carries code, eyebrows, marginalia, and pills.</p>
+        <p>Bright teal <code>--nord8</code> is the lead accent — it earns links, the italic-em in titles, the active TOC state, and primary diagram nodes. Slate-blue <code>--nord9</code> is secondary — eyebrow dot, marginalia counter, ticket pills. Aurora red <code>--nord11</code> is reserved for warnings, and only that.</p>
+        <div class="quote">Two reports in this language should feel like two pages from the same arctic editor — visibly the same voice, visibly not xeroxed.</div>
+        <p>The restraint is load-bearing. Nord is the variation that proves a technical document can carry its weight on cool color alone. Snow Storm light text on Polar Night surfaces; Frost accents that never shout; Aurora colors held in reserve. Swap the Frost lead for an Aurora color and the language becomes <code>nord-aurora</code>, a different document entirely.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Developer-facing documentation, CLI reference, SDK guides, open-source project sites. Changelogs with a single status type. Operator runbooks for an engineering audience that lives in a dark terminal. Anywhere a Scandinavian code-editor aesthetic feels native.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The audience expects a print-paper register (use <code>editorial-parchment</code>). The report needs to signal many semantic categories at once with color (use <code>nord-aurora</code>). The reader is a non-engineer or a public audience uncomfortable with dark themes (consider <code>nord-snow</code>).</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL — the weight ranges are part of the brand. Inter 300 carries the display register; 400 carries body; mono 400/500 handles code and labels.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--sans</span>: <span class="str">"Inter"</span>, <span class="str">"Helvetica Neue"</span>, -apple-system, system-ui, sans-serif;
+<span class="kw">--mono</span>: <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Inter 400</td><td>16px, line-height 1.65</td></tr>
+            <tr><td>Display / h1</td><td><code>var(--sans)</code> — Inter 300</td><td>Light weight is load-bearing; tight letter-spacing</td></tr>
+            <tr><td>h2 / h3</td><td><code>var(--sans)</code> — Inter 500</td><td>Tight tracking</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td><code>var(--mono)</code> — JetBrains Mono</td><td>Mono caps with letter-spacing</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Italic phrases inside <code>h1</code> use <code>&lt;em&gt;</code> and are colored <code>--nord8</code> bright teal.</li>
+          <li>Body italics are permitted; <strong>never</strong> bold body prose for emphasis — use italic.</li>
+          <li>Mono caps with <code>0.12–0.18em</code> letter-spacing for eyebrows and meta keys.</li>
+          <li>Pull quotes are large (~24px), Inter light, bright teal, set off by a thin left rule.</li>
+          <li>The eyebrow dot is always <code>--nord9</code> slate blue — the language's smallest secondary touch.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>The full Nord palette — sixteen values by Arctic Ice Studio. Polar Night provides the dark surfaces; Snow Storm provides the light text; Frost provides cool accents; Aurora is held in reserve (only <code>--nord11</code> is in use as <code>--warn</code>).</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #2e3440"></div><div class="label"><strong>--nord0</strong><span>#2e3440 · bg</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #3b4252"></div><div class="label"><strong>--nord1</strong><span>#3b4252 · bg-card</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #434c5e"></div><div class="label"><strong>--nord2</strong><span>#434c5e · rule</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #4c566a"></div><div class="label"><strong>--nord3</strong><span>#4c566a · ink-faint</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #d8dee9"></div><div class="label"><strong>--nord4</strong><span>#d8dee9 · ink-soft</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #e5e9f0"></div><div class="label"><strong>--nord5</strong><span>#e5e9f0</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #eceff4"></div><div class="label"><strong>--nord6</strong><span>#eceff4 · ink</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #8fbcbb"></div><div class="label"><strong>--nord7</strong><span>#8fbcbb · hover</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #88c0d0"></div><div class="label"><strong>--nord8</strong><span>#88c0d0 · accent</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #81a1c1"></div><div class="label"><strong>--nord9</strong><span>#81a1c1 · secondary</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #5e81ac"></div><div class="label"><strong>--nord10</strong><span>#5e81ac</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #bf616a"></div><div class="label"><strong>--nord11</strong><span>#bf616a · warn</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #d08770"></div><div class="label"><strong>--nord12</strong><span>#d08770 · reserved</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ebcb8b"></div><div class="label"><strong>--nord13</strong><span>#ebcb8b · reserved</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #a3be8c"></div><div class="label"><strong>--nord14</strong><span>#a3be8c · reserved</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #b48ead"></div><div class="label"><strong>--nord15</strong><span>#b48ead · reserved</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Four aliases let the canonical SVG <code>&lt;style&gt;</code> block render unchanged:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--nord8</span>);
+<span class="kw">--accent-soft</span>:    rgba(<span class="n">136</span>, <span class="n">192</span>, <span class="n">208</span>, <span class="n">0.18</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--nord9</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">129</span>, <span class="n">161</span>, <span class="n">193</span>, <span class="n">0.18</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not promote a second Frost color to lead-accent equivalence with <code>--nord8</code>. The bright-teal singular voice is what separates this variation from <code>nord-aurora</code>. The Aurora colors stay reserved here.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No warm tints anywhere — no cream, no parchment, no warm grey. Nord has zero warmth.</li>
+          <li>No system-font defaults (no Arial, no Roboto, no -apple-system fallback at the head of the stack).</li>
+          <li>No light-mode variation of this file — that is <code>nord-snow</code>, a different document.</li>
+          <li>No simultaneous use of all five Aurora colors as semantic signals — that is <code>nord-aurora</code>.</li>
+          <li>No bright/saturated accents outside the Nord palette (no electric magenta, no neon green).</li>
+          <li>No shadows tinted toward warm hues. Drop-shadows are flat near-black: <code>rgba(20, 25, 35, 0.22)</code>.</li>
+          <li>No emoji in headings or callouts.</li>
+          <li>No decorative gradients beyond the very subtle Frost radial wash on body.</li>
+          <li>No serif display fonts — the language is sans-only.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component this report uses, rendered in this language with its locked/free contract. CSS selectors are stable — copy verbatim. The HTML structure mirrors <code>references/content-components.md</code>; values shown here are Nord Polar's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The top of every report. See this document's own hero above — it demonstrates the locked elements (Inter 300 h1, teal <code>em</code>, Inter 300 lede, mono eyebrow with slate-blue dot, Polar Night gradient).</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter 300 h1, teal italic <code>&lt;em&gt;</code>, Inter 300 lede, mono caps eyebrow, <code>--nord9</code> dot, <code>nord1 → nord0</code> gradient.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, footer as key/value <code>.meta-row</code> or pill <code>.meta</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Every top-level section in the body. Each section in this document is a live example: slate-blue mono <code>.num</code> in the left gutter, Inter 500 h2 at 34px. The <code>id</code> matches <code>href="#id"</code> in the TOC.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter 500 h2 around 34px, slate-blue mono number, <code>position: absolute; left: -64px</code> gutter placement.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 font-weight (400–500), section vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Use a card to enclose a concept, code path, or feature facet — anything that benefits from a visual boundary. Cards nest any prose or sub-components. Surface is <code>--nord1</code>; rule is <code>--nord2</code>.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>--nord1</code> fill, <code>1px solid var(--rule)</code> border, near-black shadow at ceiling <code>0 8px 24px rgba(20, 25, 35, 0.22)</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (10–16px), padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use a Frost-teal background wash with a 4px <code>--nord8</code> left border. Place directly after the paragraph they annotate.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> The warn variant swaps to <code>--nord11</code> Aurora red. Reserve for deprecation, failure paths, and known gaps. No <code>.success</code> in this variation — multi-status reports belong to <code>nord-aurora</code>.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Frost-teal wash + 4px <code>--nord8</code> left-border (default). Warn swaps both colors to <code>--nord11</code> only — geometry unchanged.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius, padding, presence of icon or bold label.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — the one a skimming reader must absorb. One per section maximum.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter 300, <code>--nord8</code> color, ≥22px, thin left rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Rule weight, exact font-size (22–28px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>The first item in a series commonly carries <code>open</code> so context is immediately visible. Summary uses Inter 500 at 18px in <code>--nord8</code> — it reads like a collapsible sub-heading.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse so the reader can skip well-understood steps. The slate-blue <code>+ / −</code> marker is part of this language's expression.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter 500 summary in teal at ~18px, rule top-border on each <code>details</code>, slate-blue <code>+/−</code> marker.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>+/−</code> vs chevron), padding, exact summary font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>−2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono uppercase <code>th</code> on <code>--bg-soft</code>, <code>--rule</code> border, row separators in <code>--rule-soft</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping (default: none), <code>td</code> font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host): <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Spans are classified manually — <code>kw</code> (keyword, <code>--nord9</code>), <code>str</code> (string, <code>--nord14</code>), <code>com</code> (comment, <code>--nord3</code>), <code>n</code> (numeric, <code>--nord15</code>), <code>fn</code> (function, <code>--nord8</code>), <code>type</code> (type name, <code>--nord7</code>). No runtime highlighter is involved.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>--bg-code</code> fill, <code>--rule</code> border, JetBrains Mono 13px, Nord-palette token colors.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (10–16px), padding, exact token color choices within Nord.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes. Use for type names, method names, field names, and short literals embedded in prose.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.92em</code>, faint <code>--nord8</code> wash, <code>--nord8</code> ink color, small radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact wash opacity (0.06–0.12), padding, border-radius.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>--nord9</code> slate-blue border + ink, mono 12px, pill shape (<code>border-radius: 999px</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), optional slate-blue-soft background wash.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 for live diagrams — each is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and a small Inter italic caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Inter light italic in <code>--ink-faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size (12–14px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid is the default — used for "X vs Y" comparisons and "pick this when / don't pick this when" framing (see §02 above).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings and let the language control <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at <code>720px</code> or narrower.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value, child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams here are quiet and precise — never decorative. Boxes have thin <code>--nord2</code> borders, <code>--nord1</code> fill, bright-teal <code>--nord8</code> arrows. Text inside diagrams uses Inter (matching body) so diagram and prose remain in conversation. Aurora colors stay out of the diagram surface; only <code>--warn</code> (<code>--nord11</code>) is permitted, and only on the failure path.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>--nord1</code></td><td><code>--nord3</code></td><td>1.5px stroke, <code>rx="14"</code> rounded corners.</td></tr>
+            <tr><td><code>hot</code></td><td>nord8 @ 0.18α</td><td><code>--nord8</code></td><td>Same geometry; bright-teal accents.</td></tr>
+            <tr><td><code>store</code></td><td><code>--bg-soft</code></td><td><code>--nord3</code></td><td>Slightly heavier stroke (2px).</td></tr>
+            <tr><td><code>external</code></td><td>nord9 @ 0.18α</td><td><code>--nord9</code></td><td>Slate-blue family.</td></tr>
+            <tr><td><code>warn</code></td><td>nord11 @ 0.16α</td><td><code>--nord11</code></td><td>Only when warn is permitted.</td></tr>
+            <tr><td><code>future</code></td><td><code>--bg</code></td><td><code>--ink-ghost</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 14px "Inter", sans-serif; fill: var(--ink); }
+              .small { font: 12px "Inter", sans-serif; fill: var(--ink-soft); }
+              .default  { fill: var(--bg-card);        stroke: var(--nord3); }
+              .hot      { fill: rgba(136,192,208,0.18);  stroke: var(--nord8); }
+              .store    { fill: var(--bg-soft);        stroke: var(--nord3); }
+              .external { fill: rgba(129,161,193,0.18); stroke: var(--nord9); }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: var(--nord8); stroke-width: 2; fill: none; marker-end: url(#np-arrow); }
+            </style>
+            <defs>
+              <marker id="np-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#88c0d0"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70" rx="14"/>
+            <text class="txt"   x="40"  y="67">Trigger</text>
+            <text class="small" x="40"  y="88">user request</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="230" y="67">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="430" y="67">Store</text>
+            <text class="small" x="430" y="88">persist</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70" rx="14"/>
+            <text class="txt"   x="630" y="67">Notify</text>
+            <text class="small" x="630" y="88">third party</text>
+          </svg>
+          <figcaption class="caption">Linear flow — <code>hot</code> marks the step the prose is currently discussing.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 14px "Inter", sans-serif; fill: var(--ink); }
+              .small      { font: 12px "Inter", sans-serif; fill: var(--ink-soft); }
+              .note       { font: italic 12px "Inter", sans-serif; fill: var(--ink-faint); }
+              .step       { font: 500 11px "JetBrains Mono", monospace; fill: var(--nord9); letter-spacing: 0.12em; }
+              .alert-txt  { font: 600 11px "JetBrains Mono", monospace; fill: var(--nord11); letter-spacing: 0.14em; }
+              .default  { fill: var(--bg-card); stroke: var(--nord3); }
+              .hot      { fill: rgba(136,192,208,0.18); stroke: var(--nord8); }
+              .external { fill: rgba(129,161,193,0.18); stroke: var(--nord9); }
+              .box   { stroke-width: 1.5; }
+              .arrow       { stroke: var(--nord8); stroke-width: 2;   fill: none; marker-end: url(#np-arrow3); }
+              .arrow-muted { stroke: var(--nord3); stroke-width: 1.5; fill: none; marker-end: url(#np-arrow-muted3); }
+              .arrow-warn  { stroke: var(--nord11); stroke-width: 2;   fill: none; marker-end: url(#np-arrow-warn3); }
+              .arrow-async { stroke: var(--nord8); stroke-width: 2;   fill: none; stroke-dasharray: 6 3; marker-end: url(#np-arrow3); }
+            </style>
+            <defs>
+              <marker id="np-arrow3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#88c0d0"/>
+              </marker>
+              <marker id="np-arrow-muted3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#4c566a"/>
+              </marker>
+              <marker id="np-arrow-warn3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#bf616a"/>
+              </marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="120" y="52" text-anchor="middle">Client</text>
+
+            <rect class="box default"  x="260" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="320" y="52" text-anchor="middle">API</text>
+
+            <rect class="box hot"      x="440" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="500" y="52" text-anchor="middle">Worker</text>
+
+            <rect class="box external" x="620" y="20" width="200" height="50" rx="12"/>
+            <text class="txt" x="720" y="52" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="#434c5e" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="#434c5e" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="#434c5e" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="#434c5e" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="90" rx="12"
+                  fill="rgba(191, 97, 106, 0.06)" stroke="#bf616a" stroke-width="1" stroke-dasharray="4 3"/>
+
+            <path class="arrow-warn" d="M720 320 H500"/>
+            <text class="alert-txt" x="610" y="315" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="32" rx="8"
+                  fill="rgba(191, 97, 106, 0.16)" stroke="#bf616a" stroke-width="1"/>
+            <circle cx="378" cy="361" r="3" fill="#bf616a"/>
+            <text class="alert-txt" x="390" y="365">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="365">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="413">04</text>
+            <path class="arrow" d="M500 410 H720"/>
+            <text class="small" x="610" y="405" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 455 H500"/>
+            <text class="small" x="610" y="450" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="15" y="498">05</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 495 H120"/>
+            <text class="small" x="310" y="513" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — Inter italic commentary between messages, dashed bright-teal arrows for async dispatch, and an Aurora-red alert region with an inline <code>RETRY POLICY ENGAGED</code> callout on the failure path.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Base classes:</p>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">14</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--ink</span>); }
+<span class="kw">.small</span> { font: <span class="n">12</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--ink-soft</span>); }</pre>
+
+        <p>Language extensions for annotated diagrams:</p>
+        <pre><span class="kw">.note</span>      { font: italic <span class="n">12</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--ink-faint</span>); }
+<span class="kw">.step</span>      { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--nord9</span>); letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--nord11</span>); letter-spacing: <span class="n">0.14</span>em; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Inline annotations use Inter italic in <code>--ink-faint</code>. Step numbers and alert text use JetBrains Mono with letter-spacing — <code>--nord9</code> slate blue for steps, <code>--nord11</code> Aurora red for alerts.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Whether to use step numbers at all (small diagrams omit them), exact letter-spacing (0.10–0.16em), annotation placement.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>When a diagram has a failure path, wrap the affected messages in an Aurora-red-tinted dashed rectangle and place an inline alert pill (<code>nord11 @ 0.16α</code> fill + <code>--nord11</code> border + <code>--nord11</code> mono caps text). The pattern is visible in the sequence diagram above between messages 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Warn-tinted background at <code>rgba(191, 97, 106, 0.06)</code> + dashed <code>--nord11</code> border. Inline alert pill stacks a colored dot, a mono-caps label, and an Inter italic detail.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert pill copy, whether to include the colored dot.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: <code>--nord8</code>. 2px stroke for primary flow, 1.5px for muted/return. Failure-path arrows use <code>--nord11</code>; async dispatch is dashed teal.</p>
+
+        <h3>Caption</h3>
+        <p>Inter light italic, <code>--ink-faint</code>, 13px, centered under the diagram with <code>margin-top: 12px</code>.</p>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">08</span>
+        <h2>Exemplar reports</h2>
+        <p>Read at least one before writing a fresh report. Exemplars are evidence of the language deployed in real content — not templates to clone.</p>
+        <ul>
+          <li><code>nord-polar/cli-reference-tour.html</code> — full CLI reference walkthrough; the language at full scale.</li>
+          <li><code>nord-polar/sdk-changelog-v3.html</code> — release changelog at smaller scale; useful when the report is mid-length and the warn variant earns its keep.</li>
+        </ul>
+        <p>The two exemplars are visibly different in composition but instantly recognizable as the same language. That's the goal: locked brand stack, free composition.</p>
+        <div class="quote">If two Nord Polar reports feel xeroxed, one is wrong. If two feel like different brands, both are wrong.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

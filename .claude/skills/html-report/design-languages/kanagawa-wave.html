@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanagawa Wave — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sumi-ink-0:   #16161D;
+      --sumi-ink-1:   #181820;
+      --sumi-ink-3:   #1F1F28;
+      --sumi-ink-4:   #2A2A37;
+      --sumi-ink-5:   #363646;
+      --sumi-ink-6:   #54546D;
+      --fuji-white:   #DCD7BA;
+      --old-white:    #C8C093;
+      --fuji-gray:    #727169;
+      --crystal-blue: #7E9CD8;
+      --wave-aqua:    #7AA89F;
+      --spring-green: #98BB6C;
+      --carp-yellow:  #E6C384;
+      --surimi-orange:#FFA066;
+      --autumn-red:   #C34043;
+      --sakura-pink:  #D27E99;
+      --wave-blue-2:  #2D4F67;
+
+      --bg:        var(--sumi-ink-3);
+      --bg-soft:   var(--sumi-ink-1);
+      --bg-card:   var(--sumi-ink-4);
+      --bg-code:   var(--sumi-ink-4);
+
+      --ink:       var(--fuji-white);
+      --ink-soft:  var(--old-white);
+      --ink-faint: var(--fuji-gray);
+      --ink-ghost: var(--sumi-ink-6);
+
+      --rule:        var(--sumi-ink-5);
+      --rule-soft:   var(--sumi-ink-4);
+      --rule-strong: var(--sumi-ink-6);
+
+      --warn:      var(--surimi-orange);
+      --warn-soft: rgba(255, 160, 102, 0.10);
+
+      --accent:         var(--crystal-blue);
+      --accent-soft:    rgba(126, 156, 216, 0.14);
+      --secondary:      var(--wave-aqua);
+      --secondary-soft: rgba(122, 168, 159, 0.14);
+
+      --serif: "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", "Iowan Old Style", Georgia, serif;
+      --sans:  "Noto Serif JP", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+      --mono:  "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.7;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(126, 156, 216, 0.06) 0, transparent 42%),
+        radial-gradient(circle at 82% 88%, rgba(122, 168, 159, 0.04) 0, transparent 38%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--crystal-blue);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--crystal-blue);
+      color: var(--sumi-ink-0);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li {
+      counter-increment: toc;
+      margin: 0;
+    }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--fuji-white); }
+    aside.toc a.active { color: var(--crystal-blue); }
+    aside.toc a.active::before { color: var(--wave-aqua); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, var(--sumi-ink-1) 0%, var(--sumi-ink-3) 100%);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 72px;
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header.hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 70% 90%, rgba(45, 79, 103, 0.45) 0, transparent 60%),
+        radial-gradient(ellipse at 12% 20%, rgba(122, 168, 159, 0.08) 0, transparent 50%);
+      pointer-events: none;
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; position: relative; z-index: 1; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--wave-aqua);
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(122, 168, 159, 0.45);
+    }
+
+    h1.title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(40px, 5.6vw, 70px);
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      margin: 0 0 28px;
+      color: var(--fuji-white);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--crystal-blue);
+    }
+
+    .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(18px, 1.9vw, 22px);
+      line-height: 1.5;
+      color: var(--old-white);
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .meta-row .v {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 9px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--wave-aqua);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 34px;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: -0.012em;
+      margin: 0 0 24px;
+      color: var(--fuji-white);
+    }
+
+    h3 {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.25;
+      margin: 40px 0 12px;
+      color: var(--fuji-white);
+    }
+
+    h4 {
+      font-family: var(--serif);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+      color: var(--fuji-white);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--crystal-blue); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--fuji-white); }
+
+    .card {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 14px 40px rgba(0, 0, 0, 0.25);
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--crystal-blue);
+      background: var(--accent-soft);
+      padding: 18px 20px;
+      border-radius: 10px;
+      margin: 22px 0;
+      color: var(--ink);
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 600; color: var(--fuji-white); }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 23px;
+      line-height: 1.4;
+      color: var(--crystal-blue);
+      border-left: 1px solid var(--sumi-ink-5);
+      padding-left: 24px;
+      margin: 30px 0;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 1px solid var(--rule);
+      padding: 16px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--crystal-blue);
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "＋ "; font-family: var(--mono); color: var(--wave-aqua); margin-right: 6px; font-size: 14px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      margin: 22px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+      background: var(--sumi-ink-3);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--crystal-blue); }
+    pre .str  { color: var(--spring-green); }
+    pre .com  { color: var(--fuji-gray); font-style: italic; }
+    pre .n    { color: var(--surimi-orange); }
+    pre .fn   { color: var(--carp-yellow); }
+    pre .type { color: var(--wave-aqua); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.9em;
+      background: var(--sumi-ink-1);
+      color: var(--carp-yellow);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--sumi-ink-5);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--wave-aqua);
+      border-radius: 999px;
+      color: var(--wave-aqua);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--ink-faint);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--sumi-ink-6);
+      background: var(--sumi-ink-1);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--wave-aqua);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--ink-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--fuji-white); font-weight: 500; }
+    .swatch .label span { color: var(--ink-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Kanagawa Wave, <em>indigo and foam</em></h1>
+          <p class="lede">A dark, artisanal register modeled on Hokusai's woodblock print — sumi-ink backgrounds, fuji-white parchment text, and crystal-blue accents the colour of wave-foam reflecting a moonlit sky.</p>
+          <div class="meta">
+            <span class="pill">Variant: wave</span>
+            <span class="pill">Mode: dark</span>
+            <span class="pill">Body: Noto Serif JP</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0; position: relative; z-index: 1;">
+          <div class="row"><span class="label">Locked</span><span>Noto Serif JP h1 at weight 500 with crystal-blue italic <code>&lt;em&gt;</code>, italic 300 lede, mono caps eyebrow with wave-aqua dot, <code>sumi-ink-1 → sumi-ink-3</code> vertical gradient with low-opacity wave-blue-2 glow at lower right.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> key/values or <code>.meta</code> pill chips, exact glow radius.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Kanagawa Wave is a Japanese woodblock print rendered as code. Imagine reading a long technical document by lamplight on washi paper — the page is a deep indigo-night, the text the warm yellowed cream of aged parchment, and the accents are the cold cyan of wave-foam against a stormy sky. The signature is the <code>--fuji-white</code> body text: it is never stark, never bone-white; it is the colour of a paper lantern at dusk.</p>
+        <div class="quote">If the foreground reads as pure white on the screen, the variant has been mis-rendered. Fuji-white is warm, yellowed, and dim by design.</div>
+        <p>The font stack leans heavily on Noto Serif JP — a Japanese-aware serif that handles Latin script with grace and brings the woodblock register without resorting to caricature. JetBrains Mono provides the technical counterpoint for code and marginalia. The accent triple is intentional: <em>crystal-blue</em> is the wave-foam (primary, restrained), <em>wave-aqua</em> the deeper teal that catches subtitles and the eyebrow dot, and <em>surimi-orange</em> the warn — the colour of a torii gate against the storm.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Dense architecture tours read at night. PR reviews that span multiple subsystems and benefit from the slower reading rhythm a serif imposes. Operator references where the reader will sit and absorb 20+ minutes of text and expects technical density paired with visual quiet.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>Short field reports under five minutes — the artisanal register feels overdressed. Incident postmortems where outcomes-forward bluntness matters more than register. Light-mode environments — for those, reach for <code>kanagawa-lotus</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL — the weight set is part of the brand.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>: <span class="str">"Noto Serif JP"</span>, <span class="str">"Hiragino Mincho ProN"</span>, <span class="str">"Yu Mincho"</span>, <span class="str">"Iowan Old Style"</span>, Georgia, serif;
+<span class="kw">--sans</span>:  <span class="str">"Noto Serif JP"</span>, <span class="str">"Hiragino Mincho ProN"</span>, <span class="str">"Yu Mincho"</span>, Georgia, serif;
+<span class="kw">--mono</span>:  <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Noto Serif JP 400</td><td>16px, line-height 1.7 — the looser leading is part of the woodblock feel</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--serif)</code> — Noto Serif JP 500</td><td>h1 italic em uses weight 300 for contrast</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td><code>var(--mono)</code> — JetBrains Mono</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Italic Noto Serif JP for ledes and pull quotes — keep weight at 300 or 400, never bold-italic.</li>
+          <li>Mono caps with <code>letter-spacing: 0.18em</code> for eyebrows; <code>0.12em</code> for marginalia numbers.</li>
+          <li>Pull quotes use the same crystal-blue as the h1 italic — they continue the title's voice into the body.</li>
+          <li>The eyebrow dot is always <code>--wave-aqua</code> with a soft glow shadow — this is the brand's smallest teal touch.</li>
+          <li><strong>Never</strong> bold body prose for emphasis — use italic. Bold weights are reserved for h4 and <code>&lt;strong&gt;</code> inside callouts.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>The Kanagawa Wave palette in full — every value is brand-locked. The semantic aliases (<code>--bg</code>, <code>--ink</code>, etc.) point to these named tokens; both layers exist so SVG <code>&lt;style&gt;</code> blocks can reference either.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #16161D"></div><div class="label"><strong>--sumi-ink-0</strong><span>#16161D · darkest</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #181820"></div><div class="label"><strong>--sumi-ink-1</strong><span>#181820 · bg-soft</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1F1F28"></div><div class="label"><strong>--sumi-ink-3</strong><span>#1F1F28 · default bg</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #2A2A37"></div><div class="label"><strong>--sumi-ink-4</strong><span>#2A2A37 · card</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #363646"></div><div class="label"><strong>--sumi-ink-5</strong><span>#363646 · rule</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #54546D"></div><div class="label"><strong>--sumi-ink-6</strong><span>#54546D · dim text</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #DCD7BA"></div><div class="label"><strong>--fuji-white</strong><span>#DCD7BA · body ink</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #C8C093"></div><div class="label"><strong>--old-white</strong><span>#C8C093 · ink-soft</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #727169"></div><div class="label"><strong>--fuji-gray</strong><span>#727169 · comments</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #7E9CD8"></div><div class="label"><strong>--crystal-blue</strong><span>#7E9CD8 · primary</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #7AA89F"></div><div class="label"><strong>--wave-aqua</strong><span>#7AA89F · secondary</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #98BB6C"></div><div class="label"><strong>--spring-green</strong><span>#98BB6C · string</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E6C384"></div><div class="label"><strong>--carp-yellow</strong><span>#E6C384 · fn / code</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FFA066"></div><div class="label"><strong>--surimi-orange</strong><span>#FFA066 · warn</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #C34043"></div><div class="label"><strong>--autumn-red</strong><span>#C34043 · error</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #D27E99"></div><div class="label"><strong>--sakura-pink</strong><span>#D27E99 · seasonal</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #2D4F67"></div><div class="label"><strong>--wave-blue-2</strong><span>#2D4F67 · deep wave</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Four aliases let the canonical diagram-kit template render unchanged:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--crystal-blue</span>);
+<span class="kw">--accent-soft</span>:    rgba(<span class="n">126</span>, <span class="n">156</span>, <span class="n">216</span>, <span class="n">0.14</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--wave-aqua</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">122</span>, <span class="n">168</span>, <span class="n">159</span>, <span class="n">0.14</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not introduce <code>--sakura-pink</code> as a third primary accent in this variant. The Wave register stays cool — crystal-blue and wave-aqua only. Sakura belongs to <code>kanagawa-dragon</code>, where it earns its place against the warmer brown background.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No pure white <code>#FFFFFF</code> for body text. Fuji-white <code>#DCD7BA</code> is the signature — stark white reads as a different brand.</li>
+          <li>No Inter, Roboto, or system sans for body. The Noto Serif JP register is load-bearing.</li>
+          <li>No light backgrounds — that is what <code>kanagawa-lotus</code> exists for.</li>
+          <li>No saturated neon accents. The Wave palette is cool and muted; an electric blue or fluorescent green breaks the woodblock illusion.</li>
+          <li>No drop-shadows heavier than <code>0 14px 40px rgba(0, 0, 0, 0.25)</code>. Heavier shadows kill the flat-paper feel.</li>
+          <li>No emoji or kanji as decoration. The Japanese influence is in the typography, not in pasted-in glyphs.</li>
+          <li>No three-accent combinations. Crystal-blue plus wave-aqua is the duo; surimi-orange is reserved for warn only.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in this language with its locked/free contract. CSS selectors are stable across all design languages — copy verbatim.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The top of every report. See the document's own hero above — it demonstrates the locked elements (Noto Serif JP h1, crystal-blue italic em, italic lede, mono eyebrow with wave-aqua dot, sumi-ink gradient with deep wave glow).</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Noto Serif JP h1 weight 500, crystal-blue italic <code>&lt;em&gt;</code> at weight 300, italic lede, mono eyebrow with wave-aqua dot, <code>sumi-ink-1 → sumi-ink-3</code> gradient with low-opacity wave-blue-2 glow.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, glow ellipse position, footer as <code>.meta-row</code> or <code>.meta</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Every top-level section. The marginalia <code>.num</code> in the left gutter uses wave-aqua mono with letter-spacing — see this section's own <code>06</code> at top-left. The <code>id</code> matches <code>href="#id"</code> in the TOC.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif h2 at 34px / weight 500, wave-aqua mono number in left gutter, <code>position: absolute; left: -64px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 font-weight (400–600), vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Cards lift slightly from the page using <code>sumi-ink-4</code> — one shade above the body background. The border is <code>sumi-ink-5</code> and the shadow is heavy enough to read as depth but light enough to stay flat-paper.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>sumi-ink-4</code> fill, <code>1px solid sumi-ink-5</code> border, shadow ceiling <code>0 14px 40px rgba(0, 0, 0, 0.25)</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (10–18px), padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use a 14%-opacity crystal-blue wash with a 4px crystal-blue left border. The translucent fill lets the sumi-ink-3 page tone show through — flat and quiet.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant uses surimi-orange — the colour of a torii gate. Reserve for deprecation, failure paths, and known gaps. No success variant exists in this language; if you need to mark a positive outcome, use prose plus a wave-aqua accent.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Translucent accent wash + 4px solid left border. Warn swaps both colors only — geometry unchanged.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (8–14px), padding, opacity of wash (12–18%).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">A pull quote in Wave is the calligraphic aside — a single italic sentence the eye must catch on its way down the column.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Noto Serif JP italic, crystal-blue color, ≥22px, thin sumi-ink-5 left rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Rule weight, exact font-size (22–26px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>The first item in a series carries <code>open</code> so the reader's context is immediately seeded. Summary is Noto Serif JP at 20px / weight 500 in crystal-blue — visually a sub-heading.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse. The wave-aqua <code>＋ / −</code> marker is part of this language — the full-width plus glyph is intentional, it echoes the woodblock register.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif summary in crystal-blue at ~20px, sumi-ink-5 top-border on each <code>details</code>, wave-aqua mono marker.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (full-width <code>＋</code> vs ASCII <code>+</code>), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Component</th><th>Role</th><th>Latency</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Coordinator</td><td>orchestrates</td><td><code>12 ms</code></td></tr>
+              <tr><td>Worker</td><td>processes</td><td><code>118 ms</code></td></tr>
+              <tr><td>Sink</td><td>persists</td><td><code>40 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono uppercase <code>th</code> on <code>sumi-ink-3</code>, sumi-ink-5 border, row separators in <code>sumi-ink-4</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping (default: none), <code>td</code> font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">render_wave</span>(canvas: <span class="type">Canvas</span>) -&gt; <span class="type">None</span>:  <span class="com"># sumi-ink page</span>
+    canvas.fill(<span class="str">"#1F1F28"</span>)
+    <span class="kw">for</span> i <span class="kw">in</span> <span class="fn">range</span>(<span class="n">42</span>):
+        canvas.stroke(<span class="str">"#7E9CD8"</span>, alpha=<span class="n">0.6</span>)
+    <span class="kw">return</span> <span class="kw">None</span></pre>
+          <p>Token colors map onto the Wave palette: <code>kw</code> = crystal-blue, <code>str</code> = spring-green, <code>com</code> = fuji-gray italic, <code>n</code> = surimi-orange, <code>fn</code> = carp-yellow, <code>type</code> = wave-aqua. No runtime highlighter — spans are classified manually.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>sumi-ink-4</code> fill, <code>sumi-ink-5</code> border, JetBrains Mono 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (8–16px), padding, exact token colors within the Wave palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the worker step completes. Inline code is recessed (<code>sumi-ink-1</code> wash, sumi-ink-5 border) and colored carp-yellow — it sits in the prose without competing with the body ink.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.9em</code>, <code>sumi-ink-1</code> wash, carp-yellow ink, thin sumi-ink-5 border, small radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius (3–6px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">WAVE-15</span> and shipped under <span class="pill">SUMI-2026</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Wave-aqua border + wave-aqua ink, mono 12px, pill shape (<code>border-radius: 999px</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), optional translucent aqua wash background.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See §07 for live diagrams. Each is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and a Noto Serif JP italic caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Noto Serif JP italic in <code>--ink-faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size (13–15px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid is the default — used for "X vs Y" comparisons and "pick this when / don't pick" framing (see §02).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings; the language controls <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at <code>720px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value, child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams here are ink-on-rice-paper, not rounded rectangles. Brushstroke arrows curve gently (never straight). A subtle wave-pattern SVG fill textures <code>store</code> and <code>external</code> nodes. Node corners are asymmetric (<code>rx</code> ≠ <code>ry</code>) to suggest a hand-drawn form. Small wave-aqua dots sit near labels like ink drops. Captions are italic Noto Serif JP, continuous with the body prose.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>--sumi-ink-4</code></td><td><code>--sumi-ink-5</code></td><td>Asymmetric corners (<code>rx="14" ry="18"</code>), 1.5px stroke.</td></tr>
+            <tr><td><code>hot</code></td><td><code>--accent-soft</code> (crystal-blue 14%)</td><td><code>--crystal-blue</code></td><td>Same hand-drawn geometry; the active step.</td></tr>
+            <tr><td><code>store</code></td><td><code>--sumi-ink-1</code> + <code>url(#kw-wave)</code></td><td><code>--sumi-ink-6</code></td><td>Crystal-blue wave-pattern overlay at 0.15 opacity; 2px stroke.</td></tr>
+            <tr><td><code>external</code></td><td><code>--secondary-soft</code> (aqua 14%) + <code>url(#kw-wave)</code></td><td><code>--wave-aqua</code></td><td>Wave-pattern fill reads as paper texture, not stripes.</td></tr>
+            <tr><td><code>warn</code></td><td>Surimi-orange wave-pattern (<code>url(#kw-wave-warn)</code>)</td><td><code>--surimi-orange</code></td><td>Pattern fill replaces solid warn-tint on failure path.</td></tr>
+            <tr><td><code>future</code></td><td><code>--bg</code></td><td><code>--sumi-ink-6</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 180" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 14px "Noto Serif JP", serif; fill: #DCD7BA; }
+              .small { font: italic 12px "Noto Serif JP", serif; fill: #C8C093; }
+              .default  { fill: #2A2A37; stroke: #363646; }
+              .hot      { fill: rgba(126, 156, 216, 0.18); stroke: #7E9CD8; }
+              .store    { fill: #181820; stroke: #54546D; }
+              .external { fill: rgba(122, 168, 159, 0.18); stroke: #7AA89F; }
+              .box        { stroke-width: 1.5; }
+              .box-store  { stroke-width: 2; }
+              .brush-arrow { stroke: #7E9CD8; stroke-width: 1.5; fill: none; stroke-linecap: round; marker-end: url(#kw-arrow); }
+              .ink-dot    { fill: #7AA89F; }
+            </style>
+            <defs>
+              <marker id="kw-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#7E9CD8"/>
+              </marker>
+              <pattern id="kw-wave" x="0" y="0" width="22" height="10" patternUnits="userSpaceOnUse">
+                <path d="M0,5 Q5.5,0 11,5 T22,5" fill="none" stroke="#7E9CD8" stroke-width="0.8" opacity="0.15"/>
+              </pattern>
+            </defs>
+            <rect class="box default" x="20"  y="50" width="150" height="80" rx="14" ry="18"/>
+            <circle class="ink-dot" cx="32" cy="60" r="2.2"/>
+            <text class="txt"   x="40"  y="85">Trigger</text>
+            <text class="small" x="40"  y="106">user request</text>
+            <path class="brush-arrow" d="M170 90 Q190 82 210 90"/>
+
+            <rect class="box hot"     x="210" y="50" width="160" height="80" rx="14" ry="18"/>
+            <circle class="ink-dot" cx="222" cy="60" r="2.2"/>
+            <text class="txt"   x="230" y="85">Process</text>
+            <text class="small" x="230" y="106">in focus</text>
+            <path class="brush-arrow" d="M370 90 Q390 98 410 90"/>
+
+            <rect class="box-store store" x="410" y="50" width="160" height="80" rx="14" ry="18"/>
+            <rect x="410" y="50" width="160" height="80" rx="14" ry="18" fill="url(#kw-wave)"/>
+            <circle class="ink-dot" cx="422" cy="60" r="2.2"/>
+            <text class="txt"   x="430" y="85">Store</text>
+            <text class="small" x="430" y="106">persist</text>
+            <path class="brush-arrow" d="M570 90 Q590 82 610 90"/>
+
+            <rect class="box external" x="610" y="50" width="170" height="80" rx="14" ry="18"/>
+            <rect x="610" y="50" width="170" height="80" rx="14" ry="18" fill="url(#kw-wave)"/>
+            <circle class="ink-dot" cx="622" cy="60" r="2.2"/>
+            <text class="txt"   x="630" y="85">Notify</text>
+            <text class="small" x="630" y="106">third party</text>
+          </svg>
+          <figcaption class="caption">Linear flow — brushstroke arrows curve gently between hand-drawn nodes. <code>hot</code> marks the step the prose is currently discussing; <code>store</code> and <code>external</code> carry a wave-pattern texture.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 14px "Noto Serif JP", serif; fill: #DCD7BA; }
+              .small      { font: 12px "Noto Serif JP", serif; fill: #C8C093; }
+              .note       { font: italic 12px "Noto Serif JP", serif; fill: #727169; }
+              .step       { font: 500 11px "JetBrains Mono", monospace; fill: #7AA89F; letter-spacing: 0.12em; }
+              .alert-txt  { font: 600 11px "JetBrains Mono", monospace; fill: #FFA066; letter-spacing: 0.14em; }
+              .default  { fill: #2A2A37; stroke: #363646; }
+              .hot      { fill: rgba(126, 156, 216, 0.18); stroke: #7E9CD8; }
+              .external { fill: rgba(122, 168, 159, 0.18); stroke: #7AA89F; }
+              .box   { stroke-width: 1.5; }
+              .brush-arrow       { stroke: #7E9CD8; stroke-width: 1.5; fill: none; stroke-linecap: round; marker-end: url(#kw-arrow3); }
+              .brush-arrow-muted { stroke: #54546D; stroke-width: 1.2; fill: none; stroke-linecap: round; marker-end: url(#kw-arrow-muted3); }
+              .brush-arrow-warn  { stroke: #FFA066; stroke-width: 1.8; fill: none; stroke-linecap: round; marker-end: url(#kw-arrow-warn3); }
+              .brush-arrow-async { stroke: #7E9CD8; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-dasharray: 6 3; marker-end: url(#kw-arrow3); }
+              .ink-dot    { fill: #7AA89F; }
+            </style>
+            <defs>
+              <marker id="kw-arrow3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#7E9CD8"/>
+              </marker>
+              <marker id="kw-arrow-muted3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#54546D"/>
+              </marker>
+              <marker id="kw-arrow-warn3" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L10,5 L0,10 L3,5 Z" fill="#FFA066"/>
+              </marker>
+              <pattern id="kw-wave" x="0" y="0" width="22" height="10" patternUnits="userSpaceOnUse">
+                <path d="M0,5 Q5.5,0 11,5 T22,5" fill="none" stroke="#7E9CD8" stroke-width="0.8" opacity="0.15"/>
+              </pattern>
+              <pattern id="kw-wave-warn" x="0" y="0" width="22" height="10" patternUnits="userSpaceOnUse">
+                <path d="M0,5 Q5.5,0 11,5 T22,5" fill="none" stroke="#FFA066" stroke-width="0.9" opacity="0.18"/>
+              </pattern>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="56" rx="14" ry="18"/>
+            <circle class="ink-dot" cx="72" cy="32" r="2"/>
+            <text class="txt" x="120" y="54" text-anchor="middle">Client</text>
+
+            <rect class="box default"  x="260" y="20" width="120" height="56" rx="14" ry="18"/>
+            <circle class="ink-dot" cx="272" cy="32" r="2"/>
+            <text class="txt" x="320" y="54" text-anchor="middle">API</text>
+
+            <rect class="box hot"      x="440" y="20" width="120" height="56" rx="14" ry="18"/>
+            <circle class="ink-dot" cx="452" cy="32" r="2"/>
+            <text class="txt" x="500" y="54" text-anchor="middle">Worker</text>
+
+            <rect class="box external" x="620" y="20" width="200" height="56" rx="14" ry="18"/>
+            <rect x="620" y="20" width="200" height="56" rx="14" ry="18" fill="url(#kw-wave)"/>
+            <circle class="ink-dot" cx="632" cy="32" r="2"/>
+            <text class="txt" x="720" y="54" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="76" x2="120" y2="525" stroke="#363646" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="76" x2="320" y2="525" stroke="#363646" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="76" x2="500" y2="525" stroke="#363646" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="76" x2="720" y2="525" stroke="#363646" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <path class="brush-arrow" d="M120 125 Q220 113 320 125"/>
+            <circle class="ink-dot" cx="298" cy="120" r="1.8"/>
+            <text class="small" x="305" y="120">POST /jobs</text>
+            <text class="note"  x="220" y="148" text-anchor="middle">synchronous create</text>
+
+            <path class="brush-arrow-muted" d="M320 172 Q220 184 120 172"/>
+            <circle class="ink-dot" cx="298" cy="167" r="1.8"/>
+            <text class="small" x="305" y="167">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="brush-arrow-async" d="M320 215 Q410 207 500 215"/>
+            <circle class="ink-dot" cx="478" cy="234" r="1.8"/>
+            <text class="small" x="485" y="234">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <path class="brush-arrow" d="M500 275 Q610 263 720 275"/>
+            <circle class="ink-dot" cx="698" cy="270" r="1.8"/>
+            <text class="small" x="705" y="270">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="90" rx="12" ry="14"
+                  fill="url(#kw-wave-warn)" stroke="#FFA066" stroke-width="1" stroke-dasharray="4 3"/>
+
+            <path class="brush-arrow-warn" d="M720 322 Q610 334 500 322"/>
+            <circle cx="478" cy="317" r="1.8" fill="#FFA066"/>
+            <text class="alert-txt" x="485" y="317">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="32" rx="8" ry="10"
+                  fill="rgba(255, 160, 102, 0.14)" stroke="#FFA066" stroke-width="1"/>
+            <circle cx="378" cy="361" r="3" fill="#FFA066"/>
+            <text class="alert-txt" x="390" y="365">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="365">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="413">04</text>
+            <path class="brush-arrow" d="M500 410 Q610 398 720 410"/>
+            <circle class="ink-dot" cx="698" cy="405" r="1.8"/>
+            <text class="small" x="705" y="405">POST /provision (retry)</text>
+
+            <path class="brush-arrow-muted" d="M720 457 Q610 469 500 457"/>
+            <circle class="ink-dot" cx="478" cy="452" r="1.8"/>
+            <text class="small" x="485" y="452">201 Created</text>
+
+            <text class="step" x="15" y="498">05</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="brush-arrow-async" d="M500 495 Q310 483 120 495"/>
+            <circle class="ink-dot" cx="98" cy="513" r="1.8"/>
+            <text class="small" x="105" y="513">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — brushstroke arrows curve between participants, message labels are right-aligned with a calligraphic dot prefix, and the alert region carries a surimi-orange wave-pattern fill in place of a flat warn-tint.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">14</span>px <span class="str">"Noto Serif JP"</span>, serif; fill: <span class="str">#DCD7BA</span>; }
+<span class="kw">.small</span> { font: <span class="n">12</span>px <span class="str">"Noto Serif JP"</span>, serif; fill: <span class="str">#C8C093</span>; }
+<span class="kw">.note</span>  { font: italic <span class="n">12</span>px <span class="str">"Noto Serif JP"</span>, serif; fill: <span class="str">#727169</span>; }
+<span class="kw">.step</span>  { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: <span class="str">#7AA89F</span>; letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: <span class="str">#FFA066</span>; letter-spacing: <span class="n">0.14</span>em; }
+<span class="kw">.brush-arrow</span> { stroke: <span class="str">#7E9CD8</span>; stroke-width: <span class="n">1.5</span>; stroke-linecap: round; fill: none; }
+<span class="kw">.ink-dot</span>     { fill: <span class="str">#7AA89F</span>; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Annotations use Noto Serif JP italic in fuji-gray. Step numbers JetBrains Mono in wave-aqua. Arrows are 2.5px crystal-blue brushstrokes with <code>stroke-linecap: round</code> and a gentle quadratic curve — straight lines are forbidden. Message labels are right-aligned with a calligraphic wave-aqua dot prefix.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Curve amplitude (small only), node corner asymmetry within <code>rx 12–16</code> / <code>ry 16–22</code>, calligraphic dot count.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>Failure paths sit inside a dashed surimi-orange rectangle filled with the <code>kw-wave-warn</code> pattern (surimi-orange wave path at 0.18 opacity) instead of a flat warn-tint — the texture echoes the woodblock vocabulary. The inline alert pill keeps a solid 14%-opacity fill so the caps mono label stays legible. Visible above between messages 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Warn region: <code>url(#kw-wave-warn)</code> pattern fill + dashed surimi-orange border. Inline alert pill: <code>rgba(255, 160, 102, 0.14)</code> fill, solid border, mono caps label with optional ink-drop dot.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert pill copy, dot presence.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default brushstroke arrows: crystal-blue at 1.5px, round caps, gentle quadratic curve. Return paths use <code>brush-arrow-muted</code> (sumi-ink-6) so direction reads at a glance. Async/fire-and-forget: same crystal-blue brush with <code>stroke-dasharray: 6 3</code>. Warn: surimi-orange at 1.8px.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

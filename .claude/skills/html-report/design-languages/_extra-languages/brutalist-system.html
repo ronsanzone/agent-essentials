@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brutalist System — Design Language</title>
+  <style>
+    :root {
+      --bg:           #FFFFFF;
+      --bg-alt:       #F5F5F5;
+      --bg-card:      #FFFFFF;
+      --bg-code:      #F5F5F5;
+      --bg-soft:      #F5F5F5;
+
+      --text:         #000000;
+      --text-soft:    #000000;
+      --text-faint:   #555555;
+      --text-ghost:   #888888;
+      --ink:          #000000;
+      --ink-soft:     #000000;
+      --ink-faint:    #555555;
+      --ink-ghost:    #888888;
+
+      --rule:         #000000;
+      --rule-soft:    #000000;
+      --rule-strong:  #000000;
+
+      --link-blue:    #0000EE;
+      --visited:      #551A8B;
+      --accent-red:   #FF0000;
+
+      --accent:         var(--link-blue);
+      --accent-soft:    var(--bg-alt);
+      --secondary:      var(--accent-red);
+      --secondary-soft: var(--bg-alt);
+      --warn:           var(--accent-red);
+      --warn-soft:      var(--bg-alt);
+
+      --sans:  system-ui, -apple-system, "Helvetica Neue", sans-serif;
+      --mono:  "Courier New", Courier, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--link-blue);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+      border-right: 1px solid var(--rule);
+      padding-right: 16px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li {
+      counter-increment: toc;
+      margin: 0;
+    }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--link-blue);
+      text-decoration: underline;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero) ". ";
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent-red);
+      margin-right: 6px;
+    }
+
+    aside.toc a.active { color: var(--text); background: var(--bg-alt); }
+    aside.toc a:visited { color: var(--visited); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; border-right: none; padding-right: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--bg);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 48px;
+      border-bottom: 1px solid var(--text);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 32px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-red);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: clamp(36px, 5vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      margin: 0 0 24px;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    h1.title em {
+      font-style: normal;
+      font-weight: 400;
+      text-decoration: underline;
+      text-decoration-thickness: 2px;
+      text-underline-offset: 4px;
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-size: 18px;
+      line-height: 1.5;
+      color: var(--text);
+      max-width: 640px;
+      margin: 0 0 32px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--text);
+      margin-top: 24px;
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .meta-row .v {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 80px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 6px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent-red);
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--sans);
+      font-size: 28px;
+      font-weight: 700;
+      line-height: 1.15;
+      margin: 0 0 20px;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: -0.005em;
+      border-bottom: 1px solid var(--text);
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 32px 0 10px;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0;
+      margin: 0 0 8px;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--link-blue); text-decoration: underline; }
+    a:visited { color: var(--visited); }
+    a:hover { color: var(--link-blue); background: var(--bg-alt); }
+
+    ul, ol { padding-left: 22px; margin: 0 0 16px; }
+    li { margin-bottom: 4px; }
+
+    .card {
+      border: 1px solid var(--text);
+      background: var(--bg-card);
+      padding: 16px 18px;
+      margin: 20px 0;
+    }
+
+    .card.mini { padding: 14px 16px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border: 1px solid var(--text);
+      border-left: 6px solid var(--text);
+      background: var(--bg-alt);
+      padding: 14px 16px;
+      margin: 20px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--accent-red);
+    }
+
+    .callout.success {
+      border-left-color: var(--text);
+    }
+
+    .callout strong { font-weight: 700; text-transform: uppercase; }
+
+    .quote {
+      font-family: var(--sans);
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.4;
+      color: var(--text);
+      border-left: 6px solid var(--text);
+      padding: 4px 0 4px 20px;
+      margin: 28px 0;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 1px solid var(--text);
+      padding: 14px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--text); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      list-style: none;
+      text-transform: uppercase;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "[+] "; font-family: var(--mono); color: var(--accent-red); margin-right: 4px; }
+    details[open] > summary::before { content: "[-] "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg);
+      border: 1px solid var(--text);
+      margin: 22px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid var(--text);
+      vertical-align: top;
+      font-size: 14px;
+    }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text);
+      background: var(--bg-alt);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--text);
+      padding: 14px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 16px 0;
+      color: var(--text);
+    }
+
+    pre .kw   { color: var(--text); font-weight: 700; }
+    pre .str  { color: var(--text); }
+    pre .com  { color: var(--text-faint); }
+    pre .n    { color: var(--accent-red); }
+    pre .fn   { color: var(--link-blue); }
+    pre .type { color: var(--text); font-weight: 700; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--bg-alt);
+      color: var(--text);
+      padding: 1px 4px;
+      border: 1px solid var(--text);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    figure.card.diagram { padding: 18px 16px 14px; margin: 24px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; background: var(--bg); }
+
+    .caption {
+      font-family: var(--mono);
+      color: var(--text);
+      font-size: 12px;
+      text-align: left;
+      margin-top: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .contract {
+      margin: 12px 0 28px;
+      padding: 12px 16px;
+      border: 1px solid var(--text);
+      border-left: 6px solid var(--text);
+      background: var(--bg-alt);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--accent-red);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--text); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--text);
+      background: var(--bg);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--text); }
+    .swatch .label { padding: 6px 10px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--text); }
+    .swatch .label strong { display: block; color: var(--text); font-weight: 700; text-transform: uppercase; }
+    .swatch .label span { color: var(--text-faint); }
+
+    .gallery-item { margin: 0 0 36px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 8px; vertical-align: 2px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+        <li><a href="#exemplars">Exemplar reports</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Brutalist System, <em>unstyled on purpose</em></h1>
+          <p class="lede">The default browser, maximally. No fonts loaded. No rounded corners. Links are <code>#0000EE</code>. The absence of design decisions IS the decision.</p>
+          <div class="meta">
+            <span class="pill">Status: shipped</span>
+            <span class="pill">Audience: technical-manifesto</span>
+            <span class="pill">v1</span>
+          </div>
+          <aside class="contract" style="margin: 32px 0 0;">
+            <div class="row"><span class="label">Locked</span><span>System sans h1, 1px solid black borders, native browser link blue, no border-radius, no shadows, no gradients. Hero has a bottom rule and nothing else.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, title case (upper vs sentence), pill content, hero footer as meta-row or pills.</span></div>
+          </aside>
+        </div>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Brutalist System is anti-design as design philosophy. The medium is the statement. It is the right choice for technical manifestos, personal developer sites, and tools-for-tools documentation where ornamentation would undermine credibility. The aesthetic principle: consistency in restraint.</p>
+        <div class="quote">If a reader notices the design, the design has failed. If a reader notices the absence of design, that is the design working.</div>
+        <p>Body is the operating-system sans stack. Code is <code>"Courier New"</code>. No Google Fonts are loaded for body or display — the only optional CDN dependency is <code>Courier Prime</code> for code blocks if a renderer wants a slight upgrade. Backgrounds are <code>#FFFFFF</code> and <code>#F5F5F5</code>. Text is <code>#000000</code>. Links are <code>#0000EE</code> — the native browser hyperlink color, untouched. Visited links are <code>#551A8B</code>. The brand identity is "we didn't bother styling them."</p>
+        <p>Red (<code>#FF0000</code>) is the only secondary accent and appears sparingly: marginalia counters, the eyebrow dot, alert states. Everything else is black on white.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Technical manifestos. Standards documents. Personal developer sites that signal seriousness through restraint. Documentation for tools-for-tools where ornament would feel out of place. RFC-style writing.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The audience expects polish (external sales, marketing). The content is narrative or persuasive — restraint reads as indifference there. Reports that must reassure rather than instruct.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>No Google Fonts URL is loaded for body or display. The system stack IS the brand.</p>
+        <pre><span class="com">/* no &lt;link&gt; tag — system fonts only */</span></pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="kw">--sans</span>:  system-ui, -apple-system, <span class="str">"Helvetica Neue"</span>, sans-serif;
+<span class="kw">--mono</span>:  <span class="str">"Courier New"</span>, Courier, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code></td><td>16px, line-height 1.5</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--sans)</code> bold uppercase</td><td>Hierarchy by size and weight only</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td><code>var(--mono)</code></td><td>Courier New, no substitute</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Headings are uppercase. Letter-spacing is unmodified or near-zero.</li>
+          <li><strong>Bold</strong> for emphasis. Italic is allowed but unstyled.</li>
+          <li>No display-only typography. The same sans renders body and heading.</li>
+          <li>Inline code is bordered (1px solid black) — code stands out by geometry, not color.</li>
+          <li>Native browser blue (<code>#0000EE</code>) for links. Visited purple is allowed. Hover state is a background wash, not a color change.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>Six colors. The brand is the restraint.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #FFFFFF"></div><div class="label"><strong>--bg</strong><span>#FFFFFF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F5F5F5"></div><div class="label"><strong>--bg-alt</strong><span>#F5F5F5</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #000000"></div><div class="label"><strong>--text</strong><span>#000000</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #555555"></div><div class="label"><strong>--text-faint</strong><span>#555555</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #888888"></div><div class="label"><strong>--text-ghost</strong><span>#888888</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #000000"></div><div class="label"><strong>--rule</strong><span>#000000</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0000EE"></div><div class="label"><strong>--link-blue</strong><span>#0000EE</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #551A8B"></div><div class="label"><strong>--visited</strong><span>#551A8B</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FF0000"></div><div class="label"><strong>--accent-red</strong><span>#FF0000</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>The canonical SVG <code>&lt;style&gt;</code> block renders unchanged:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--link-blue</span>);
+<span class="kw">--accent-soft</span>:    var(<span class="kw">--bg-alt</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--accent-red</span>);
+<span class="kw">--secondary-soft</span>: var(<span class="kw">--bg-alt</span>);
+<span class="kw">--warn</span>:           var(<span class="kw">--accent-red</span>);
+<span class="kw">--warn-soft</span>:      var(<span class="kw">--bg-alt</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not introduce a third color family. Two accents (native blue, red) and four neutrals. If a report needs more, it is the wrong language.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li><strong>No border-radius.</strong> Ever. <code>border-radius: 0</code> is the default and the rule.</li>
+          <li><strong>No box-shadow.</strong> Shadows imply elevation; this language is flat.</li>
+          <li><strong>No gradients.</strong> Solid fills only.</li>
+          <li><strong>No styled focus rings.</strong> The browser default is correct.</li>
+          <li><strong>No webfonts for body or display.</strong> System stack only.</li>
+          <li><strong>No emoji</strong> in headings, callouts, or marginalia.</li>
+          <li><strong>No "tasteful" off-blacks.</strong> Text is <code>#000000</code>, not <code>#222</code>.</li>
+          <li><strong>No "tasteful" off-whites.</strong> Background is <code>#FFFFFF</code>, not <code>#FAFAFA</code>.</li>
+          <li><strong>No animation</strong> beyond the progress-bar width transition (locked at 0.05s linear).</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in this language with its locked/free contract. The CSS class names are stable — copy them verbatim. The HTML structure mirrors <code>references/content-components.md</code>; the values here are this language's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>See the document hero above. Uppercase sans h1, native-blue underline on italic-em phrase, single bottom rule, no gradient.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>System sans h1 uppercase, 1px solid black bottom border, no background, mono eyebrow with 8px red square dot.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as meta-row key/values or .meta pill chips.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Top-level section. Red mono <code>.num</code> in the gutter, uppercase sans h2 with a 1px black underline rule. Each section in this document is a live example.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Sans uppercase h2 with 1px solid black bottom rule, red mono .num at <code>left: -64px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact left offset (±8px), h2 font-size (24–32px), section vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Just a black-bordered rectangle. No fill change, no shadow, no radius.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black border, <code>border-radius: 0</code>, no shadow, white fill.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, content layout inside, optional <code>.mini</code> reduced-padding variant.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use the grey background with a 6px black left border. Place after the paragraph being annotated.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant swaps the left border to <code>#FF0000</code>. That is the only difference. Geometry unchanged.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black border on all sides + 6px solid left accent, <code>#F5F5F5</code> background. Warn swaps left border to red.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, presence of bold uppercase label.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">A pull quote is indented behind a 6px solid black left rule. That is the entire treatment. No italics, no serif, no color shift.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>6px solid black left border, 20px font-size, sans, no italic, no color change.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (18–22px), padding, presence of trailing attribution.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Summary is uppercase sans bold. The marker is <code>[+]</code> / <code>[-]</code> in red Courier New. The marker character is part of this language's expression.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse so the reader can skip well-understood steps.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black top border on each details, uppercase sans summary, mono <code>[+]/[-]</code> marker in red.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>[+]/[-]</code> vs <code>+/-</code>), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>-2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Every cell has a 1px solid black border. Mono uppercase <code>th</code> on <code>#F5F5F5</code>. No row striping.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, <code>td</code> font-size (12–14px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host): <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Spans are classified manually — <code>kw</code> (keyword, bold black), <code>fn</code> (function, native blue), <code>n</code> (numeric, red), <code>com</code> (comment, grey). Strings and types are plain black.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>#F5F5F5</code> fill, 1px solid black border, Courier New 13px, no border-radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, exact token color mapping within the 4-color palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes. Inline code is bordered — it stands out by geometry, not color.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.92em</code>, 1px solid black border, <code>#F5F5F5</code> fill.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (1–2px), font-size within ±0.04em.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black border, white fill, Courier New 11px uppercase. No radius — pills are rectangles.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (10–12px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07. Each diagram is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG. Caption is mono uppercase, left-aligned.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> 1px black border. Caption is mono uppercase, left-aligned.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up is the default — used for "X vs Y" comparisons (see §02).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings and let the language control <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, single-column collapse at 720px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams are 1px black lines on white. Boxes are rectangles. Arrows are black. The <code>hot</code> role is a grey-filled rectangle — there is no separate "accent" color. Failure paths and the <code>warn</code> role use <code>#FF0000</code> stroke and that is the only place red appears in diagrams.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>#FFFFFF</code></td><td><code>#000000</code></td><td>1.5px stroke, no rx (square corners).</td></tr>
+            <tr><td><code>hot</code></td><td><code>#F5F5F5</code></td><td><code>#000000</code></td><td>2px stroke for emphasis.</td></tr>
+            <tr><td><code>store</code></td><td><code>#FFFFFF</code></td><td><code>#000000</code></td><td>2px stroke, doubled border via inner rect.</td></tr>
+            <tr><td><code>external</code></td><td><code>#FFFFFF</code></td><td><code>#000000</code></td><td>Dashed stroke (<code>stroke-dasharray: 6 3</code>).</td></tr>
+            <tr><td><code>warn</code></td><td><code>#FFFFFF</code></td><td><code>#FF0000</code></td><td>The only red. 2px stroke.</td></tr>
+            <tr><td><code>future</code></td><td><code>#FFFFFF</code></td><td><code>#888888</code></td><td>Dashed, ghosted stroke.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 14px system-ui, sans-serif; fill: #000000; }
+              .small { font: 12px system-ui, sans-serif; fill: #555555; }
+              .default  { fill: #FFFFFF; stroke: #000000; }
+              .hot      { fill: #F5F5F5; stroke: #000000; }
+              .store    { fill: #FFFFFF; stroke: #000000; }
+              .external { fill: #FFFFFF; stroke: #000000; stroke-dasharray: 6 3; }
+              .box   { stroke-width: 1.5; }
+              .hot.box { stroke-width: 2; }
+              .arrow { stroke: #000000; stroke-width: 1.5; fill: none; marker-end: url(#bs-arrow); }
+            </style>
+            <defs>
+              <marker id="bs-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#000000"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70"/>
+            <text class="txt"   x="40"  y="67">Trigger</text>
+            <text class="small" x="40"  y="88">user request</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70"/>
+            <text class="txt"   x="230" y="67">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70"/>
+            <rect class="box store"   x="414" y="39" width="152" height="62" fill="none"/>
+            <text class="txt"   x="430" y="67">Store</text>
+            <text class="small" x="430" y="88">persist</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70"/>
+            <text class="txt"   x="630" y="67">Notify</text>
+            <text class="small" x="630" y="88">third party</text>
+          </svg>
+          <figcaption class="caption">Fig. 01 — Linear flow. Hot is grey-filled. Store is double-bordered. External is dashed.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 14px system-ui, sans-serif; fill: #000000; }
+              .small      { font: 12px system-ui, sans-serif; fill: #555555; }
+              .note       { font: 12px "Courier New", monospace; fill: #555555; }
+              .step       { font: 700 11px "Courier New", monospace; fill: #FF0000; letter-spacing: 0.08em; }
+              .alert-txt  { font: 700 11px "Courier New", monospace; fill: #FF0000; letter-spacing: 0.10em; }
+              .default  { fill: #FFFFFF; stroke: #000000; }
+              .hot      { fill: #F5F5F5; stroke: #000000; }
+              .external { fill: #FFFFFF; stroke: #000000; stroke-dasharray: 6 3; }
+              .box   { stroke-width: 1.5; }
+              .hot.box { stroke-width: 2; }
+              .arrow       { stroke: #000000; stroke-width: 1.5; fill: none; marker-end: url(#bs-arrow-blk); }
+              .arrow-muted { stroke: #555555; stroke-width: 1; fill: none; marker-end: url(#bs-arrow-mut); }
+              .arrow-warn  { stroke: #FF0000; stroke-width: 2; fill: none; marker-end: url(#bs-arrow-red); }
+              .arrow-async { stroke: #000000; stroke-width: 1.5; fill: none; stroke-dasharray: 6 3; marker-end: url(#bs-arrow-blk); }
+            </style>
+            <defs>
+              <marker id="bs-arrow-blk" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#000000"/>
+              </marker>
+              <marker id="bs-arrow-mut" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#555555"/>
+              </marker>
+              <marker id="bs-arrow-red" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#FF0000"/>
+              </marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50"/>
+            <text class="txt" x="120" y="52" text-anchor="middle">Client</text>
+
+            <rect class="box default"  x="260" y="20" width="120" height="50"/>
+            <text class="txt" x="320" y="52" text-anchor="middle">API</text>
+
+            <rect class="box hot"      x="440" y="20" width="120" height="50"/>
+            <text class="txt" x="500" y="52" text-anchor="middle">Worker</text>
+
+            <rect class="box external" x="620" y="20" width="200" height="50"/>
+            <text class="txt" x="720" y="52" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="#000000" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="#000000" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="#000000" stroke-width="1" stroke-dasharray="3 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="#000000" stroke-width="1" stroke-dasharray="3 4"/>
+
+            <text class="step" x="15" y="128">[01]</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="15" y="218">[02]</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">[03]</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="90"
+                  fill="#F5F5F5" stroke="#FF0000" stroke-width="1" stroke-dasharray="6 3"/>
+
+            <path class="arrow-warn" d="M720 320 H500"/>
+            <text class="alert-txt" x="610" y="315" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="32"
+                  fill="#FFFFFF" stroke="#FF0000" stroke-width="1"/>
+            <rect x="368" y="353" width="8" height="16" fill="#FF0000"/>
+            <text class="alert-txt" x="384" y="365">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="365">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="413">[04]</text>
+            <path class="arrow" d="M500 410 H720"/>
+            <text class="small" x="610" y="405" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 455 H500"/>
+            <text class="small" x="610" y="450" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="15" y="498">[05]</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 495 H120"/>
+            <text class="small" x="310" y="513" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Fig. 02 — Annotated sequence with alert region. Step numbers are <code>[NN]</code>. Red is reserved for failure paths.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">14</span>px system-ui, sans-serif; fill: <span class="str">#000000</span>; }
+<span class="kw">.small</span> { font: <span class="n">12</span>px system-ui, sans-serif; fill: <span class="str">#555555</span>; }
+<span class="kw">.note</span>  { font: <span class="n">12</span>px <span class="str">"Courier New"</span>, monospace; fill: <span class="str">#555555</span>; }
+<span class="kw">.step</span>  { font: <span class="n">700</span> <span class="n">11</span>px <span class="str">"Courier New"</span>; fill: <span class="str">#FF0000</span>; }
+<span class="kw">.alert-txt</span> { font: <span class="n">700</span> <span class="n">11</span>px <span class="str">"Courier New"</span>; fill: <span class="str">#FF0000</span>; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Step numbers and alert text are red Courier New uppercase. Step labels use <code>[NN]</code> bracket format. The only red in a diagram is failure-path / alert.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Whether to include step numbers (small diagrams omit them), exact letter-spacing (0.06–0.12em).</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>Wrap failure-region messages in a grey-filled rectangle with a 1px dashed red border. Place an inline alert pill (white fill, red border, red Courier text) explaining the consequence. Visible in Fig. 02 between steps 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Grey fill (<code>#F5F5F5</code>) + 1px dashed red (<code>#FF0000</code>) border. Inline alert pill: white fill, solid red border, red Courier caps text, optional 8px red square dot at left edge (no circles — squares only).</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert-pill copy, presence of the leading red square dot.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: black. Muted return paths: <code>#555555</code>. Warn / failure-path: red <code>#FF0000</code>. Async: black with <code>stroke-dasharray: 6 3</code>. Never colored otherwise.</p>
+
+        <h3>Caption</h3>
+        <p>Mono uppercase Courier New, <code>#000000</code>, 12px, left-aligned under the diagram. Captions start with a <code>Fig. NN</code> prefix.</p>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">08</span>
+        <h2>Exemplar reports</h2>
+        <p>Read at least one before writing a fresh report. Exemplars demonstrate the language deployed; this file is the vocabulary reference.</p>
+        <ul>
+          <li><code>~/notes/04_Research/protocol-rfc-tour.html</code> — long-form technical RFC. The language at its full reach.</li>
+          <li><code>~/notes/04_Research/migration-runbook.html</code> — short operator runbook. Same language at smaller scale.</li>
+        </ul>
+        <div class="quote">If two reports in this language feel identical, that is correct. If a report in this language looks like it came from a marketing team, it is the wrong language.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

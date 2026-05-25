@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe Blog — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-deep:   #0A2540;
+      --white:       #FFFFFF;
+      --surface-1:   #F6F9FC;
+      --surface-2:   #F0F4F8;
+      --border:      #E3E8EF;
+      --border-soft: #EEF2F7;
+      --text:        #425466;
+      --text-light:  #697386;
+      --text-ghost:  #8C9AAE;
+
+      --purple:        #635BFF;
+      --purple-soft:   #EBE9FF;
+      --purple-deep:   #4B45CC;
+      --purple-faint:  #F4F3FF;
+
+      --warn:      #E5A53E;
+      --warn-soft: #FCF2DC;
+
+      --accent:         var(--purple);
+      --accent-soft:    var(--purple-soft);
+      --secondary:      var(--purple);
+      --secondary-soft: var(--purple-soft);
+
+      --bg:        var(--white);
+      --bg-soft:   var(--surface-1);
+      --bg-card:   var(--white);
+      --bg-code:   var(--surface-1);
+      --ink:       var(--navy-deep);
+      --ink-soft:  var(--text);
+      --ink-faint: var(--text-light);
+      --ink-ghost: var(--text-ghost);
+      --rule:        var(--border);
+      --rule-soft:   var(--border-soft);
+      --rule-strong: #C9D2DC;
+
+      --serif: "Source Serif Pro", "Iowan Old Style", "Charter", Georgia, serif;
+      --sans:  "Inter", "Söhne", "Helvetica Neue", -apple-system, sans-serif;
+      --mono:  "IBM Plex Mono", "Söhne Mono", "SF Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--white);
+      color: var(--navy-deep);
+      font-family: var(--serif);
+      font-size: 18px;
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--purple);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+    .skip-link:focus {
+      position: static; width: auto; height: auto; overflow: visible;
+      padding: 8px 14px; background: var(--purple); color: var(--white); border-radius: 6px;
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 144px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 220px minmax(0, 1fr));
+      gap: 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 40px;
+      align-self: start;
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+      padding-top: 48px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin: 0 0 20px;
+    }
+
+    aside.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc; }
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 7px 0;
+      font-family: var(--serif);
+      font-size: 14px;
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-ghost);
+      margin-right: 12px;
+      letter-spacing: 0.1em;
+    }
+
+    aside.toc a:hover { color: var(--purple); }
+    aside.toc a.active { color: var(--purple); font-style: italic; }
+    aside.toc a.active::before { color: var(--purple); font-style: normal; }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--white);
+      margin: 0 -48px 96px;
+      padding: 112px 48px 80px;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 64px; padding: 56px 24px 40px; }
+    }
+
+    .hero-inner { max-width: 640px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--purple); display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--serif);
+      font-weight: 700;
+      font-size: clamp(40px, 5vw, 64px);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin: 0 0 28px;
+      color: var(--navy-deep);
+    }
+    h1.title em {
+      font-style: italic;
+      font-weight: 600;
+      color: var(--purple);
+    }
+
+    .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 22px;
+      line-height: 1.5;
+      color: var(--text);
+      margin: 0 0 40px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 36px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+    .meta-row .v { font-family: var(--serif); font-size: 14px; color: var(--navy-deep); }
+
+    main { min-width: 0; padding-top: 0; }
+
+    /* The defining constraint of stripe-blog: 640px text column */
+    main > section,
+    main > section > p,
+    main > section > h2,
+    main > section > h3,
+    main > section > h4,
+    main > section > ul,
+    main > section > ol,
+    main > section > .quote,
+    main > section > details {
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    /* Wider components break out of the narrow column */
+    main > section > table,
+    main > section > pre,
+    main > section > .grid,
+    main > section > figure.card.diagram,
+    main > section > .callout,
+    main > section > .card,
+    main > section > .contract,
+    main > section > .swatches,
+    main > section > .gallery-item {
+      max-width: 760px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    section.section {
+      position: relative;
+      margin: 0 0 112px;
+      scroll-margin-top: 40px;
+    }
+
+    .num {
+      position: absolute;
+      left: 50%;
+      top: -42px;
+      transform: translateX(-380px);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--purple);
+      letter-spacing: 0.14em;
+      font-weight: 500;
+    }
+    @media (max-width: 980px) {
+      .num { position: static; transform: none; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.015em;
+      margin: 0 0 24px;
+      color: var(--navy-deep);
+    }
+
+    h3 {
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.3;
+      margin: 48px 0 12px;
+      color: var(--navy-deep);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin: 0 0 10px;
+      color: var(--text-light);
+    }
+
+    p { margin: 0 0 22px; }
+    p, ul, ol { color: var(--navy-deep); }
+
+    a {
+      color: var(--purple);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+      text-decoration-color: rgba(99, 91, 255, 0.4);
+      transition: text-decoration-color 0.15s, color 0.15s;
+    }
+    a:hover { color: var(--purple-deep); text-decoration-color: currentColor; }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: 12px;
+      padding: 24px 28px;
+      margin: 28px auto;
+      box-shadow: 0 1px 3px rgba(10, 37, 64, 0.03);
+    }
+    .card.mini { padding: 20px 22px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin: 28px auto;
+    }
+    .grid > .card { margin: 0; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .callout {
+      border-left: 3px solid var(--purple);
+      background: var(--purple-faint);
+      padding: 18px 24px;
+      border-radius: 0 8px 8px 0;
+      margin: 28px auto;
+      font-family: var(--serif);
+      font-size: 17px;
+      color: var(--navy-deep);
+    }
+    .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+    .callout strong { font-weight: 600; font-style: italic; }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 600;
+      font-size: 30px;
+      line-height: 1.3;
+      color: var(--purple);
+      border: none;
+      padding: 0;
+      margin: 56px auto;
+      text-align: left;
+      letter-spacing: -0.01em;
+    }
+
+    details {
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
+    }
+    details:last-of-type { border-bottom: 1px solid var(--border); }
+    summary {
+      cursor: pointer;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--navy-deep);
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "§ "; font-family: var(--mono); color: var(--purple); margin-right: 6px; font-size: 0.8em; }
+    details[open] > summary::before { content: "¶ "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border: 1px solid var(--border);
+      margin: 28px auto;
+      font-family: var(--serif);
+      font-size: 15px;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-soft);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    th {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text-light);
+      background: var(--surface-1);
+    }
+
+    pre {
+      background: var(--surface-1);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 20px auto;
+      color: var(--navy-deep);
+    }
+
+    pre .kw   { color: var(--purple); font-weight: 500; }
+    pre .str  { color: #008060; }
+    pre .com  { color: var(--text-light); font-style: italic; }
+    pre .n    { color: #C9460C; }
+    pre .fn   { color: var(--purple-deep); }
+    pre .type { color: var(--navy-deep); font-weight: 600; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.85em;
+      background: var(--surface-1);
+      color: var(--purple-deep);
+      padding: 1.5px 6px;
+      border-radius: 3px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 4px 11px;
+      border: 1px solid var(--purple);
+      border-radius: 999px;
+      color: var(--purple);
+      background: var(--white);
+      display: inline-block;
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+    }
+
+    figure.card.diagram { padding: 28px 24px 20px; margin: 36px auto; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--text-light);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 14px;
+    }
+    .caption .fig-prefix {
+      font-style: italic;
+      color: var(--text);
+    }
+    .panel-key {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--purple);
+      font-weight: 600;
+    }
+    .panel-legend {
+      font-family: var(--serif);
+      font-style: normal;
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 8px auto 0;
+      max-width: 56ch;
+      text-align: left;
+      list-style: none;
+      padding: 0;
+    }
+    .panel-legend li { margin: 4px 0; padding-left: 1.6em; text-indent: -1.6em; }
+    .panel-legend .panel-key { display: inline-block; min-width: 1.4em; }
+
+    .contract {
+      margin: 16px auto 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--surface-1);
+      border-radius: 0 6px 6px 0;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+    .contract .row { display: grid; grid-template-columns: 76px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 5px; }
+    .contract .label {
+      color: var(--purple);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--text-light); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 10px;
+      margin: 28px auto;
+    }
+    .swatch {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--white);
+    }
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--border); }
+    .swatch .label { padding: 8px 10px; font-family: var(--mono); font-size: 10.5px; line-height: 1.4; color: var(--text); }
+    .swatch .label strong { display: block; color: var(--navy-deep); font-weight: 500; }
+    .swatch .label span { color: var(--text-light); }
+
+    .gallery-item { margin: 0 auto 48px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language · Editorial Register</div>
+          <h1 class="title">Stripe Blog, <em>set in serif long-form</em></h1>
+          <p class="lede">An editorial register: Stripe's color palette laid over a literary type system. For essays, reflections, retrospectives, and any long-form writing that wants the Stripe trust signal but the breathing room of a serif book page.</p>
+          <div class="meta">
+            <span class="pill">Long-form</span>
+            <span class="pill">Reading: ≈ 25 min</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 640px; margin: 36px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Source Serif Pro 700 h1 at clamp(40px,5vw,64px), italic purple <code>&lt;em&gt;</code>, serif italic lede at 22px, 640px text column max-width, purple as <strong>single</strong> accent (no blue, no secondary).</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, hero meta as <code>.meta-row</code> key/values or <code>.meta</code> pill chips, exact lede line-length.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Stripe Blog is the editorial register turned up — what Stripe's blog would look like if it leaned harder into long-form essay aesthetics. Source Serif Pro for body and display. Inter only for small functional UI (eyebrows, h4 labels, meta keys). IBM Plex Mono for code. The recognizable Stripe purple <code>#635BFF</code> as the <em>single</em> accent — no blue, no secondary, no warm balance.</p>
+        <div class="quote">Stripe’s color palette laid over a literary type system: the trust signal of fintech, the reading comfort of a book page.</div>
+        <p>The 640px text column is the defining geometric constraint. Body lines are deliberately narrow so prose reads at book pace rather than screen-scrolling pace. Wider components (tables, diagrams, callouts) break out to 760px — wide enough to breathe, narrow enough to stay in the editorial register. The result feels nothing like the press page; it feels like a magazine essay.</p>
+        <p>This is the variation a long-form retrospective on the Stripe blog would use if Stripe leaned harder into editorial. Most Stripe blog posts in production sit between this and <code>stripe-press</code> — this language is the editorial extreme.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Engineering essays. Retrospectives. Year-in-review reports. Reflections on architecture or process. Anything that reads like prose first and reference second. Where the reader will sit and read for 20+ minutes without scrolling reference.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>Reference docs — use <code>stripe-docs</code>. Product announcements — use <code>stripe-press</code>. Reports that are dense with code and tables; the narrow 640px column wastes width for those.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>The serif/sans split is load-bearing. Source Serif Pro does the reading work — body, display, ledes. Inter does the small functional work — eyebrows, h4 labels, meta keys, anything that needs sans-typed UI clarity. IBM Plex Mono handles code. Söhne, again, is the Stripe brand sans; Inter is the Google-Fonts fallback.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Source+Serif+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400;1,600&amp;family=Inter:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>: <span class="str">"Source Serif Pro"</span>, <span class="str">"Iowan Old Style"</span>, <span class="str">"Charter"</span>, Georgia, serif;
+<span class="kw">--sans</span>:  <span class="str">"Inter"</span>, <span class="str">"Söhne"</span>, <span class="str">"Helvetica Neue"</span>, -apple-system, sans-serif;
+<span class="kw">--mono</span>:  <span class="str">"IBM Plex Mono"</span>, <span class="str">"Söhne Mono"</span>, <span class="str">"SF Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--serif)</code> — Source Serif Pro</td><td>18px, line-height 1.7 — book pace</td></tr>
+            <tr><td>Display / h1 / h2 / h3</td><td><code>var(--serif)</code> — Source Serif Pro</td><td>Weights 600/700, restrained sizes (36–64px)</td></tr>
+            <tr><td>Lede, pull quotes</td><td><code>var(--serif)</code> italic</td><td>The italic axis carries the editorial voice</td></tr>
+            <tr><td>h4 sub-labels, eyebrows, meta keys</td><td><code>var(--sans)</code> — Inter</td><td>Small, functional, UI-typed</td></tr>
+            <tr><td>Code, pills</td><td><code>var(--mono)</code> — IBM Plex Mono</td><td>Inline code wash uses purple ink</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>H1 carries an italic serif <code>em</code> phrase in purple — the canonical editorial title-with-subhead pattern.</li>
+          <li>The lede is <strong>always</strong> serif italic. This is the strongest editorial signal the language carries.</li>
+          <li>Body uses <em>italic</em> for emphasis, never bold. Bold is reserved for the occasional in-line term gloss.</li>
+          <li>Mono caps with wide letter-spacing for eyebrows (0.20em) and meta keys (0.15em).</li>
+          <li>Pull quotes are large (≥28px), serif italic, in purple, with no decorative borders or quotation marks — let the type carry the weight.</li>
+          <li>The 640px text column is non-negotiable for prose. Tables, diagrams, callouts may break to 760px max.</li>
+          <li>Single accent: <strong>purple only</strong>. No link-blue, no navy as a secondary, no amber outside the warn slot.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>One accent. Purple does all the work that two accents do in the press register and three do in the docs register. The cool surface family is identical to the other Stripe languages — this is the same brand, in a different voice.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #FFFFFF; border-bottom: 1px solid var(--border)"></div><div class="label"><strong>--white</strong><span>#FFFFFF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F6F9FC"></div><div class="label"><strong>--surface-1</strong><span>#F6F9FC</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F0F4F8"></div><div class="label"><strong>--surface-2</strong><span>#F0F4F8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E3E8EF"></div><div class="label"><strong>--border</strong><span>#E3E8EF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0A2540"></div><div class="label"><strong>--navy-deep</strong><span>#0A2540</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #425466"></div><div class="label"><strong>--text</strong><span>#425466</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #697386"></div><div class="label"><strong>--text-light</strong><span>#697386</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #635BFF"></div><div class="label"><strong>--purple</strong><span>#635BFF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #EBE9FF"></div><div class="label"><strong>--purple-soft</strong><span>#EBE9FF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F4F3FF"></div><div class="label"><strong>--purple-faint</strong><span>#F4F3FF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #4B45CC"></div><div class="label"><strong>--purple-deep</strong><span>#4B45CC</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E5A53E"></div><div class="label"><strong>--warn</strong><span>#E5A53E</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FCF2DC"></div><div class="label"><strong>--warn-soft</strong><span>#FCF2DC</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Both <code>--accent</code> and <code>--secondary</code> point at purple. The role distinction in diagrams shows through tone (<code>purple</code> vs <code>purple-soft</code>) rather than hue.</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--purple</span>);
+<span class="kw">--accent-soft</span>:    var(<span class="kw">--purple-soft</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--purple</span>);
+<span class="kw">--secondary-soft</span>: var(<span class="kw">--purple-soft</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Resist the urge to introduce a second accent for variety. Single-accent discipline is what gives this register its editorial purity. If you find yourself reaching for navy or link-blue as a secondary, switch to <code>stripe-press</code> instead.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No sans body. Source Serif Pro is the body face. Inter is small-UI-only.</li>
+          <li>No press-style display headings (h1 at 88px is wrong here — 64px is the ceiling).</li>
+          <li>No wide text columns. 640px max for prose; 760px max for break-out components.</li>
+          <li>No second accent color. Purple only. (See §04.)</li>
+          <li>No drop-shadows heavier than <code>0 1px 3px rgba(10, 37, 64, 0.03)</code>. The register is flat.</li>
+          <li>No warm-paper backgrounds. The surfaces are cool — same as the other Stripe registers.</li>
+          <li>No bold for body emphasis. Italic carries emphasis here.</li>
+          <li>No decorative quotation marks on pull quotes. The italic serif does the work.</li>
+          <li>No emoji.</li>
+          <li>No method-typed pills, no <code>GET</code>/<code>POST</code> color-coding — that's the docs register.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component, rendered in the editorial register. Compared to <code>stripe-press</code>: serif body, narrower text column, single purple accent, italic-led voice. Compared to <code>stripe-docs</code>: airier, more typographic, no method-pill conventions.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>See the document's own hero above — serif h1, italic purple <code>em</code>, italic serif lede, eyebrow with wide letter-spacing, 640px column.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Source Serif Pro 700 h1, italic purple <code>&lt;em&gt;</code>, <strong>italic serif lede at 22px</strong>, 640px hero-inner max-width, mono eyebrow with purple dot at 0.20em letter-spacing.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (80–112px vertical), meta-row contents, presence of <code>.meta</code> pills.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Purple mono <code>.num</code> floats above each section heading (not in the left gutter — the narrow column doesn't have one). H2 at 36px serif 700.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Source Serif Pro h2 at 36px/700/−0.015em, purple mono number positioned above heading.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Number placement (above vs centered), h2 weight (600–700), section vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>An aside card</h4>
+            <p>Editorial cards are rare — long-form writing carries its own structure through paragraphs and quotes. When a card is needed, it's quiet: thin border, near-flat shadow, 12px radius.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>White fill, 1px border, near-flat shadow <code>0 1px 3px rgba(10, 37, 64, 0.03)</code>, h4 inside is Inter sans-caps (not serif).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (20–28px), border-radius (8–14px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Callouts in this register are serif and prose-shaped — they read like a parenthetical aside rather than a UI alert. Purple-faint background, 3px purple left border.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> The warn variant uses amber — same warn color as <code>stripe-press</code>. Use sparingly; long-form writing rarely needs heavy alerting.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>3px left-border (purple default, amber warn), serif body text (17px), italic <code>&lt;strong&gt;</code> label, purple-faint or warn-soft background.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius, label presence.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The signature component of this register. Large serif italic purple — no quotation marks, no border. Pure typography.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Source Serif Pro italic 600 at 30px, purple ink, <strong>no border, no quotation marks</strong>, generous vertical margin.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (26–34px), text-align (left default; centered acceptable), max-width.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>An expandable note (open by default)</summary>
+            <p>Summary is serif 600. The marker uses pilcrow / section glyphs (<code>§ / ¶</code>) — editorial conventions, not the press <code>+/−</code> or docs chevron.</p>
+          </details>
+          <details>
+            <summary>A subsequent expandable note</summary>
+            <p>Closed by default. Together the marker pair (§/¶) feels typographic — at home in a serif essay.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Source Serif Pro 600 summary at 20px, border-top rule, <code>§/¶</code> marker pair in purple.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph pair (<code>§/¶</code> vs others), padding, summary weight.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>−2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif body in cells (15px), mono uppercase <code>th</code>, no row striping (editorial restraint), border-radius optional.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, presence of borders between cells.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">reflect</span>(year): <span class="com"># the editorial impulse</span>
+  <span class="kw">return</span> <span class="str">"learned"</span> <span class="kw">if</span> year &lt; <span class="n">2026</span> <span class="kw">else</span> <span class="str">"shipping"</span></pre>
+          <p>Editorial code blocks are rare. When they appear, they stay small and quotable — code-as-epigraph rather than code-as-reference.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>IBM Plex Mono 13px on <code>--surface-1</code>, 10px radius, no left-border accent (that's the docs register).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (16–24px), token color tuning (keep purple-family).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>Inline code uses <code>purple-deep</code> ink on a faint surface wash. The status moves from <code>PENDING</code> to <code>ACTIVE</code> — the purple ink keeps inline code visually tied to the single accent.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>IBM Plex Mono at <code>0.85em</code>, <code>--surface-1</code> wash, <code>--purple-deep</code> ink.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius (2–4px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Pills appear primarily in the hero <code>.meta</code> row — meta tags like <span class="pill">Long-form</span> or <span class="pill">v1</span>. Inline use in prose is rare in editorial writing.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Purple border, purple ink, white fill, mono 11px, pill shape (<code>border-radius: 999px</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (10–12px), light <code>--purple-faint</code> background wash.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>Diagrams break out to 760px (wider than the 640px text column) so they can breathe. See section 07.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome, caption is Source Serif Pro italic in <code>--text-light</code> at 14px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, caption alignment.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left aside</h4>
+              <p>Two-up grids in editorial writing are usually for "X vs Y" framing — rarely for parameter pairs or method comparisons (those are docs patterns).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right aside</h4>
+              <p>The grid breaks out from the 640px text column to 760px; the cards inside stay quiet.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, 18px gap, single-column collapse at <code>720px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–3, rarely 4), gap value.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams in editorial writing illustrate an argument, not a system. The Blog idiom borrows from the explanatory graphics in long-form newspaper features: 1px purple outlines, white-fill boxes, labels keyed to a paragraph that explains each panel in prose. The accent is delicate (<code>#635BFF</code> hairline strokes), the typography is the body serif, and the alert region is a thin dashed purple frame — not a filled tint.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--white)</code></td><td><code>var(--border)</code></td><td>1px stroke, <code>rx="2"</code>. Box is a frame for a label; labels sit outside it.</td></tr>
+            <tr><td><code>hot</code></td><td><code>var(--white)</code></td><td><code>var(--purple)</code></td><td>Same 1px weight; the purple hairline is the only differentiator.</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--white)</code></td><td><code>var(--purple)</code></td><td>1px purple outline drawn as a doubled rectangle (two concentric strokes).</td></tr>
+            <tr><td><code>external</code></td><td><code>var(--white)</code></td><td><code>var(--purple)</code>, dashed</td><td><code>stroke-dasharray: 3 3</code> — outside the system, no second hue.</td></tr>
+            <tr><td><code>warn</code></td><td>transparent</td><td><code>var(--warn)</code>, dashed</td><td>Reserved for the alert region; thin dashed frame, no fill.</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--white)</code></td><td><code>var(--text-ghost)</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>, low-contrast.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Linear narrative diagram with four labelled panels (a) through (d), connected by thin purple arrows, with sub-letter labels outside each box.">
+            <style>
+              .panel-lbl  { font: italic 12px "Source Serif Pro", serif; fill: var(--text); }
+              .sub-lbl    { font: 600 13px "Source Serif Pro", serif; fill: var(--purple); }
+              .note       { font: italic 11px "Source Serif Pro", serif; fill: var(--text-light); }
+              .box        { fill: var(--white); stroke-width: 1; }
+              .default    { stroke: var(--border);    }
+              .hot        { stroke: var(--purple);    }
+              .external   { stroke: var(--purple); stroke-dasharray: 3 3; }
+              .leader     { stroke: var(--text-ghost); stroke-width: 0.75; fill: none; }
+              .arrow      { stroke: var(--purple); stroke-width: 1; fill: none; marker-end: url(#sb-arrow); }
+            </style>
+            <defs>
+              <marker id="sb-arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--purple)"/>
+              </marker>
+            </defs>
+
+            <!-- Four panels in a row -->
+            <rect class="box default"  x="40"  y="80" width="140" height="56" rx="2"/>
+            <rect class="box hot"      x="220" y="80" width="140" height="56" rx="2"/>
+            <!-- store: doubled outline -->
+            <rect class="box default"  x="400" y="80" width="140" height="56" rx="2"/>
+            <rect class="box default"  x="404" y="84" width="132" height="48" rx="1"/>
+            <rect class="box external" x="580" y="80" width="160" height="56" rx="2"/>
+
+            <!-- Sub-letter labels INSIDE each panel as small annotation -->
+            <text class="sub-lbl" x="110" y="115" text-anchor="middle">(a)</text>
+            <text class="sub-lbl" x="290" y="115" text-anchor="middle">(b)</text>
+            <text class="sub-lbl" x="470" y="115" text-anchor="middle">(c)</text>
+            <text class="sub-lbl" x="660" y="115" text-anchor="middle">(d)</text>
+
+            <!-- Leader lines from boxes to labels above -->
+            <path class="leader" d="M110 80 V60 H40"/>
+            <path class="leader" d="M290 80 V60 H220"/>
+            <path class="leader" d="M470 80 V60 H400"/>
+            <path class="leader" d="M660 80 V60 H580"/>
+
+            <!-- Labels above each box -->
+            <text class="panel-lbl" x="40"  y="50">Question</text>
+            <text class="panel-lbl" x="220" y="50">Investigation</text>
+            <text class="panel-lbl" x="400" y="50">Finding</text>
+            <text class="panel-lbl" x="580" y="50">Application</text>
+
+            <!-- Connectors -->
+            <path class="arrow" d="M180 108 H220"/>
+            <path class="arrow" d="M360 108 H400"/>
+            <path class="arrow" d="M540 108 H580"/>
+
+            <!-- Footer note -->
+            <text class="note" x="40" y="180">Panels (a)–(d) key to the legend below. The purple outline on (b) marks the panel</text>
+            <text class="note" x="40" y="196">the essay is currently exploring; (c) is doubled to read as a store; (d) is dashed</text>
+            <text class="note" x="40" y="212">because it sits outside the system under discussion.</text>
+          </svg>
+          <figcaption class="caption"><span class="fig-prefix">Figure 1.</span> The narrative arc of an investigation, panel by panel.</figcaption>
+          <ul class="panel-legend">
+            <li><span class="panel-key">(a)</span> <em>Question.</em> The starting premise — what the reader and writer share before the essay begins.</li>
+            <li><span class="panel-key">(b)</span> <em>Investigation.</em> Where the essay lives; the purple outline marks the panel we are currently inside.</li>
+            <li><span class="panel-key">(c)</span> <em>Finding.</em> A persistent result — drawn as a doubled box to read as a store rather than a step.</li>
+            <li><span class="panel-key">(d)</span> <em>Application.</em> A future reader; dashed because the actor is outside the present essay.</li>
+          </ul>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Annotated sequence with four actor lifelines. Sub-letter labels (a) through (e) key to a legend below.">
+            <style>
+              .actor       { font: 600 13px "Source Serif Pro", serif; fill: var(--navy-deep); }
+              .msg         { font: italic 12px "Source Serif Pro", serif; fill: var(--text); }
+              .note        { font: italic 11px "Source Serif Pro", serif; fill: var(--text-light); }
+              .sub-lbl     { font: 600 12px "Source Serif Pro", serif; fill: var(--purple); }
+              .alert-txt   { font: italic 12px "Source Serif Pro", serif; fill: var(--warn); }
+              .box         { fill: var(--white); stroke-width: 1; }
+              .default     { stroke: var(--border); }
+              .hot         { stroke: var(--purple); }
+              .external    { stroke: var(--purple); stroke-dasharray: 3 3; }
+              .lifeline    { stroke: var(--border); stroke-width: 0.75; stroke-dasharray: 2 4; }
+              .arrow       { stroke: var(--purple);     stroke-width: 1;   fill: none; marker-end: url(#sb-arrow2); }
+              .arrow-muted { stroke: var(--text-ghost); stroke-width: 1;   fill: none; marker-end: url(#sb-arrow-muted2); }
+              .arrow-warn  { stroke: var(--warn);       stroke-width: 1;   fill: none; marker-end: url(#sb-arrow-warn2); }
+              .arrow-async { stroke: var(--purple);     stroke-width: 1;   fill: none; stroke-dasharray: 5 3; marker-end: url(#sb-arrow2); }
+            </style>
+            <defs>
+              <marker id="sb-arrow2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--purple)"/>
+              </marker>
+              <marker id="sb-arrow-muted2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--text-ghost)"/>
+              </marker>
+              <marker id="sb-arrow-warn2" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto">
+                <path d="M0,0 L7,3.5 L0,7 Z" fill="var(--warn)"/>
+              </marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="42" rx="2"/>
+            <text class="actor" x="120" y="46" text-anchor="middle">Reader</text>
+            <rect class="box default"  x="260" y="20" width="120" height="42" rx="2"/>
+            <text class="actor" x="320" y="46" text-anchor="middle">Editor</text>
+            <rect class="box hot"      x="440" y="20" width="120" height="42" rx="2"/>
+            <text class="actor" x="500" y="46" text-anchor="middle">Author</text>
+            <rect class="box external" x="620" y="20" width="200" height="42" rx="2"/>
+            <text class="actor" x="720" y="46" text-anchor="middle">Source Material</text>
+
+            <line class="lifeline" x1="120" y1="62" x2="120" y2="540"/>
+            <line class="lifeline" x1="320" y1="62" x2="320" y2="540"/>
+            <line class="lifeline" x1="500" y1="62" x2="500" y2="540"/>
+            <line class="lifeline" x1="720" y1="62" x2="720" y2="540"/>
+
+            <!-- (a) -->
+            <text class="sub-lbl" x="20" y="118">(a)</text>
+            <path class="arrow" d="M120 115 H320"/>
+            <text class="msg" x="220" y="108" text-anchor="middle">submit question</text>
+            <text class="note" x="220" y="134" text-anchor="middle">an initial inquiry</text>
+
+            <path class="arrow-muted" d="M320 162 H120"/>
+            <text class="msg" x="220" y="156" text-anchor="middle">acknowledgement</text>
+
+            <!-- (b) -->
+            <text class="sub-lbl" x="20" y="218">(b)</text>
+            <text class="note"  x="410" y="198" text-anchor="middle">editorial assignment — open-ended</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="msg" x="410" y="234" text-anchor="middle">assign(topic)</text>
+
+            <!-- (c) -->
+            <text class="sub-lbl" x="20" y="278">(c)</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="msg" x="610" y="269" text-anchor="middle">research request</text>
+
+            <!-- Alert region: thin dashed purple frame, no fill (warn role is purple-family here) -->
+            <rect x="340" y="295" width="480" height="98" fill="none"
+                  stroke="var(--warn)" stroke-width="1" stroke-dasharray="3 3"/>
+            <text class="alert-txt" x="350" y="312">alert region — inconclusive source</text>
+
+            <path class="arrow-warn" d="M720 332 H500"/>
+            <text class="alert-txt" x="610" y="326" text-anchor="middle">source inconclusive</text>
+
+            <!-- Inner pill: thin dashed frame, no fill -->
+            <rect x="360" y="353" width="440" height="30" fill="none"
+                  stroke="var(--warn)" stroke-width="0.75"/>
+            <text class="alert-txt" x="370" y="372">second opinion sought</text>
+            <text class="note"      x="580" y="372">a tangent the essay must address</text>
+
+            <!-- (d) -->
+            <text class="sub-lbl" x="20" y="423">(d)</text>
+            <path class="arrow" d="M500 420 H720"/>
+            <text class="msg" x="610" y="414" text-anchor="middle">secondary inquiry</text>
+
+            <path class="arrow-muted" d="M720 465 H500"/>
+            <text class="msg" x="610" y="459" text-anchor="middle">corroboration</text>
+
+            <!-- (e) -->
+            <text class="sub-lbl" x="20" y="513">(e)</text>
+            <text class="note"  x="310" y="493" text-anchor="middle">the essay reaches its reader</text>
+            <path class="arrow-async" d="M500 510 H120"/>
+            <text class="msg" x="310" y="528" text-anchor="middle">published</text>
+          </svg>
+          <figcaption class="caption"><span class="fig-prefix">Figure 2.</span> The editorial sequence, message by message.</figcaption>
+          <ul class="panel-legend">
+            <li><span class="panel-key">(a)</span> <em>Inquiry.</em> Reader submits a question; the editor acknowledges synchronously.</li>
+            <li><span class="panel-key">(b)</span> <em>Assignment.</em> Dashed arrow — editor hands the topic to the author asynchronously.</li>
+            <li><span class="panel-key">(c)</span> <em>Research.</em> Author queries source material — the moment the alert region begins.</li>
+            <li><span class="panel-key">(d)</span> <em>Secondary inquiry.</em> The retry that resolves the inconclusive source.</li>
+            <li><span class="panel-key">(e)</span> <em>Publication.</em> Dashed fan-out back to the original reader.</li>
+          </ul>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Everything in the diagram is Source Serif Pro. There is no monospace step register and no display face — the diagram is part of the prose:</p>
+        <pre><span class="kw">.actor</span>     { font: <span class="n">600</span> <span class="n">13</span>px <span class="str">"Source Serif Pro"</span>, serif; fill: var(<span class="kw">--navy-deep</span>); }
+<span class="kw">.msg</span>       { font: italic <span class="n">12</span>px <span class="str">"Source Serif Pro"</span>, serif; fill: var(<span class="kw">--text</span>); }
+<span class="kw">.note</span>      { font: italic <span class="n">11</span>px <span class="str">"Source Serif Pro"</span>, serif; fill: var(<span class="kw">--text-light</span>); }
+<span class="kw">.sub-lbl</span>   { font: <span class="n">600</span> <span class="n">12</span>px <span class="str">"Source Serif Pro"</span>, serif; fill: var(<span class="kw">--purple</span>); }
+<span class="kw">.alert-txt</span> { font: italic <span class="n">12</span>px <span class="str">"Source Serif Pro"</span>, serif; fill: var(<span class="kw">--warn</span>); }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Source Serif Pro throughout — no mono, no caps. Labels OUTSIDE boxes. Sub-letter keys <code>(a)</code><code>(b)</code><code>(c)</code> in purple, keyed to a legend paragraph immediately below the figure.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Number of panels, whether to include a legend below or run the explanation inline in body prose. Roman vs alphabetic keys are both acceptable; alphabetic is the default.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>Failure regions are a <em>thin dashed purple-family frame</em> — never a filled tint. The frame uses <code>var(--warn)</code> stroke at 1px with <code>stroke-dasharray: 3 3</code>, no fill. An italic small caption inside the frame names what is going wrong; an inner nested rectangle (also outline-only) carries the dominant alarm message.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Frame: 1px <code>--warn</code> dashed, no fill. Inner pill: 0.75px <code>--warn</code> outline, no fill. Alert text in Source Serif italic — same face, same italic register as the inline notes.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Frame dimensions, exact wording, presence of the inner pill (small alert regions may omit it).</span></div>
+        </aside>
+
+        <h3>Arrows</h3>
+        <p>Default: <code>var(--purple)</code> hairline at 1px — delicate strokes feel editorial. Muted return paths: <code>--text-ghost</code>. Async: <code>stroke-dasharray: 5 3</code>. Arrowheads are small (7×7) and matched to the line color.</p>
+
+        <h3>Caption convention</h3>
+        <p>Captions begin with an italic <code>Figure N.</code> prefix in <code>--text</code>, followed by a single sentence that names what the figure shows. The full explanation lives in the legend paragraph immediately beneath — a <code>&lt;ul class="panel-legend"&gt;</code> whose entries open with the matching <span class="panel-key">(a)</span><span class="panel-key">(b)</span> key. The legend is part of the figure, not the surrounding prose.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CYBER//2077 — DESIGN LANGUAGE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void:   #00060e;
+      --bg-deep:   #0d1117;
+      --bg-card:   #11161d;
+      --bg-code:   #0a0f15;
+
+      --border:    #1f2a37;
+      --border-hi: #2a3a4d;
+
+      --text:       #d9dee5;
+      --text-dim:   #6a7280;
+      --text-faint: #4a5260;
+
+      --yellow:    #FEE801;
+      --cyan:      #25E1ED;
+      --magenta:   #ED1E79;
+      --teal:      #39c4b6;
+      --olive:     #9a9f17;
+      --red:       #FF4A57;
+
+      /* role aliases — diagram-kit reads these */
+      --accent:         var(--yellow);
+      --accent-soft:    rgba(254, 232, 1, 0.12);
+      --secondary:      var(--cyan);
+      --secondary-soft: rgba(37, 225, 237, 0.10);
+      --warn:           var(--magenta);
+      --warn-soft:      rgba(237, 30, 121, 0.10);
+      --ink:        var(--text);
+      --ink-soft:   var(--text-dim);
+      --ink-ghost:  var(--text-faint);
+      --rule:       var(--border);
+      --rule-soft:  #16202c;
+      --rule-strong:var(--border-hi);
+      --bg:         var(--bg-void);
+      --bg-soft:    var(--bg-deep);
+
+      --sans: "Rajdhani", "Inter", -apple-system, sans-serif;
+      --mono: "Share Tech Mono", "JetBrains Mono", monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg-void);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.55;
+      position: relative;
+    }
+
+    /* faint scanlines + grid — operational, not nostalgic */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(37, 225, 237, 0.025) 0 1px, transparent 1px 3px),
+        linear-gradient(180deg, rgba(254, 232, 1, 0.015) 0%, transparent 30%, transparent 70%, rgba(237, 30, 121, 0.015) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--yellow);
+      box-shadow: 0 0 8px rgba(254, 232, 1, 0.5);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute; left: -9999px; top: auto;
+      width: 1px; height: 1px; overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static; width: auto; height: auto; overflow: visible;
+      padding: 6px 12px; background: var(--yellow); color: var(--bg-void);
+      font-family: var(--mono);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+      border-right: 1px solid var(--border);
+      padding-right: 16px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin: 0 0 16px;
+    }
+    aside.toc h2::before { content: ">> "; color: var(--text-dim); }
+
+    aside.toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 7px 8px 7px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      padding-left: 10px;
+      transition: color 0.1s, border-color 0.1s, background 0.1s;
+    }
+
+    aside.toc a::before {
+      content: "[" counter(toc, decimal-leading-zero) "]";
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      margin-right: 10px;
+      letter-spacing: 0.08em;
+    }
+
+    aside.toc a:hover { color: var(--cyan); border-left-color: var(--cyan); }
+    aside.toc a.active {
+      color: var(--yellow);
+      border-left-color: var(--yellow);
+      background: rgba(254, 232, 1, 0.04);
+    }
+    aside.toc a.active::before { color: var(--yellow); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; border-right: none; padding-right: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background:
+        linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-void) 100%);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 56px;
+      border-bottom: 1px solid var(--yellow);
+      position: relative;
+    }
+    header.hero::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: -1px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--yellow) 20%, var(--yellow) 80%, transparent 100%);
+      box-shadow: 0 0 12px rgba(254, 232, 1, 0.6);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .eyebrow .dot {
+      width: 8px; height: 8px;
+      background: var(--yellow);
+      display: inline-block;
+      box-shadow: 0 0 6px rgba(254, 232, 1, 0.7);
+    }
+    .eyebrow::before { content: "//"; color: var(--text-dim); letter-spacing: 0; }
+
+    h1.title {
+      font-family: var(--sans);
+      font-weight: 700;
+      font-size: clamp(48px, 7vw, 88px);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+      text-transform: uppercase;
+      margin: 0 0 24px;
+      color: var(--text);
+    }
+    h1.title em {
+      font-style: normal;
+      font-weight: 500;
+      color: var(--yellow);
+      letter-spacing: 0.02em;
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-weight: 400;
+      font-size: clamp(18px, 1.7vw, 21px);
+      line-height: 1.45;
+      color: var(--text-dim);
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+    .meta-row .k {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .meta-row .v {
+      font-family: var(--mono); font-size: 13px;
+      color: var(--cyan);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -68px;
+      top: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--sans);
+      font-size: 38px;
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.005em;
+      text-transform: uppercase;
+      margin: 0 0 24px;
+      color: var(--text);
+    }
+    h2::before {
+      content: "";
+      display: inline-block;
+      width: 10px; height: 10px;
+      background: var(--yellow);
+      margin-right: 14px;
+      vertical-align: 4px;
+    }
+
+    h3 {
+      font-family: var(--sans);
+      font-size: 22px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      margin: 40px 0 12px;
+      color: var(--cyan);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+      color: var(--yellow);
+    }
+
+    p { margin: 0 0 16px; max-width: 70ch; }
+
+    a {
+      color: var(--yellow);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(254, 232, 1, 0.4);
+    }
+    a:hover { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+    .card {
+      border: 1px solid var(--border);
+      border-top: 1px solid var(--cyan);
+      background: var(--bg-card);
+      padding: 22px 24px;
+      margin: 22px 0;
+      position: relative;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: -1px; left: -1px;
+      width: 12px; height: 12px;
+      border-top: 1px solid var(--yellow);
+      border-left: 1px solid var(--yellow);
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      bottom: -1px; right: -1px;
+      width: 12px; height: 12px;
+      border-bottom: 1px solid var(--yellow);
+      border-right: 1px solid var(--yellow);
+    }
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 3px solid var(--yellow);
+      background: rgba(254, 232, 1, 0.06);
+      padding: 16px 20px;
+      margin: 22px 0;
+      font-family: var(--sans);
+    }
+    .callout strong {
+      font-family: var(--mono);
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--yellow);
+      font-size: 12px;
+      display: inline-block;
+      margin-right: 6px;
+    }
+
+    .callout.warn {
+      border-left-color: var(--magenta);
+      background: rgba(237, 30, 121, 0.07);
+    }
+    .callout.warn strong { color: var(--magenta); }
+
+    .callout.success {
+      border-left-color: var(--cyan);
+      background: rgba(37, 225, 237, 0.06);
+    }
+    .callout.success strong { color: var(--cyan); }
+
+    .quote {
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 24px;
+      line-height: 1.3;
+      letter-spacing: 0;
+      color: var(--yellow);
+      border-left: 2px solid var(--yellow);
+      padding: 4px 0 4px 24px;
+      margin: 30px 0;
+      max-width: 60ch;
+      text-transform: uppercase;
+    }
+    .quote::before { content: "// "; color: var(--text-dim); font-family: var(--mono); font-size: 16px; vertical-align: 3px; }
+
+    details {
+      border-top: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    details:last-of-type { border-bottom: 1px solid var(--border); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--cyan);
+      list-style: none;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before {
+      content: "[+]";
+      font-family: var(--mono);
+      color: var(--yellow);
+      margin-right: 10px;
+      font-size: 13px;
+    }
+    details[open] > summary::before { content: "[-]"; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      margin: 22px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 400;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--cyan);
+    }
+    td { font-family: var(--sans); font-size: 14px; color: var(--text); }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-left: 2px solid var(--cyan);
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0;
+      color: var(--text);
+    }
+
+    pre .kw   { color: var(--magenta); }
+    pre .str  { color: var(--yellow); }
+    pre .com  { color: var(--text-faint); font-style: italic; }
+    pre .n    { color: var(--cyan); }
+    pre .fn   { color: var(--olive); }
+    pre .type { color: var(--teal); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: rgba(37, 225, 237, 0.08);
+      color: var(--cyan);
+      padding: 1px 6px;
+      border: 1px solid rgba(37, 225, 237, 0.25);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border: 1px solid var(--yellow);
+      color: var(--yellow);
+      background: rgba(254, 232, 1, 0.06);
+      display: inline-block;
+      line-height: 1.4;
+    }
+    .pill::before { content: "// "; opacity: 0.5; }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 14px;
+      text-transform: uppercase;
+    }
+    .caption::before { content: "// "; color: var(--text-faint); }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--border-hi);
+      background: var(--bg-deep);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.65;
+      color: var(--text-dim);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 90px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--yellow);
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--text-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+      margin: 22px 0;
+    }
+    .swatch {
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .swatch .chip { height: 60px; border-bottom: 1px solid var(--border); }
+    .swatch .label {
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 10px;
+      line-height: 1.5;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+    }
+    .swatch .label strong { display: block; color: var(--text); font-weight: 400; letter-spacing: 0.10em; }
+    .swatch .label span { color: var(--text-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 3px; font-size: 9px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>INDEX</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">Deployment</a></li>
+        <li><a href="#stack">Brand stack</a></li>
+        <li><a href="#palette">Palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Components</a></li>
+        <li><a href="#diagrams">Diagrams</a></li>
+        <li><a href="#exemplars">Exemplars</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> DESIGN LANGUAGE / 2077.A</div>
+          <h1 class="title">CYBER 2077, <em>CORPO SIGNAL</em></h1>
+          <p class="lede">Confrontational HUD register for security audits, edge-of-stack API references, and product surfaces that should feel like an active terminal session — not a polished brochure.</p>
+          <div class="meta">
+            <span class="pill">STATUS: LIVE</span>
+            <span class="pill">CLEARANCE: ENG</span>
+            <span class="pill">REV.001</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">LOCKED</span><span>Rajdhani 700 uppercase h1 (no italics — yellow weight 500 for the em phrase), cyan eyebrow with yellow square dot, Share Tech Mono pills bracketed by <code>//</code>, yellow underline on the hero, scanline overlay.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Padding, lede max-width, meta as <code>.meta</code> pills or <code>.meta-row</code> key/values, dot glow intensity.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">[01] PERSONALITY</span>
+        <h2>Personality</h2>
+        <p>CYBER 2077 is the HUD. Near-black backgrounds, corpo-yellow primary, cyan secondary, magenta where things go wrong. Rajdhani at heavy weights and tight tracking carries the display register; Share Tech Mono carries every coordinate, timestamp, and section pointer. Sharp corners. No gradients masquerading as warmth. The document should feel like it was rendered onto a visor inside a moving vehicle.</p>
+        <div class="quote">Two reports in this language should read like two intercepted broadcasts from the same network — same channel, different traffic.</div>
+        <p>The yellow is load-bearing. <code>#FEE801</code> is the 2077 signature — replace it with amber or gold and the document loses its edge. The cyan is the operational counterpart: tooling output, ambient telemetry, supporting metadata. Magenta is reserved for failure paths and anything the operator needs to address immediately. Three colors. No fourth.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">[02] DEPLOYMENT</span>
+        <h2>When to deploy this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>DEPLOY WHEN</h4>
+            <p>Security audits with a confrontational tone. API references that document an edgy platform. Internal red-team reports where the visual edge supports the content. Game/runtime/protocol docs where "corpo HUD" is the right voice.</p>
+          </div>
+          <div class="card mini">
+            <h4>DO NOT DEPLOY WHEN</h4>
+            <p>The audience is executive and non-technical — the all-caps register reads as shouting. The report is sequential long-form prose where reading fatigue matters — pick <code>editorial-parchment</code>. The content is celebratory or warm.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">[03] BRAND STACK</span>
+        <h2>Locked brand stack</h2>
+        <p>Load this Google Fonts URL. Weights are part of the brand — the heavy 700 carries the display, 400/500 carry body and emphasis.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&amp;family=Share+Tech+Mono&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--sans</span>: <span class="str">"Rajdhani"</span>, <span class="str">"Inter"</span>, -apple-system, sans-serif;
+<span class="kw">--mono</span>: <span class="str">"Share Tech Mono"</span>, <span class="str">"JetBrains Mono"</span>, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>ROLE</th><th>FONT</th><th>NOTES</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Rajdhani 400</td><td>16px, line-height 1.55</td></tr>
+            <tr><td>Display h1 / h2</td><td><code>var(--sans)</code> — Rajdhani 700</td><td>ALL CAPS, tight tracking</td></tr>
+            <tr><td>Section h3 / card h4</td><td><code>var(--sans)</code> — Rajdhani 600</td><td>ALL CAPS, +0.06em tracking</td></tr>
+            <tr><td>Code, eyebrows, captions, pills, table headers, numbers, TOC</td><td><code>var(--mono)</code> — Share Tech Mono</td><td>HUD coordinates, telemetry</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>H1 and H2 are uppercase. H3 and H4 also uppercase but lighter weight. Body sentence-case.</li>
+          <li>The em inside h1 uses <code>var(--yellow)</code> at weight 500 — never italic.</li>
+          <li>Section numbers look like terminal coordinates: <code>[01] LABEL</code>.</li>
+          <li>Pills prefix with <code>//</code>; eyebrow prefixes with <code>//</code>; captions prefix with <code>//</code>. Slash-slash is this language's syntax for "machine-emitted label."</li>
+          <li>No italics anywhere. No serifs anywhere. No rounded corners (except <code>rx</code> on diagram nodes, kept under <code>rx="2"</code>).</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">[04] PALETTE</span>
+        <h2>Anchor palette</h2>
+        <p>Paste these hex values verbatim. The corpo-yellow / cyan / magenta triad is the brand. Approximations dilute the signal.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #00060e"></div><div class="label"><strong>--bg-void</strong><span>#00060e</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0d1117"></div><div class="label"><strong>--bg-deep</strong><span>#0d1117</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #11161d"></div><div class="label"><strong>--bg-card</strong><span>#11161d</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1f2a37"></div><div class="label"><strong>--border</strong><span>#1f2a37</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #6a7280"></div><div class="label"><strong>--text-dim</strong><span>#6a7280</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #d9dee5"></div><div class="label"><strong>--text</strong><span>#d9dee5</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FEE801"></div><div class="label"><strong>--yellow</strong><span>#FEE801</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #25E1ED"></div><div class="label"><strong>--cyan</strong><span>#25E1ED</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ED1E79"></div><div class="label"><strong>--magenta</strong><span>#ED1E79</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #39c4b6"></div><div class="label"><strong>--teal</strong><span>#39c4b6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #9a9f17"></div><div class="label"><strong>--olive</strong><span>#9a9f17</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FF4A57"></div><div class="label"><strong>--red</strong><span>#FF4A57</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Aliases route the generic kit tokens to this language's concrete colors:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--yellow</span>);
+<span class="kw">--accent-soft</span>:    rgba(<span class="n">254, 232, 1, 0.12</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--cyan</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">37, 225, 237, 0.10</span>);
+<span class="kw">--warn</span>:           var(<span class="kw">--magenta</span>);
+<span class="kw">--warn-soft</span>:      rgba(<span class="n">237, 30, 121, 0.10</span>);</pre>
+
+        <div class="callout warn">
+          <strong>HOSTILE INPUT</strong> Do not introduce a fourth accent (no purple, no orange, no green). The yellow/cyan/magenta triad is what this language IS. Adding a fourth turns the document into a synthwave poster.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">[05] ANTI-PATTERNS</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No serif typefaces. No italic. No "warm" anything.</li>
+          <li>No purple/violet gradients. This is not synthwave. This is operational, not nostalgic.</li>
+          <li>No rounded corners over 2px. Buttons are blocks, cards are blocks, pills are blocks.</li>
+          <li>No emoji. No drop shadows softer than a 4px glow on the primary accent.</li>
+          <li>No light themes — this language is dark-only.</li>
+          <li>No paper grain, no parchment texture, no "soft" textile-mimicking patterns.</li>
+          <li>No bright photography. If you have a hero image, it should be UI-mimicking SVG.</li>
+          <li>No additional accent colors beyond the locked triad + neutrals.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">[06] COMPONENTS</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in CYBER 2077 with its locked/free contract. Selectors are stable across all languages; values shown here are this language's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>Top of every report. See this document's hero above — uppercase Rajdhani 700 title, yellow em phrase at weight 500, cyan eyebrow with yellow square dot, yellow underline with cyan-to-yellow glow falloff.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Rajdhani 700 uppercase h1, yellow em (no italic), cyan eyebrow with <code>//</code> prefix and yellow square dot, yellow bottom border with falloff glow.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, lede max-width, whether to include the falloff glow, meta as pills or key/value rows.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Every top-level section. Cyan mono coordinate in the left gutter, formatted <code>[NN] LABEL</code>. Uppercase Rajdhani h2 with a 10px yellow square preceding it.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Cyan mono coordinate in gutter (<code>position: absolute; left: -68px</code>), uppercase Rajdhani 700 h2, yellow square glyph preceding h2.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact left offset (±8px), whether to include the square glyph, exact h2 size (32–44px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>HUD MODULE</h4>
+            <p>Cards are HUD modules — sharp corners, cyan top edge, yellow tick marks at top-left and bottom-right. They contain anything that benefits from a hard visual boundary.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>bg-card</code> fill, 1px border, cyan top border (1px), yellow 12px L-tick marks at top-left and bottom-right corners. Zero border-radius.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, whether tick marks are full corners or partial L's, presence of an h4 inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>NOTE</strong> Default callouts use a yellow left border and a 6% yellow fill. The strong label is mono uppercase and color-matched.
+          </div>
+          <div class="callout warn">
+            <strong>WARNING</strong> Warn callouts use magenta. The pink is deliberately angry — use it where action is required, not just where caution is advisable.
+          </div>
+          <div class="callout success">
+            <strong>CONFIRMED</strong> Success callouts use cyan. Use only when something has actually completed or passed verification — never as a generic "info" register.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>3px left border + ~6% tinted background. <code>strong</code> renders as mono uppercase, color-matched to the variant. Default = yellow, warn = magenta, success = cyan.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact tint opacity (5–8%), whether the strong includes a trailing colon.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The sentence the operator reads even if they read nothing else in the section.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Rajdhani 500, uppercase, yellow color, 2px yellow left rule, <code>//</code> mono prefix.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact font-size (22–28px), max-width, padding-left.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>STEP 1. INITIALIZE</summary>
+            <p>First in a series carries <code>open</code> by convention. Summary is cyan Rajdhani 600 uppercase with a mono yellow <code>[+]</code> / <code>[-]</code> toggle.</p>
+          </details>
+          <details>
+            <summary>STEP 2. AUTHENTICATE</summary>
+            <p>Subsequent steps collapse. The bracketed toggle is part of this language's HUD vocabulary — never replace it with a chevron.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Cyan uppercase Rajdhani 600 summary, mono yellow <code>[+]</code> / <code>[-]</code> toggle, 1px border top rule between items.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Summary exact font-size (16–20px), padding, whether to add a hover state.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>ENDPOINT</th><th>STATUS</th><th>LATENCY</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>auth.service.local</td><td>ONLINE</td><td><code>34 ms</code></td></tr>
+              <tr><td>job.queue.local</td><td>ONLINE</td><td><code>67 ms</code></td></tr>
+              <tr><td>provider.api.ext</td><td>DEGRADED</td><td><code>410 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono uppercase cyan <code>th</code> on <code>bg-deep</code> with cyan 1px bottom border. Row separators in <code>--rule-soft</code>.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Column widths, optional zebra striping (default: none), <code>td</code> font (Rajdhani vs mono).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">handshake</span>(host): <span class="com"># initiate ICE protocol</span>
+  <span class="kw">return</span> <span class="str">"AUTHORIZED"</span>, <span class="n">200</span></pre>
+          <p>Spans are classified manually: <code>kw</code> (magenta), <code>str</code> (yellow), <code>com</code> (faint italic), <code>n</code> (cyan), <code>fn</code> (olive), <code>type</code> (teal). No runtime highlighter.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>bg-code</code> fill, 1px border, 2px cyan left border, Share Tech Mono 13px. Sharp corners.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact token mapping within the locked palette, line-height (1.5–1.65).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The flag <code>--strict</code> raises an exception when the <code>HANDSHAKE</code> phase fails. Use for type names, flag names, field names, and short literals.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono at <code>0.88em</code>, cyan ink on cyan tinted background, 1px cyan-25% border.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact tint opacity (6–10%), border opacity (20–30%).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked under <span class="pill">SEC-2077</span> and shipped in <span class="pill">REL.A14</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>1px yellow border, yellow ink on 6% yellow fill, Share Tech Mono 11px uppercase, <code>//</code> prefix, sharp corners (no radius).</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding (3–4px vert), exact font-size (10–12px), whether prefix is <code>//</code> or <code>::</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section [07] for live diagrams — each is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and a mono uppercase caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Inherits <code>.card</code> chrome including yellow L-tick corners. Caption is mono uppercase with <code>//</code> prefix, centered.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding-bottom for caption rhythm, caption font-size (11–13px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>LEFT MODULE</h4>
+              <p>2-up grid is the default — used for deploy/don't-deploy splits and adversarial comparisons.</p>
+            </div>
+            <div class="card mini">
+              <h4>RIGHT MODULE</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings; the language controls <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>display: grid</code>, 16px gap, collapses to single column at 720px.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Column count (2–4), gap (12–20px), child card variant.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">[07] DIAGRAMS</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams are HUD elements. Sharp 2px corner radius max. Backgrounds match <code>--bg-card</code> so the diagram reads as a screen embedded in another screen. Text inside diagrams uses Rajdhani (matching body); coordinates and step markers use Share Tech Mono.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>ROLE</th><th>FILL</th><th>STROKE</th><th>NOTES</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--bg-card)</code></td><td><code>var(--border-hi)</code></td><td>1.5px stroke, <code>rx="2"</code></td></tr>
+            <tr><td><code>hot</code></td><td><code>rgba(254,232,1,0.12)</code></td><td><code>var(--yellow)</code></td><td>Yellow accent — the focus state</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--bg-deep)</code></td><td><code>var(--border-hi)</code></td><td>2px stroke, slightly heavier</td></tr>
+            <tr><td><code>external</code></td><td><code>rgba(37,225,237,0.10)</code></td><td><code>var(--cyan)</code></td><td>Cyan — third-party boundary</td></tr>
+            <tr><td><code>warn</code></td><td><code>rgba(237,30,121,0.10)</code></td><td><code>var(--magenta)</code></td><td>Failure path — magenta lands hard</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--bg-void)</code></td><td><code>var(--text-faint)</code>, dashed</td><td><code>stroke-dasharray: 4 3</code></td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 600 13px "Rajdhani", sans-serif; fill: #d9dee5; letter-spacing: 0.06em; text-transform: uppercase; }
+              .small { font: 11px "Share Tech Mono", monospace; fill: #6a7280; letter-spacing: 0.08em; text-transform: uppercase; }
+              .default  { fill: #11161d;                  stroke: #2a3a4d; }
+              .hot      { fill: rgba(254,232,1,0.12);     stroke: #FEE801; }
+              .store    { fill: #0d1117;                  stroke: #2a3a4d; }
+              .external { fill: rgba(37,225,237,0.10);    stroke: #25E1ED; }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: #FEE801; stroke-width: 2; fill: none; marker-end: url(#c77-a); }
+            </style>
+            <defs>
+              <marker id="c77-a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#FEE801"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70" rx="2"/>
+            <text class="txt"   x="40"  y="68">Trigger</text>
+            <text class="small" x="40"  y="88">user req</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70" rx="2"/>
+            <text class="txt"   x="230" y="68">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70" rx="2"/>
+            <text class="txt"   x="430" y="68">Store</text>
+            <text class="small" x="430" y="88">persist</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70" rx="2"/>
+            <text class="txt"   x="630" y="68">Provider</text>
+            <text class="small" x="630" y="88">external</text>
+          </svg>
+          <figcaption class="caption">LINEAR FLOW — HOT MARKS THE STEP CURRENTLY IN FOCUS</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 600 13px "Rajdhani", sans-serif; fill: #d9dee5; letter-spacing: 0.06em; text-transform: uppercase; }
+              .small      { font: 11px "Share Tech Mono", monospace; fill: #6a7280; letter-spacing: 0.08em; text-transform: uppercase; }
+              .note       { font: 400 11px "Rajdhani", sans-serif; fill: #6a7280; letter-spacing: 0.04em; }
+              .step       { font: 11px "Share Tech Mono", monospace; fill: #25E1ED; letter-spacing: 0.16em; }
+              .alert-txt  { font: 13px "Share Tech Mono", monospace; fill: #FEE801; letter-spacing: 0.20em; }
+              .default  { fill: #11161d;                  stroke: #2a3a4d; }
+              .hot      { fill: rgba(254,232,1,0.12);     stroke: #FEE801; }
+              .external { fill: rgba(37,225,237,0.10);    stroke: #25E1ED; }
+              .box   { stroke-width: 1.5; }
+              .arrow       { stroke: #FEE801;  stroke-width: 2;   fill: none; marker-end: url(#c77-b); }
+              .arrow-muted { stroke: #2a3a4d;  stroke-width: 1.5; fill: none; marker-end: url(#c77-b-m); }
+              .arrow-warn  { stroke: #ED1E79;  stroke-width: 2.5; fill: none; marker-end: url(#c77-b-w); }
+              .arrow-async { stroke: #25E1ED;  stroke-width: 2;   fill: none; stroke-dasharray: 6 3; marker-end: url(#c77-b-c); }
+            </style>
+            <defs>
+              <marker id="c77-b"   markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#FEE801"/></marker>
+              <marker id="c77-b-m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2a3a4d"/></marker>
+              <marker id="c77-b-w" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ED1E79"/></marker>
+              <marker id="c77-b-c" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#25E1ED"/></marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50" rx="2"/>
+            <text class="txt" x="120" y="50" text-anchor="middle">Client</text>
+            <rect class="box default"  x="260" y="20" width="120" height="50" rx="2"/>
+            <text class="txt" x="320" y="50" text-anchor="middle">API</text>
+            <rect class="box hot"      x="440" y="20" width="120" height="50" rx="2"/>
+            <text class="txt" x="500" y="50" text-anchor="middle">Worker</text>
+            <rect class="box external" x="620" y="20" width="200" height="50" rx="2"/>
+            <text class="txt" x="720" y="50" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="#1f2a37" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="#1f2a37" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="#1f2a37" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="#1f2a37" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="10" y="128">[01]</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="10" y="218">[02]</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="10" y="278">[03]</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="98" rx="2"
+                  fill="rgba(237,30,121,0.08)" stroke="#ED1E79" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+            <path class="arrow-warn" d="M720 322 H500"/>
+            <text class="alert-txt" x="610" y="317" text-anchor="middle" fill="#ED1E79">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="358" y="348" width="444" height="36" rx="2"
+                  fill="rgba(237,30,121,0.18)" stroke="#ED1E79" stroke-width="1.5"/>
+            <rect x="368" y="358" width="6" height="16" fill="#ED1E79"/>
+            <text class="alert-txt" x="384" y="371" fill="#ED1E79">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="600" y="371" fill="#d9dee5">backoff +2s · max 3 attempts</text>
+
+            <text class="step" x="10" y="423">[04]</text>
+            <path class="arrow" d="M500 420 H720"/>
+            <text class="small" x="610" y="415" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 465 H500"/>
+            <text class="small" x="610" y="460" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="10" y="508">[05]</text>
+            <text class="note"  x="310" y="488" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 505 H120"/>
+            <text class="small" x="310" y="523" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">ANNOTATED SEQUENCE — RETRY ALERT REGION TINTED MAGENTA, STEPS COORDINATED IN CYAN</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Base text classes:</p>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">600</span> <span class="n">13</span>px <span class="str">"Rajdhani"</span>, sans-serif; fill: var(<span class="kw">--text</span>); letter-spacing: <span class="n">0.06</span>em; text-transform: uppercase; }
+<span class="kw">.small</span> { font: <span class="n">11</span>px <span class="str">"Share Tech Mono"</span>, monospace; fill: var(<span class="kw">--text-dim</span>); letter-spacing: <span class="n">0.08</span>em; text-transform: uppercase; }</pre>
+
+        <p>Annotations, step coordinates, alert text:</p>
+        <pre><span class="kw">.note</span>      { font: <span class="n">400</span> <span class="n">11</span>px <span class="str">"Rajdhani"</span>, sans-serif; fill: var(<span class="kw">--text-dim</span>); }
+<span class="kw">.step</span>      { font: <span class="n">11</span>px <span class="str">"Share Tech Mono"</span>, monospace; fill: var(<span class="kw">--cyan</span>); letter-spacing: <span class="n">0.16</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">13</span>px <span class="str">"Share Tech Mono"</span>, monospace; fill: var(<span class="kw">--yellow</span>); letter-spacing: <span class="n">0.20</span>em; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">LOCKED</span><span>Diagram text uppercase Rajdhani 600 with 0.06em tracking. Step coords use Share Tech Mono in cyan with bracket format <code>[NN]</code>. Alert text is mono with wide tracking.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Whether to include step coords on small diagrams, exact letter-spacing (0.04–0.10em), node padding inside boxes.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>When a sequence has a failure leg, wrap the affected messages in a magenta-tinted dashed rectangle. Add an inline alert pill in saturated magenta with mono ALL-CAPS text explaining the consequence. The pattern is visible in the sequence diagram above between steps [03] and [04] — the magenta lands hard because that's the whole point. The retry pill is not "warn-soft" muted — it is the most saturated element on the page.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">LOCKED</span><span>Region uses <code>rgba(237,30,121,0.08)</code> + dashed magenta border. Inline alert pill stacks a magenta tick block, mono uppercase magenta label, and a Rajdhani neutral detail.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Region size, alert pill copy, whether tick block is rectangle or square dot.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: <code>var(--yellow)</code>. 2px stroke. Async arrows: <code>var(--cyan)</code> dashed. Return paths use the muted border color. Warn arrows: <code>var(--magenta)</code>, 2.5px stroke — the failure path is always heavier than the success path.</p>
+
+        <h3>Caption</h3>
+        <p>Mono uppercase, <code>var(--text-dim)</code>, 12px, centered under the diagram with <code>//</code> prefix. See the captions on the figures above.</p>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">[08] EXEMPLARS</span>
+        <h2>Exemplar reports</h2>
+        <p>Read at least one before deploying this language. Exemplars are evidence of the language in real content — not templates to clone. This file is the canonical reference for vocabulary; exemplars show vocabulary fielded.</p>
+        <ul>
+          <li><code>~/notes/04_Research/red-team-handshake-audit.html</code> — full security audit, every component, dense sequence diagrams with multiple alert regions.</li>
+          <li><code>~/notes/04_Research/edge-runtime-reference.html</code> — shorter API reference; same language at mid-scale.</li>
+        </ul>
+        <p>Two reports in this language should feel like two intercepted broadcasts from the same network. If they feel xeroxed, the report author leaned too hard on the locked elements. If they feel like different brands, someone reached for unauthorized accents.</p>
+        <div class="quote">Yellow on near-black is the channel. Cyan is the carrier. Magenta is the alarm. Anything else is interference.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

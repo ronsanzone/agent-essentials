@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanagawa Dragon — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-darkest:   #0D0C0C;
+      --bg-dark-base: #1D1C19;
+      --bg-card-base: #28272A;
+      --bg-rule:      #3A3936;
+      --bg-dim:       #5A5955;
+
+      --fuji-white:   #DCD7BA;
+      --old-white:    #C8C093;
+      --fuji-gray:    #807F7B;
+
+      --crystal-blue: #7E9CD8;
+      --wave-aqua:    #8EA4A2;
+      --spring-green: #98BB6C;
+      --carp-yellow:  #E6C384;
+      --surimi-orange:#FFA066;
+      --autumn-red:   #C34043;
+      --sakura-pink:  #D27E99;
+      --dragon-red:   #E46876;
+
+      --bg:        var(--bg-dark-base);
+      --bg-soft:   var(--bg-darkest);
+      --bg-card:   var(--bg-card-base);
+      --bg-code:   var(--bg-card-base);
+
+      --ink:       var(--fuji-white);
+      --ink-soft:  var(--old-white);
+      --ink-faint: var(--fuji-gray);
+      --ink-ghost: var(--bg-dim);
+
+      --rule:        var(--bg-rule);
+      --rule-soft:   var(--bg-card-base);
+      --rule-strong: var(--bg-dim);
+
+      --warn:      var(--autumn-red);
+      --warn-soft: rgba(195, 64, 67, 0.12);
+
+      --accent:         var(--surimi-orange);
+      --accent-soft:    rgba(255, 160, 102, 0.13);
+      --secondary:      var(--sakura-pink);
+      --secondary-soft: rgba(210, 126, 153, 0.13);
+
+      --serif: "Crimson Pro", "Iowan Old Style", "Charter", Georgia, serif;
+      --sans:  "Crimson Pro", "Iowan Old Style", "Charter", Georgia, serif;
+      --mono:  "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 22% 14%, rgba(255, 160, 102, 0.045) 0, transparent 45%),
+        radial-gradient(circle at 78% 86%, rgba(210, 126, 153, 0.03) 0, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--surimi-orange);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--surimi-orange);
+      color: var(--bg-darkest);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li {
+      counter-increment: toc;
+      margin: 0;
+    }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--sans);
+      font-size: 15px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--fuji-white); }
+    aside.toc a.active { color: var(--surimi-orange); }
+    aside.toc a.active::before { color: var(--sakura-pink); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--bg-darkest);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 72px;
+      border-bottom: 1px solid var(--rule);
+      position: relative;
+      overflow: hidden;
+    }
+
+    header.hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 60% at 75% 80%, rgba(255, 160, 102, 0.10) 0, transparent 70%),
+        radial-gradient(ellipse 40% 50% at 15% 20%, rgba(210, 126, 153, 0.05) 0, transparent 65%);
+      pointer-events: none;
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; position: relative; z-index: 1; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--sakura-pink);
+      display: inline-block;
+      box-shadow: 0 0 10px rgba(210, 126, 153, 0.5);
+    }
+
+    h1.title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(46px, 6.4vw, 82px);
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+      margin: 0 0 24px;
+      color: var(--fuji-white);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--surimi-orange);
+    }
+
+    .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(20px, 2.2vw, 25px);
+      line-height: 1.45;
+      color: var(--old-white);
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .meta-row .v {
+      font-family: var(--sans);
+      font-size: 15px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 9px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--sakura-pink);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 38px;
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -0.015em;
+      margin: 0 0 24px;
+      color: var(--fuji-white);
+    }
+
+    h3 {
+      font-family: var(--serif);
+      font-size: 25px;
+      font-weight: 500;
+      line-height: 1.2;
+      margin: 40px 0 12px;
+      color: var(--fuji-white);
+    }
+
+    h4 {
+      font-family: var(--serif);
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+      color: var(--fuji-white);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--surimi-orange); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--carp-yellow); }
+
+    .card {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.3);
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--surimi-orange);
+      background: var(--accent-soft);
+      padding: 18px 20px;
+      border-radius: 10px;
+      margin: 22px 0;
+      color: var(--ink);
+    }
+
+    .callout.warn {
+      border-left-color: var(--autumn-red);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 600; color: var(--fuji-white); }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 400;
+      font-size: 27px;
+      line-height: 1.35;
+      color: var(--surimi-orange);
+      border-left: 2px solid var(--sakura-pink);
+      padding-left: 24px;
+      margin: 30px 0;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 1px solid var(--rule);
+      padding: 16px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--serif);
+      font-size: 23px;
+      font-weight: 500;
+      color: var(--surimi-orange);
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: var(--mono); color: var(--sakura-pink); margin-right: 6px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      margin: 22px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+      background: var(--bg-darkest);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--surimi-orange); }
+    pre .str  { color: var(--spring-green); }
+    pre .com  { color: var(--fuji-gray); font-style: italic; }
+    pre .n    { color: var(--sakura-pink); }
+    pre .fn   { color: var(--carp-yellow); }
+    pre .type { color: var(--crystal-blue); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--bg-darkest);
+      color: var(--carp-yellow);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--sakura-pink);
+      border-radius: 999px;
+      color: var(--sakura-pink);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--ink-faint);
+      font-size: 15px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--bg-darkest);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--sakura-pink);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--ink-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--fuji-white); font-weight: 500; }
+    .swatch .label span { color: var(--ink-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Kanagawa Dragon, <em>warm storm</em></h1>
+          <p class="lede">A warmer dark variant of Kanagawa — brown-black backgrounds, surimi-orange as the lead accent, sakura-pink as the characterful secondary. Built for long-form prose that wants heat rather than the Wave's cool detachment.</p>
+          <div class="meta">
+            <span class="pill">Variant: dragon</span>
+            <span class="pill">Mode: dark · warm</span>
+            <span class="pill">Body: Crimson Pro</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0; position: relative; z-index: 1;">
+          <div class="row"><span class="label">Locked</span><span>Crimson Pro h1 at weight 500 with surimi-orange italic <code>&lt;em&gt;</code>, italic 400 lede, mono caps eyebrow with sakura-pink glow dot, low-opacity surimi-orange radial glow in lower-right of hero on a <code>bg-darkest</code> base.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero glow position, footer as <code>.meta-row</code> or <code>.meta</code> pills.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Dragon is what happens when you tip Kanagawa toward warmth. The background is no longer the cool sumi-ink indigo of Wave — it is a warmer brown-black, the colour of lacquered wood. The lead accent steps from crystal-blue to <em>surimi-orange</em>, and a characterful sakura-pink takes the secondary slot, used very deliberately — eyebrow dot, marginalia numbers, pull-quote rule. The effect is a register that feels like reading by firelight rather than moonlight.</p>
+        <div class="quote">Dragon is for prose that has opinions. Wave whispers; Dragon insists.</div>
+        <p>Crimson Pro is the load-bearing font choice. It is an old-style serif with a strong text feel — generous x-height, robust italics, weights that hold up well at body sizes. It is the right voice for documents that will argue with the reader: design decisions, postmortems where opinions matter, ramp-up tours where the author is explicitly guiding interpretation. Pair it with JetBrains Mono in the usual technical slots.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Prose-led documents with strong narrative voice — design decision write-ups, opinionated architecture proposals, postmortems where interpretation matters. Long-form essays on engineering systems that benefit from a warm reading register at night.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>Cool, neutral reference docs — Wave fits better. Light-mode reading — reach for Lotus. Heavy diagram-density tours where the warm palette competes with the diagram-kit's role colors — Wave's cool palette gives the diagram-kit more headroom.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL — italic weights are part of the brand:</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>: <span class="str">"Crimson Pro"</span>, <span class="str">"Iowan Old Style"</span>, <span class="str">"Charter"</span>, Georgia, serif;
+<span class="kw">--sans</span>:  <span class="str">"Crimson Pro"</span>, <span class="str">"Iowan Old Style"</span>, <span class="str">"Charter"</span>, Georgia, serif;
+<span class="kw">--mono</span>:  <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Crimson Pro 400</td><td>17px, line-height 1.6 — body is slightly larger than Wave because Crimson reads small</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--serif)</code> — Crimson Pro 500</td><td>h1 italic em uses weight 400, oblique form</td></tr>
+            <tr><td>Pull quote / lede</td><td>Crimson Pro italic 400</td><td>The italic is part of the brand voice</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td>JetBrains Mono</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Italic Crimson Pro for ledes and pull quotes — the italic is essential, Crimson italic is one of the strongest italics in any free serif.</li>
+          <li>Mono caps for eyebrows and marginalia. Sakura-pink for the marginalia number — this is one of Dragon's most distinctive touches.</li>
+          <li>Pull quotes are <em>large</em> (27px) and set in surimi-orange italic with a 2px sakura-pink left rule. They are the loudest gesture this language permits.</li>
+          <li><strong>Never</strong> bold body prose for emphasis. Reserve bold weights for h4 and the <code>&lt;strong&gt;</code> label inside callouts.</li>
+          <li>Eyebrow dot is sakura-pink with a soft glow shadow — the smallest pink touch, but unmistakable.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>Dragon shares the Kanagawa foreground palette with Wave but shifts every background token toward warmth. The result reads as the same brand at a different hour of the day.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #0D0C0C"></div><div class="label"><strong>--bg-darkest</strong><span>#0D0C0C · soft</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1D1C19"></div><div class="label"><strong>--bg-dark-base</strong><span>#1D1C19 · default</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #28272A"></div><div class="label"><strong>--bg-card-base</strong><span>#28272A · card</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #3A3936"></div><div class="label"><strong>--bg-rule</strong><span>#3A3936 · rule</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #5A5955"></div><div class="label"><strong>--bg-dim</strong><span>#5A5955 · dim</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #DCD7BA"></div><div class="label"><strong>--fuji-white</strong><span>#DCD7BA · body ink</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #C8C093"></div><div class="label"><strong>--old-white</strong><span>#C8C093 · ink-soft</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #807F7B"></div><div class="label"><strong>--fuji-gray</strong><span>#807F7B · faint</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FFA066"></div><div class="label"><strong>--surimi-orange</strong><span>#FFA066 · primary</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #D27E99"></div><div class="label"><strong>--sakura-pink</strong><span>#D27E99 · secondary</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E46876"></div><div class="label"><strong>--dragon-red</strong><span>#E46876 · seasonal</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #C34043"></div><div class="label"><strong>--autumn-red</strong><span>#C34043 · warn</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E6C384"></div><div class="label"><strong>--carp-yellow</strong><span>#E6C384 · code ink</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #98BB6C"></div><div class="label"><strong>--spring-green</strong><span>#98BB6C · str token</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #7E9CD8"></div><div class="label"><strong>--crystal-blue</strong><span>#7E9CD8 · type token</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #8EA4A2"></div><div class="label"><strong>--wave-aqua</strong><span>#8EA4A2 · aux</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--surimi-orange</span>);
+<span class="kw">--accent-soft</span>:    rgba(<span class="n">255</span>, <span class="n">160</span>, <span class="n">102</span>, <span class="n">0.13</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--sakura-pink</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">210</span>, <span class="n">126</span>, <span class="n">153</span>, <span class="n">0.13</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Warn uses <code>--autumn-red</code> (#C34043), not <code>--dragon-red</code>. Dragon-red is reserved for seasonal accents on rare emphatic moments — never as the failure-path indicator. Keep the contract: <code>--warn</code> always points to autumn-red here.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No cool blue or teal as primary accent — that would collapse Dragon back into Wave. Crystal-blue exists in the palette only as the code-block <code>type</code> token, never on UI chrome.</li>
+          <li>No Inter, Roboto, Helvetica, or any sans for body. The Crimson Pro register defines this variant.</li>
+          <li>No light backgrounds — that role belongs to Lotus.</li>
+          <li>No three-accent UI. Surimi-orange and sakura-pink only. Adding a third hue (carp-yellow on chrome, dragon-red on borders) dilutes the duo.</li>
+          <li>No drop-shadows heavier than <code>0 14px 36px rgba(0, 0, 0, 0.30)</code>.</li>
+          <li>No emoji or kanji as decoration. The voice is in the typography.</li>
+          <li>No pure white <code>#FFFFFF</code> for text. Fuji-white is the brand and stark white reads as a different variant.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in Dragon. CSS selectors are stable across all design languages.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>See the document's own hero above. Crimson Pro h1 at weight 500, surimi-orange italic em, italic 400 lede, sakura-pink glow dot on the eyebrow, low-opacity orange radial glow at lower-right of the bg-darkest base.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Crimson Pro h1 weight 500, surimi-orange italic <code>&lt;em&gt;</code>, italic 400 lede, mono caps eyebrow with sakura-pink glow dot, radial surimi-orange glow at ~10% opacity on lower-right of <code>bg-darkest</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, glow exact position, footer style.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>The marginalia number in the left gutter is sakura-pink mono — this is one of Dragon's signature flourishes. See the <code>06</code> at the top-left of this section.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Crimson Pro h2 at 38px / weight 500, sakura-pink mono number in left gutter, <code>position: absolute; left: -64px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 font-weight (400–600), section rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Cards use <code>bg-card-base</code> (#28272A) — slightly warmer than the page. The border is bg-rule (#3A3936), one shade up. Shadows are heavier than Wave's because the warm brown base swallows shadow more readily.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-card-base</code> fill, <code>1px solid bg-rule</code> border, shadow ceiling <code>0 14px 36px rgba(0, 0, 0, 0.30)</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (10–18px), padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts are surimi-orange — a 13% wash with a 4px solid surimi-orange left border. This is louder than Wave's quiet teal, intentionally.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn uses autumn-red. Reserve for failure paths, deprecations, broken contracts. Dragon's warn is heavier than Wave's surimi-orange warn because Dragon's lead accent is itself orange — the warn must shift further along the spectrum to register as alarming.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Default: surimi-orange 13% wash + 4px solid border. Warn: autumn-red 12% wash + 4px autumn-red border. Geometry shared.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (8–14px), padding, opacity (11–16%).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">A pull quote in Dragon is the brand's loudest gesture — italic, 27px, surimi-orange against a sakura-pink rule.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Crimson Pro italic, surimi-orange color, ≥25px, 2px sakura-pink left rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (25–30px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Crimson Pro summary at 23px / weight 500 in surimi-orange. The sakura-pink mono <code>+ / −</code> marker echoes the marginalia counter color.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse. Summaries are loud because Dragon's voice is loud — the language uses serif size to do work that Wave does with restraint.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Crimson Pro summary in surimi-orange at ~23px, sakura-pink mono marker, bg-rule top-border on each <code>details</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph, padding, summary weight (500–600).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>State</th><th>Trigger</th><th>Next</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>PENDING</code></td><td>create</td><td><code>ACTIVE</code></td></tr>
+              <tr><td><code>ACTIVE</code></td><td>error</td><td><code>FAILED</code></td></tr>
+              <tr><td><code>FAILED</code></td><td>retry</td><td><code>PENDING</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono uppercase <code>th</code> on <code>bg-darkest</code>, bg-rule border, row separators in bg-card-base.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping, <code>td</code> font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">class</span> <span class="type">Dragon</span>:
+    <span class="kw">def</span> <span class="fn">breathe</span>(self) -&gt; <span class="type">Flame</span>:  <span class="com"># the warm path</span>
+        <span class="kw">return</span> <span class="type">Flame</span>(intensity=<span class="n">0.85</span>, color=<span class="str">"surimi"</span>)</pre>
+          <p>Dragon's token colors lean orange-pink: <code>kw</code> = surimi-orange (the lead), <code>n</code> = sakura-pink (the secondary), <code>fn</code> = carp-yellow, <code>type</code> = crystal-blue (one of the few uses of cool color in this variant — keeps types visually distinct from functions), <code>str</code> = spring-green, <code>com</code> = fuji-gray italic.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-card-base</code> fill, bg-rule border, JetBrains Mono 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (8–16px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>Status moves from <code>PENDING</code> to <code>ACTIVE</code> after the worker completes. Inline code uses the darkest background with a bg-rule border and carp-yellow ink.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.88em</code>, bg-darkest wash, carp-yellow ink, thin bg-rule border, small radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius (3–6px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Tracked in <span class="pill">DRAGON-7</span> and shipped under <span class="pill">SAKURA-2026</span>. The sakura-pink pill is one of Dragon's most distinctive small touches — pink against the warm brown reads as cherry blossoms against a stormy sky.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Sakura-pink border + sakura-pink ink, mono 12px, pill shape.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), optional translucent pink wash.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See §07 for live diagrams. Each is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and Crimson Pro italic caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Crimson Pro italic in <code>--ink-faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom, caption font-size (14–16px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid for "X vs Y" comparisons and "pick / don't pick" framing (see §02).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>4-up: add two more <code>.card.mini</code> siblings; language controls columns.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, collapse at <code>720px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count, gap value, child variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Dragon's diagrams are angular and dramatic — sumi-ink-slash arrows (heavier 3px brushstrokes), octagonal nodes carved from <code>&lt;polygon&gt;</code>, dragon-scale pattern fills on <code>external</code>, sakura-pink calligraphic dots near labels. Captions stay in Crimson Pro italic, prefixed with surimi-orange <code>図 X.</code> ("zu" — "figure"). Every connector curves; straight lines are forbidden.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>--bg-card-base</code></td><td><code>--bg-rule</code></td><td>Octagonal <code>&lt;polygon&gt;</code> shape, 2px sumi-ink stroke.</td></tr>
+            <tr><td><code>hot</code></td><td><code>--accent-soft</code> (orange 13%)</td><td><code>--surimi-orange</code></td><td>Octagonal shape with sumi-slash stroke — the active step.</td></tr>
+            <tr><td><code>store</code></td><td><code>--bg-darkest</code></td><td><code>--bg-dim</code></td><td>Octagonal, heavier 2.5px stroke for weight.</td></tr>
+            <tr><td><code>external</code></td><td><code>--secondary-soft</code> + <code>url(#kd-scales)</code></td><td><code>--sakura-pink</code></td><td>Dragon-scale scallop pattern overlay at 0.18 opacity.</td></tr>
+            <tr><td><code>warn</code></td><td><code>--warn-soft</code></td><td><code>--autumn-red</code></td><td>Brushstroke-style border (multi-stroke rough edge).</td></tr>
+            <tr><td><code>future</code></td><td><code>--bg</code></td><td><code>--bg-dim</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 240" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 15px "Crimson Pro", serif; fill: #DCD7BA; }
+              .small { font: italic 13px "Crimson Pro", serif; fill: #C8C093; }
+              .oct-default { fill: #28272A; stroke: #3A3936; stroke-width: 2; stroke-linejoin: miter; }
+              .oct-hot     { fill: rgba(255, 160, 102, 0.16); stroke: #FFA066; stroke-width: 2.5; stroke-linejoin: miter; }
+              .oct-warn    { fill: rgba(195, 64, 67, 0.14); stroke: #C34043; stroke-width: 2.5; stroke-linejoin: miter; }
+              .sumi-slash  { stroke: #FFA066; stroke-width: 2; fill: none; stroke-linecap: round; marker-end: url(#kd-arrow); }
+              .ink-mark    { fill: #D27E99; }
+              .caption-mk  { font: 600 13px "Noto Serif JP", serif; fill: #FFA066; }
+            </style>
+            <defs>
+              <marker id="kd-arrow" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                <path d="M0,0 L11,5.5 L0,11 L4,5.5 Z" fill="#FFA066"/>
+              </marker>
+            </defs>
+            <text class="small" x="200" y="22" text-anchor="middle">Before</text>
+            <text class="small" x="640" y="22" text-anchor="middle">After</text>
+            <path d="M430 32 Q433 116 430 212" stroke="#3A3936" stroke-width="1" fill="none"/>
+
+            <!-- Before / Old Step 1 (octagonal default) -->
+            <polygon class="oct-default" points="62,50 178,50 190,70 190,100 178,120 62,120 50,100 50,70"/>
+            <circle class="ink-mark" cx="62" cy="58" r="2.4"/>
+            <text class="txt" x="78"  y="92">Old Step 1</text>
+            <path class="sumi-slash" d="M195 85 Q215 78 232 85"/>
+
+            <!-- Before / Old Step 2 (warn with brushstroke border) -->
+            <polygon class="oct-warn" points="242,50 358,50 370,70 370,100 358,120 242,120 230,100 230,70"/>
+            <polygon points="244,52 356,52 368,70 368,100 356,118 244,118 232,100 232,70" fill="none" stroke="#C34043" stroke-width="1" opacity="0.55"/>
+            <polygon points="246,54 354,54 366,71 366,99 354,116 246,116 234,99 234,71" fill="none" stroke="#C34043" stroke-width="0.7" opacity="0.35"/>
+            <circle class="ink-mark" cx="242" cy="58" r="2.4"/>
+            <text class="txt" x="258" y="92">Old Step 2</text>
+            <path class="sumi-slash" d="M140 122 Q145 145 140 168"/>
+
+            <!-- Old outcome -->
+            <polygon class="oct-default" points="62,170 358,170 370,182 370,200 358,212 62,212 50,200 50,182"/>
+            <text class="txt" x="120" y="196">Old outcome</text>
+
+            <!-- After / New Step 1 -->
+            <polygon class="oct-default" points="472,50 588,50 600,70 600,100 588,120 472,120 460,100 460,70"/>
+            <circle class="ink-mark" cx="472" cy="58" r="2.4"/>
+            <text class="txt" x="488" y="92">New Step 1</text>
+            <path class="sumi-slash" d="M605 85 Q625 92 642 85"/>
+
+            <!-- After / New Step 2 (hot) -->
+            <polygon class="oct-hot" points="652,50 788,50 800,70 800,100 788,120 652,120 640,100 640,70"/>
+            <circle class="ink-mark" cx="652" cy="58" r="2.4"/>
+            <text class="txt" x="668" y="92">New Step 2</text>
+            <path class="sumi-slash" d="M570 122 Q575 145 570 168"/>
+
+            <!-- Improved outcome (hot) -->
+            <polygon class="oct-hot" points="472,170 788,170 800,182 800,200 788,212 472,212 460,200 460,182"/>
+            <text class="txt" x="530" y="196">Improved outcome</text>
+
+            <text class="caption-mk" x="20" y="232">図 1.</text>
+          </svg>
+          <figcaption class="caption"><span style="color:#FFA066; font-family: 'Noto Serif JP', serif; font-weight:600;">図 1.</span> Before/after — octagonal nodes with sumi-slash connectors. <code>warn</code> on the autumn-red node wears a brushstroke-rough border (three stacked strokes at descending opacity); <code>hot</code> on the surimi-orange improved equivalent.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 560" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 15px "Crimson Pro", serif; fill: #DCD7BA; }
+              .small      { font: 13px "Crimson Pro", serif; fill: #C8C093; }
+              .note       { font: italic 13px "Crimson Pro", serif; fill: #807F7B; }
+              .step       { font: 500 11px "JetBrains Mono", monospace; fill: #D27E99; letter-spacing: 0.12em; }
+              .alert-txt  { font: 600 11px "JetBrains Mono", monospace; fill: #C34043; letter-spacing: 0.14em; }
+              .caption-mk { font: 600 13px "Noto Serif JP", serif; fill: #FFA066; }
+              .oct-default { fill: #28272A; stroke: #3A3936; stroke-width: 2; stroke-linejoin: miter; }
+              .oct-hot     { fill: rgba(255, 160, 102, 0.16); stroke: #FFA066; stroke-width: 2.5; stroke-linejoin: miter; }
+              .oct-external{ fill: rgba(210, 126, 153, 0.16); stroke: #D27E99; stroke-width: 2; stroke-linejoin: miter; }
+              .sumi-slash        { stroke: #FFA066; stroke-width: 2;   fill: none; stroke-linecap: round; marker-end: url(#kd-arrow3); }
+              .sumi-slash-muted  { stroke: #5A5955; stroke-width: 1.2; fill: none; stroke-linecap: round; marker-end: url(#kd-arrow-muted3); }
+              .sumi-slash-warn   { stroke: #C34043; stroke-width: 2.2; fill: none; stroke-linecap: round; marker-end: url(#kd-arrow-warn3); }
+              .sumi-slash-async  { stroke: #FFA066; stroke-width: 2;   fill: none; stroke-linecap: round; stroke-dasharray: 6 4; marker-end: url(#kd-arrow3); }
+              .ink-mark   { fill: #D27E99; }
+            </style>
+            <defs>
+              <marker id="kd-arrow3" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                <path d="M0,0 L11,5.5 L0,11 L4,5.5 Z" fill="#FFA066"/>
+              </marker>
+              <marker id="kd-arrow-muted3" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                <path d="M0,0 L11,5.5 L0,11 L4,5.5 Z" fill="#5A5955"/>
+              </marker>
+              <marker id="kd-arrow-warn3" markerWidth="8" markerHeight="8" refX="6.5" refY="4" orient="auto">
+                <path d="M0,0 L11,5.5 L0,11 L4,5.5 Z" fill="#C34043"/>
+              </marker>
+              <pattern id="kd-scales" x="0" y="0" width="14" height="10" patternUnits="userSpaceOnUse">
+                <path d="M0,10 A7,7 0 0,1 14,10" fill="none" stroke="#D27E99" stroke-width="0.8" opacity="0.18"/>
+                <path d="M-7,5 A7,7 0 0,1 7,5" fill="none" stroke="#D27E99" stroke-width="0.8" opacity="0.18"/>
+                <path d="M7,5 A7,7 0 0,1 21,5" fill="none" stroke="#D27E99" stroke-width="0.8" opacity="0.18"/>
+              </pattern>
+            </defs>
+
+            <!-- Participants (octagons) -->
+            <polygon class="oct-default" points="72,20 168,20 180,32 180,58 168,70 72,70 60,58 60,32"/>
+            <circle class="ink-mark" cx="72" cy="28" r="2.2"/>
+            <text class="txt" x="120" y="50" text-anchor="middle">Client</text>
+
+            <polygon class="oct-default" points="272,20 368,20 380,32 380,58 368,70 272,70 260,58 260,32"/>
+            <circle class="ink-mark" cx="272" cy="28" r="2.2"/>
+            <text class="txt" x="320" y="50" text-anchor="middle">API</text>
+
+            <polygon class="oct-hot" points="452,20 548,20 560,32 560,58 548,70 452,70 440,58 440,32"/>
+            <circle class="ink-mark" cx="452" cy="28" r="2.2"/>
+            <text class="txt" x="500" y="50" text-anchor="middle">Worker</text>
+
+            <polygon class="oct-external" points="632,20 808,20 820,32 820,58 808,70 632,70 620,58 620,32"/>
+            <polygon points="632,20 808,20 820,32 820,58 808,70 632,70 620,58 620,32" fill="url(#kd-scales)"/>
+            <circle class="ink-mark" cx="632" cy="28" r="2.2"/>
+            <text class="txt" x="720" y="50" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="540" stroke="#3A3936" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="540" stroke="#3A3936" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="540" stroke="#3A3936" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="540" stroke="#3A3936" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <path class="sumi-slash" d="M120 125 Q220 112 320 125"/>
+            <circle class="ink-mark" cx="220" cy="113" r="2"/>
+            <text class="small" x="220" y="106" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="148" text-anchor="middle">synchronous create</text>
+
+            <path class="sumi-slash-muted" d="M320 172 Q220 184 120 172"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="sumi-slash-async" d="M320 215 Q410 205 500 215"/>
+            <circle class="ink-mark" cx="410" cy="207" r="2"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <path class="sumi-slash" d="M500 275 Q610 263 720 275"/>
+            <circle class="ink-mark" cx="610" cy="264" r="2"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <!-- Alert region: brushstroke-style multi-stroke border (autumn-red) -->
+            <rect x="340" y="295" width="480" height="100"
+                  fill="rgba(195, 64, 67, 0.10)" stroke="#C34043" stroke-width="2" stroke-dasharray="6 4"/>
+            <rect x="343" y="298" width="474" height="94"
+                  fill="none" stroke="#C34043" stroke-width="1" stroke-dasharray="3 5" opacity="0.55"/>
+            <rect x="346" y="301" width="468" height="88"
+                  fill="none" stroke="#C34043" stroke-width="0.6" stroke-dasharray="2 7" opacity="0.35"/>
+
+            <path class="sumi-slash-warn" d="M720 325 Q610 337 500 325"/>
+            <text class="alert-txt" x="610" y="319" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="350" width="440" height="34"
+                  fill="rgba(195, 64, 67, 0.16)" stroke="#C34043" stroke-width="1.4"/>
+            <circle cx="378" cy="367" r="3" fill="#C34043"/>
+            <text class="alert-txt" x="390" y="371">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="371">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="425">04</text>
+            <path class="sumi-slash" d="M500 422 Q610 410 720 422"/>
+            <circle class="ink-mark" cx="610" cy="411" r="2"/>
+            <text class="small" x="610" y="417" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="sumi-slash-muted" d="M720 468 Q610 480 500 468"/>
+            <text class="small" x="610" y="461" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="15" y="510">05</text>
+            <text class="note"  x="310" y="490" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="sumi-slash-async" d="M500 507 Q310 495 120 507"/>
+            <circle class="ink-mark" cx="310" cy="496" r="2"/>
+            <text class="small" x="310" y="525" text-anchor="middle">webhook: job.completed</text>
+
+            <text class="caption-mk" x="20" y="552">図 2.</text>
+          </svg>
+          <figcaption class="caption"><span style="color:#FFA066; font-family: 'Noto Serif JP', serif; font-weight:600;">図 2.</span> Annotated sequence — octagonal participants, sumi-ink-slash arrows curve between lifelines, sakura-pink step numbers, and an autumn-red alert region wrapped in three stacked brushstroke borders (descending opacity) on the failure path. The <code>Provider API</code> wears a dragon-scale scallop pattern.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">15</span>px <span class="str">"Crimson Pro"</span>, serif; fill: <span class="str">#DCD7BA</span>; }
+<span class="kw">.small</span> { font: <span class="n">13</span>px <span class="str">"Crimson Pro"</span>, serif; fill: <span class="str">#C8C093</span>; }
+<span class="kw">.note</span>  { font: italic <span class="n">13</span>px <span class="str">"Crimson Pro"</span>, serif; fill: <span class="str">#807F7B</span>; }
+<span class="kw">.step</span>  { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: <span class="str">#D27E99</span>; letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.alert-txt</span>  { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: <span class="str">#C34043</span>; letter-spacing: <span class="n">0.14</span>em; }
+<span class="kw">.caption-mk</span> { font: <span class="n">600</span> <span class="n">13</span>px <span class="str">"Noto Serif JP"</span>, serif; fill: <span class="str">#FFA066</span>; }
+<span class="kw">.sumi-slash</span>  { stroke: <span class="str">#FFA066</span>; stroke-width: <span class="n">2</span>; stroke-linecap: round; fill: none; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Annotations use Crimson Pro italic in fuji-gray. Step numbers are sakura-pink mono — the brand signature. Alert text uses autumn-red. Captions are prefixed with a surimi-orange <code>図 N.</code> set in Noto Serif JP 600. Arrows are 2px sumi-slash brushstrokes with rounded caps and a quadratic curve — straight lines are forbidden.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Curve amplitude (small), node octagon notch size, sakura-pink ink-mark count, step letter-spacing (0.10–0.16em).</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>Failure regions are framed by three stacked autumn-red strokes at descending opacity (1.0 / 0.55 / 0.35) and descending dash density — the multi-stroke layering reads as a rough, brushed border, not a clean print. An inline alert pill (16% autumn-red fill + solid 1.4px border + mono caps label + autumn-red ink dot) sits inside the region. Visible above between messages 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Warn region: 10% autumn-red fill, three stacked dashed strokes (descending opacity) forming a brushed edge. Alert pill: 16% fill, solid 1.4px border, mono caps label, optional dot.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, alert copy, dot presence, exact number of layered strokes (2–4 acceptable).</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default sumi-slash arrows: surimi-orange at 2px, round caps, quadratic curve. Returns / mutes: bg-dim at 1.2px. Async: dashed surimi-orange at 2px (<code>stroke-dasharray: 6 4</code>). Warn: autumn-red at 2.2px.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

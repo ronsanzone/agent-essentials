@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Language Candidate Picker</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --bg-card: #ffffff;
+      --bg-soft: #f1efe8;
+      --ink: #1c1a17;
+      --ink-soft: #4d4842;
+      --ink-faint: #8a8175;
+      --rule: #d9d2c1;
+      --rule-soft: #e8e2d2;
+      --accent: #0a5c4f;
+      --accent-soft: #dae5e0;
+      --warn: #a84e1a;
+      --selected-bg: #fefbf3;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .layout { max-width: 1100px; margin: 0 auto; padding: 32px 24px 160px; }
+    header { margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--rule); }
+    h1 { margin: 0 0 6px; font-size: 22px; font-weight: 600; }
+    header p { margin: 0; color: var(--ink-soft); font-size: 13px; }
+    header .hint { color: var(--ink-faint); font-size: 12px; margin-top: 4px; }
+
+    .status-bar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: var(--bg);
+      padding: 10px 0;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--rule-soft);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      font-size: 13px;
+    }
+    .status-bar .count { font-weight: 600; color: var(--accent); }
+    .status-bar .sep { color: var(--ink-faint); }
+    .status-bar button {
+      font-family: inherit;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      color: var(--ink);
+      cursor: pointer;
+    }
+    .status-bar button:hover { background: var(--bg-soft); }
+    .status-bar button.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+    .status-bar button.primary:hover { background: #064038; }
+    .status-bar button.danger { color: var(--warn); }
+
+    section.theme { margin-bottom: 28px; }
+    section.theme h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: var(--ink);
+      letter-spacing: -0.005em;
+    }
+    section.theme .desc { margin: 0 0 8px; color: var(--ink-faint); font-size: 12px; }
+
+    table { width: 100%; border-collapse: collapse; background: var(--bg-card); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
+    tr { border-bottom: 1px solid var(--rule-soft); transition: background 0.1s; }
+    tr:last-child { border-bottom: none; }
+    tr.selected { background: var(--selected-bg); }
+    td { padding: 9px 12px; vertical-align: middle; }
+    td.check { width: 36px; text-align: center; }
+    td.name { width: 220px; }
+    td.name a { color: var(--accent); text-decoration: none; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; }
+    td.name a:hover { text-decoration: underline; }
+    td.feedback { width: auto; }
+    td.feedback input {
+      width: 100%;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 5px 8px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    td.feedback input:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+
+    input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+
+    .overall {
+      margin-top: 32px;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      border-radius: 8px;
+    }
+    .overall h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+    .overall textarea {
+      width: 100%;
+      min-height: 80px;
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+      border: 1px solid var(--rule-soft);
+      border-radius: 4px;
+      background: var(--bg);
+      color: var(--ink);
+      resize: vertical;
+    }
+
+    #export-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(28, 26, 23, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    #export-modal[hidden] { display: none; }
+    #export-modal .modal-card {
+      background: var(--bg-card);
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      width: min(720px, 90vw);
+      max-height: 86vh;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+    }
+    #export-modal h3 { margin: 0 0 10px; font-size: 16px; font-weight: 600; }
+    #export-modal .modal-hint { color: var(--ink-soft); font-size: 12px; margin: 0 0 10px; }
+    #export-output {
+      flex: 1;
+      width: 100%;
+      min-height: 360px;
+      font-family: ui-monospace, "SF Mono", Menlo, monospace;
+      font-size: 12px;
+      padding: 12px;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      background: var(--bg);
+      color: var(--ink);
+      resize: none;
+      line-height: 1.55;
+    }
+    #export-modal .modal-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      justify-content: flex-end;
+    }
+    #export-modal button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 14px;
+      border-radius: 5px;
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      cursor: pointer;
+    }
+    #export-modal button.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+      font-weight: 500;
+    }
+    #export-modal button.primary:hover { background: #064038; }
+    .copied { color: var(--accent); font-size: 12px; margin-right: 8px; align-self: center; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <h1>Design Language Candidate Picker</h1>
+      <p>Open files in new tabs to review, check the winners, leave optional per-file notes, then click <strong>Export prompt</strong>.</p>
+      <p class="hint">State auto-saves to <code>localStorage</code> — refresh and your selections stay.</p>
+    </header>
+
+    <div class="status-bar">
+      <span><span class="count" id="count">0</span> of 30 selected</span>
+      <span class="sep">·</span>
+      <button id="check-all" type="button">Select all</button>
+      <button id="uncheck-all" type="button">Clear selections</button>
+      <span class="sep">·</span>
+      <button id="clear" type="button" class="danger">Reset everything</button>
+      <span style="flex: 1;"></span>
+      <button id="export" type="button" class="primary">Export prompt</button>
+    </div>
+
+    <main id="themes"></main>
+
+    <div class="overall">
+      <h3>Overall feedback</h3>
+      <textarea id="overall-notes" placeholder="Anything that applies across files — taste direction, what you wish you saw more of, what should go away..."></textarea>
+    </div>
+  </div>
+
+  <div id="export-modal" hidden>
+    <div class="modal-card">
+      <h3>Export prompt</h3>
+      <p class="modal-hint">Copy this and paste it back to Claude to drive the next round.</p>
+      <textarea id="export-output" readonly></textarea>
+      <div class="modal-actions">
+        <span class="copied" id="copied" hidden>Copied.</span>
+        <button id="close-modal" type="button">Close</button>
+        <button id="copy" type="button" class="primary">Copy to clipboard</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const THEMES = [
+      {
+        name: "Editorial Parchment",
+        desc: "Currently shipped reference language — included for comparison.",
+        files: [
+          { slug: "editorial-parchment", path: "../editorial-parchment.html", label: "editorial-parchment (shipped)" },
+        ],
+        shipped: true,
+      },
+      {
+        name: "Flexoki",
+        desc: "Steph Ango's inky color scheme. Warm-grey neutrals, never cold.",
+        files: [
+          { slug: "flexoki-paper", path: "./flexoki-paper.html" },
+          { slug: "flexoki-ink",   path: "./flexoki-ink.html"   },
+          { slug: "flexoki-prose", path: "./flexoki-prose.html" },
+        ],
+      },
+      {
+        name: "Tokyo Night",
+        desc: "Indigo-navy backgrounds with blue & violet neon.",
+        files: [
+          { slug: "tokyo-night-storm", path: "./tokyo-night-storm.html" },
+          { slug: "tokyo-night-moon",  path: "./tokyo-night-moon.html"  },
+          { slug: "tokyo-night-day",   path: "./tokyo-night-day.html"   },
+        ],
+      },
+      {
+        name: "Anthropic",
+        desc: "Warm cream + terracotta. Considered, safety-first register.",
+        files: [
+          { slug: "anthropic-paper",    path: "./anthropic-paper.html"    },
+          { slug: "anthropic-clay",     path: "./anthropic-clay.html"     },
+          { slug: "anthropic-research", path: "./anthropic-research.html" },
+        ],
+      },
+      {
+        name: "Kanagawa",
+        desc: "Japanese woodblock print as code. Sumi ink + wave foam.",
+        files: [
+          { slug: "kanagawa-wave",   path: "./kanagawa-wave.html"   },
+          { slug: "kanagawa-dragon", path: "./kanagawa-dragon.html" },
+          { slug: "kanagawa-lotus",  path: "./kanagawa-lotus.html"  },
+        ],
+      },
+      {
+        name: "Cyber",
+        desc: "Near-future dystopia. Neon on near-black, terminal heritage.",
+        files: [
+          { slug: "cyber-2077",   path: "./cyber-2077.html"   },
+          { slug: "cyber-matrix", path: "./cyber-matrix.html" },
+          { slug: "cyber-corpo",  path: "./cyber-corpo.html"  },
+        ],
+      },
+      {
+        name: "Synthwave",
+        desc: "80s retro-futurist. Sunset gradients, chrome typography.",
+        files: [
+          { slug: "synthwave-outrun", path: "./synthwave-outrun.html" },
+          { slug: "synthwave-vapor",  path: "./synthwave-vapor.html"  },
+          { slug: "synthwave-chrome", path: "./synthwave-chrome.html" },
+        ],
+      },
+      {
+        name: "Stripe",
+        desc: "Premium fintech editorial. Restrained, trustworthy.",
+        files: [
+          { slug: "stripe-press", path: "./stripe-press.html" },
+          { slug: "stripe-docs",  path: "./stripe-docs.html"  },
+          { slug: "stripe-blog",  path: "./stripe-blog.html"  },
+        ],
+      },
+      {
+        name: "Nord",
+        desc: "Arctic minimalism. Desaturated teal-to-slate-blue Frost layer.",
+        files: [
+          { slug: "nord-polar",  path: "./nord-polar.html"  },
+          { slug: "nord-snow",   path: "./nord-snow.html"   },
+          { slug: "nord-aurora", path: "./nord-aurora.html" },
+        ],
+      },
+      {
+        name: "Newsprint",
+        desc: "Broadsheet print authority. Column rules, red flags, ink-on-cream.",
+        files: [
+          { slug: "newsprint-broadsheet", path: "./newsprint-broadsheet.html" },
+          { slug: "newsprint-aged",       path: "./newsprint-aged.html"       },
+          { slug: "newsprint-classified", path: "./newsprint-classified.html" },
+        ],
+      },
+      {
+        name: "Brutalist",
+        desc: "Anti-design. Raw HTML, native styling, no decoration.",
+        files: [
+          { slug: "brutalist-system",   path: "./brutalist-system.html"   },
+          { slug: "brutalist-terminal", path: "./brutalist-terminal.html" },
+          { slug: "brutalist-print",    path: "./brutalist-print.html"    },
+        ],
+      },
+    ];
+
+    const STORAGE_KEY = "dl-picker-state-v1";
+    const state = loadState();
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch (e) {}
+      return { checked: {}, feedback: {}, overall: "" };
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function render() {
+      const root = document.getElementById("themes");
+      root.innerHTML = "";
+      for (const theme of THEMES) {
+        if (theme.shipped) continue;
+        const section = document.createElement("section");
+        section.className = "theme";
+        const heading = document.createElement("h2");
+        heading.textContent = theme.name;
+        section.appendChild(heading);
+        const desc = document.createElement("p");
+        desc.className = "desc";
+        desc.textContent = theme.desc;
+        section.appendChild(desc);
+
+        const table = document.createElement("table");
+        for (const f of theme.files) {
+          const tr = document.createElement("tr");
+          tr.dataset.slug = f.slug;
+          if (state.checked[f.slug]) tr.classList.add("selected");
+
+          const tdCheck = document.createElement("td");
+          tdCheck.className = "check";
+          const cb = document.createElement("input");
+          cb.type = "checkbox";
+          cb.dataset.slug = f.slug;
+          cb.checked = !!state.checked[f.slug];
+          cb.addEventListener("change", () => {
+            state.checked[f.slug] = cb.checked;
+            tr.classList.toggle("selected", cb.checked);
+            saveState();
+            updateCount();
+          });
+          tdCheck.appendChild(cb);
+          tr.appendChild(tdCheck);
+
+          const tdName = document.createElement("td");
+          tdName.className = "name";
+          const a = document.createElement("a");
+          a.href = f.path;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = f.label || f.slug;
+          tdName.appendChild(a);
+          tr.appendChild(tdName);
+
+          const tdFb = document.createElement("td");
+          tdFb.className = "feedback";
+          const fb = document.createElement("input");
+          fb.type = "text";
+          fb.placeholder = "brief note (optional)";
+          fb.dataset.slug = f.slug;
+          fb.value = state.feedback[f.slug] || "";
+          fb.addEventListener("input", () => {
+            const v = fb.value.trim();
+            if (v) state.feedback[f.slug] = v;
+            else delete state.feedback[f.slug];
+            saveState();
+          });
+          tdFb.appendChild(fb);
+          tr.appendChild(tdFb);
+
+          table.appendChild(tr);
+        }
+        section.appendChild(table);
+        root.appendChild(section);
+      }
+      const ta = document.getElementById("overall-notes");
+      ta.value = state.overall || "";
+      ta.addEventListener("input", () => {
+        state.overall = ta.value;
+        saveState();
+      });
+      updateCount();
+    }
+
+    function updateCount() {
+      const n = Object.values(state.checked).filter(Boolean).length;
+      document.getElementById("count").textContent = n;
+    }
+
+    function buildPrompt() {
+      const selected = [];
+      const rejectedWithNotes = [];
+      for (const theme of THEMES) {
+        if (theme.shipped) continue;
+        for (const f of theme.files) {
+          const note = (state.feedback[f.slug] || "").trim();
+          if (state.checked[f.slug]) {
+            selected.push({ slug: f.slug, theme: theme.name, note });
+          } else if (note) {
+            rejectedWithNotes.push({ slug: f.slug, theme: theme.name, note });
+          }
+        }
+      }
+
+      const lines = [];
+      lines.push("# Design Language Selection");
+      lines.push("");
+      lines.push(`## Selected winners (${selected.length})`);
+      lines.push("");
+      if (selected.length === 0) {
+        lines.push("_(none selected)_");
+      } else {
+        for (const s of selected) {
+          if (s.note) lines.push(`- **${s.slug}** (${s.theme}) — ${s.note}`);
+          else        lines.push(`- **${s.slug}** (${s.theme})`);
+        }
+      }
+      lines.push("");
+
+      const overall = (state.overall || "").trim();
+      if (overall) {
+        lines.push("## Overall feedback");
+        lines.push("");
+        lines.push(overall);
+        lines.push("");
+      }
+
+      if (rejectedWithNotes.length) {
+        lines.push("## Notes on rejected candidates");
+        lines.push("");
+        for (const r of rejectedWithNotes) {
+          lines.push(`- **${r.slug}** (${r.theme}) — ${r.note}`);
+        }
+        lines.push("");
+      }
+
+      lines.push("## Next step");
+      lines.push("");
+      lines.push("Promote the selected winners out of `_candidates/` into `design-languages/`, update `design-languages/README.md`'s Available table and selection heuristic, and (optionally) delete the rest. If any winners need iteration before promotion, address the per-file feedback first.");
+      return lines.join("\n");
+    }
+
+    document.getElementById("export").addEventListener("click", () => {
+      const prompt = buildPrompt();
+      document.getElementById("export-output").value = prompt;
+      document.getElementById("export-modal").hidden = false;
+      document.getElementById("copied").hidden = true;
+    });
+
+    document.getElementById("close-modal").addEventListener("click", () => {
+      document.getElementById("export-modal").hidden = true;
+    });
+
+    document.getElementById("export-modal").addEventListener("click", (e) => {
+      if (e.target.id === "export-modal") {
+        document.getElementById("export-modal").hidden = true;
+      }
+    });
+
+    document.getElementById("copy").addEventListener("click", async () => {
+      const text = document.getElementById("export-output").value;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        const ta = document.getElementById("export-output");
+        ta.select();
+        document.execCommand("copy");
+      }
+      const c = document.getElementById("copied");
+      c.hidden = false;
+      setTimeout(() => { c.hidden = true; }, 2200);
+    });
+
+    document.getElementById("check-all").addEventListener("click", () => {
+      for (const theme of THEMES) {
+        if (theme.shipped) continue;
+        for (const f of theme.files) state.checked[f.slug] = true;
+      }
+      saveState();
+      render();
+    });
+
+    document.getElementById("uncheck-all").addEventListener("click", () => {
+      state.checked = {};
+      saveState();
+      render();
+    });
+
+    document.getElementById("clear").addEventListener("click", () => {
+      if (!confirm("Reset all checks, all per-file notes, and the overall feedback?")) return;
+      state.checked = {};
+      state.feedback = {};
+      state.overall = "";
+      saveState();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

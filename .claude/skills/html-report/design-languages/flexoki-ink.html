@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexoki Ink — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Flexoki dark — Steph Ango */
+      --paper:     #100F0F;
+      --surface1:  #1C1B1A;
+      --surface2:  #282726;
+      --border:    #343331;
+      --ui-active: #403E3C;
+      --faint:     #6F6E69;
+      --ink:       #F2F0E5;
+      --red:       #D14D41;
+      --orange:    #DA702C;
+      --yellow:    #D0A215;
+      --green:     #879A39;
+      --cyan:      #3AA99F;
+      --blue:      #4385BE;
+      --purple:    #8B7EC8;
+      --magenta:   #CE5D97;
+
+      /* Shell-facing aliases */
+      --bg:        var(--paper);
+      --bg-soft:   var(--surface1);
+      --bg-card:   var(--surface1);
+      --bg-code:   var(--surface2);
+
+      --ink-soft:  #CECDC3;
+      --ink-faint: var(--faint);
+      --ink-ghost: #555452;
+
+      --rule:        var(--border);
+      --rule-soft:   #2A2928;
+      --rule-strong: #4E4C4A;
+
+      --warn:      var(--yellow);
+      --warn-soft: #3A2F12;
+
+      --accent:         var(--cyan);
+      --accent-soft:    #143936;
+      --secondary:      var(--magenta);
+      --secondary-soft: #3A1A2A;
+
+      --serif: "IBM Plex Sans", "Inter", -apple-system, sans-serif;
+      --sans:  "IBM Plex Sans", "Inter", -apple-system, sans-serif;
+      --mono:  "IBM Plex Mono", "JetBrains Mono", "SF Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.62;
+      position: relative;
+    }
+
+    /* No paper grain — dark surfaces stay clean. */
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--cyan);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--cyan);
+      color: var(--paper);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--faint);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--cyan); }
+    aside.toc a.active { color: var(--cyan); }
+    aside.toc a.active::before { color: var(--magenta); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, var(--surface1) 0%, var(--paper) 100%);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 72px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--magenta);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: clamp(44px, 6vw, 76px);
+      line-height: 1.05;
+      letter-spacing: -0.026em;
+      margin: 0 0 28px;
+      color: var(--ink);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--cyan);
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-style: italic;
+      font-weight: 300;
+      font-size: clamp(19px, 2vw, 22px);
+      line-height: 1.5;
+      color: var(--ink-soft);
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 2px solid var(--border);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .meta-row .v {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--magenta);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--sans);
+      font-size: 34px;
+      font-weight: 600;
+      line-height: 1.14;
+      letter-spacing: -0.017em;
+      margin: 0 0 24px;
+      color: var(--ink);
+    }
+
+    h3 {
+      font-family: var(--sans);
+      font-size: 22px;
+      font-weight: 500;
+      line-height: 1.25;
+      margin: 40px 0 12px;
+      color: var(--ink);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--cyan); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--ink); }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--surface1);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 1px 0 rgba(255, 252, 240, 0.02) inset;
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--cyan);
+      background: var(--accent-soft);
+      padding: 18px 20px;
+      border-radius: 10px;
+      margin: 22px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--yellow);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 600; }
+
+    .quote {
+      font-family: var(--sans);
+      font-style: italic;
+      font-weight: 300;
+      font-size: 24px;
+      line-height: 1.4;
+      color: var(--cyan);
+      border-left: 2px solid var(--border);
+      padding-left: 24px;
+      margin: 30px 0;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 2px solid var(--border);
+      padding: 16px 0;
+    }
+
+    details:last-of-type { border-bottom: 2px solid var(--border); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 20px;
+      font-weight: 500;
+      color: var(--cyan);
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: var(--mono); color: var(--magenta); margin-right: 6px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--surface1);
+      border: 1px solid var(--border);
+      margin: 22px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--faint);
+      background: var(--surface2);
+    }
+
+    pre {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--cyan); }
+    pre .str  { color: var(--green); }
+    pre .com  { color: var(--faint); font-style: italic; }
+    pre .n    { color: var(--orange); }
+    pre .fn   { color: var(--purple); }
+    pre .type { color: var(--yellow); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--surface2);
+      color: var(--cyan);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--magenta);
+      border-radius: 999px;
+      color: var(--magenta);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--sans);
+      font-style: italic;
+      font-weight: 300;
+      color: var(--faint);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 12px;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--surface2);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--magenta);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--surface1);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--border); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--ink); font-weight: 500; }
+    .swatch .label span { color: var(--faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Flexoki Ink, <em>after dark</em></h1>
+          <p class="lede">The same warm-grey ramp at night — brown-black surfaces, IBM Plex letterforms, cyan ink. For readers who keep the monitor on past midnight.</p>
+          <div class="meta">
+            <span class="pill">Status: candidate</span>
+            <span class="pill">Audience: engineer-internal</span>
+            <span class="pill">Dark only</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>IBM Plex Sans h1 at 600 weight, cyan italic <code>&lt;em&gt;</code> at 300 weight, italic light lede, mono caps eyebrow with 6px magenta dot, <code>surface1 → paper</code> linear gradient.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> key/values or <code>.meta</code> pill chips.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Flexoki Ink is the dark inversion of the Flexoki philosophy. The neutral ramp never goes fully cold — even <code>--paper</code> at <code>#100F0F</code> is brown-black, not blue-black. The surfaces stack <em>upward</em> in luminance from the body background: code blocks and contracts sit on <code>surface2</code>, which is lighter than the page itself. This is the warm ink-paper relationship inverted: paper is dark, ink is the light text floating on it.</p>
+        <div class="quote">If <em>Paper</em> is ink soaking into a page, <em>Ink</em> is the page glowing under the lamp — the same warmth, lit from inside.</div>
+        <p>Cyan leads — links, the italic-em in the hero title, the active TOC entry, primary diagram arrows. Magenta supports — the eyebrow dot, marginalia counter, pill borders. Yellow is the warn color, replacing the orange of the light variant because orange on dark loses contrast against the warm surfaces. Body and headings are IBM Plex Sans because it carries enough engineering credibility for dark surfaces without going industrial; code is IBM Plex Mono so the two are visibly siblings.</p>
+        <p>Rules are <strong>2px</strong> here — not 1px. Thin lines disappear on dark surfaces; the language compensates by making borders, hero footers, and details separators slightly more present.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>The report is read on a dark editor or terminal-adjacent context. The audience explicitly prefers dark themes. The content is debugging-heavy, trace-heavy, or built around code blocks and sequence diagrams (where the dark surface lets the cyan arrows pop).</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The report will be printed, exported to PDF for distribution, or read in a brightly-lit conference room — dark themes contrast-flip badly in those contexts. Use <code>flexoki-paper</code>. Also avoid for documents that lean heavily on illustrations or screenshots with light backgrounds.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL — the weight ranges are part of the brand.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>: <span class="str">"IBM Plex Sans"</span>, <span class="str">"Inter"</span>, -apple-system, sans-serif;
+<span class="kw">--sans</span>:  <span class="str">"IBM Plex Sans"</span>, <span class="str">"Inter"</span>, -apple-system, sans-serif;
+<span class="kw">--mono</span>:  <span class="str">"IBM Plex Mono"</span>, <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, Menlo, monospace;</pre>
+
+        <p>Flexoki Ink is a sans-led language; both <code>--serif</code> and <code>--sans</code> resolve to IBM Plex Sans. The "serif" alias exists only so canonical components written for the editorial register still resolve. Hierarchy comes from weight (300 / 400 / 500 / 600) and the Plex italic, not from a typeface switch.</p>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — IBM Plex Sans 400</td><td>16px, line-height 1.62</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--sans)</code> — IBM Plex Sans 500–600</td><td>Plex's display weights have tighter tracking</td></tr>
+            <tr><td>Italic ledes and pull quotes</td><td><code>var(--sans)</code> — IBM Plex Sans 300 italic</td><td>Plex Italic Light is the brand's italic register</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills</td><td><code>var(--mono)</code> — IBM Plex Mono</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Italic Plex Light for ledes, pull quotes, and the italic-em phrase inside <code>h1</code>: <code>&lt;h1&gt;Title, &lt;em&gt;italic phrase&lt;/em&gt;&lt;/h1&gt;</code>.</li>
+          <li>Mono caps with letter-spacing for eyebrows, meta-row labels, marginalia, and SVG step numbers.</li>
+          <li><strong>Never</strong> bold body prose for emphasis — use italic light instead.</li>
+          <li>The eyebrow dot is always <code>var(--magenta)</code>.</li>
+          <li>Links are <code>var(--cyan)</code>; hover collapses to <code>var(--ink)</code>.</li>
+          <li>Rules and dividers are <strong>2px</strong> minimum — thin lines disappear on dark surfaces.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>Flexoki's dark palette (Steph Ango), used verbatim. The neutrals stay warm — brown-black, not blue-black.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #100F0F"></div><div class="label"><strong>--paper</strong><span>#100F0F</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1C1B1A"></div><div class="label"><strong>--surface1</strong><span>#1C1B1A</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #282726"></div><div class="label"><strong>--surface2</strong><span>#282726</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #343331"></div><div class="label"><strong>--border</strong><span>#343331</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #403E3C"></div><div class="label"><strong>--ui-active</strong><span>#403E3C</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #6F6E69"></div><div class="label"><strong>--faint</strong><span>#6F6E69</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F2F0E5"></div><div class="label"><strong>--ink</strong><span>#F2F0E5</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #D14D41"></div><div class="label"><strong>--red</strong><span>#D14D41</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #DA702C"></div><div class="label"><strong>--orange</strong><span>#DA702C</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #D0A215"></div><div class="label"><strong>--yellow</strong><span>#D0A215</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #879A39"></div><div class="label"><strong>--green</strong><span>#879A39</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #3AA99F"></div><div class="label"><strong>--cyan</strong><span>#3AA99F</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #4385BE"></div><div class="label"><strong>--blue</strong><span>#4385BE</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #8B7EC8"></div><div class="label"><strong>--purple</strong><span>#8B7EC8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #CE5D97"></div><div class="label"><strong>--magenta</strong><span>#CE5D97</span></div></div>
+        </div>
+
+        <h3>Role assignment</h3>
+        <ul>
+          <li><strong>Lead accent</strong> — <code>--cyan</code>. Links, italic-em in titles, active TOC, primary diagram arrows and <code>hot</code> nodes, progress bar fill.</li>
+          <li><strong>Secondary</strong> — <code>--magenta</code>. Eyebrow dot, marginalia counter, pill borders, active-TOC counter prefix.</li>
+          <li><strong>Warn</strong> — <code>--yellow</code>. Failure paths, deprecation, retry callouts. Yellow on warm-dark holds its weight better than orange.</li>
+          <li>The remaining hues (<code>--green</code>, <code>--blue</code>, <code>--orange</code>, <code>--purple</code>, <code>--red</code>) are syntax tokens and tertiary diagram roles.</li>
+        </ul>
+
+        <h3>Diagram-kit aliases</h3>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--cyan</span>);
+<span class="kw">--accent-soft</span>:    <span class="str">#143936</span>;
+<span class="kw">--secondary</span>:      var(<span class="kw">--magenta</span>);
+<span class="kw">--secondary-soft</span>: <span class="str">#3A1A2A</span>;</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Don't substitute <code>--blue</code> as the lead accent — blue on dark is a generic dashboard look. Flexoki Ink's identity is specifically the cyan/magenta duo against warm brown-black. Swap that and you've drifted into a different language.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No system-font defaults. IBM Plex must load.</li>
+          <li>No cool-grey or blue-black neutrals (<code>#1A1B1F</code>, <code>#0F1115</code>). The warm ramp is the brand.</li>
+          <li>No light themes — use <code>flexoki-paper</code>.</li>
+          <li>No bold body prose for emphasis. Italic Plex Light only.</li>
+          <li>No 1px rules on dark surfaces. Minimum 2px for borders, hero footers, details separators.</li>
+          <li>No saturated accents outside the Flexoki dark palette. No neon pink, no electric purple.</li>
+          <li>No heavy drop shadows. Cards lean on the surface-luminance stack, not on shadow.</li>
+          <li>No emoji in headings, callouts, or marginalia.</li>
+          <li>No paper grain or texture overlays — dark surfaces stay clean.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component, rendered in Flexoki Ink with its locked/free contract. Compare against the editorial-parchment gallery — the structure is identical; only the paint changes.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>See the document's own hero above — Plex h1 at 600, cyan light-italic <code>em</code>, italic-light lede, mono eyebrow with magenta dot, <code>surface1 → paper</code> gradient with a 2px border-bottom.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Plex Sans h1 at 600, cyan italic <code>&lt;em&gt;</code> at 300, italic light lede, mono caps eyebrow, magenta dot, <code>surface1 → paper</code> gradient.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, footer as key/value <code>.meta-row</code> or pill <code>.meta</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Each section in this document is a live example: magenta mono <code>.num</code> in the left gutter, Plex h2 at 34px / 600.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Plex Sans h2 at 600, magenta mono number, <code>position: absolute; left: -64px</code> gutter placement.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 size (32–36px), section vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Cards sit on <code>--surface1</code> — one step lighter than the page background. The luminance step <em>is</em> the separator; the 1px border is the secondary cue.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>surface1</code> fill, <code>1px solid var(--border)</code>, subtle inset highlight for surface separation.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (12–20px), padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use a 4px cyan left border with an <code>accent-soft</code> (dark cyan) wash.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant swaps to <code>--yellow</code> / <code>warn-soft</code>. Reserve for deprecation, failure paths, and known gaps.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Accent-soft background + 4px cyan left-border (default). Warn swaps to yellow geometry unchanged.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius, padding, presence of icon or bold label.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — the one a skimming reader must absorb. One per section maximum.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Plex italic light, cyan color, ≥22px, 2px left rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Rule weight, exact font-size (22–26px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Summary uses Plex Sans 20px 500 weight, cyan. The magenta <code>+ / −</code> marker is the only marker glyph in this language.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse so the reader can skip well-understood steps. Separator rules are 2px because thinner disappears on the dark page.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Plex summary in cyan at ~20px, 2px border-top on each <code>details</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>+/−</code> vs chevron), padding, exact summary font-weight.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>−2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Plex Mono uppercase <code>th</code> on <code>surface2</code>, 1px border, row separators in <code>rule-soft</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping (default: none), <code>td</code> font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host: <span class="type">str</span>) -&gt; <span class="type">int</span>:  <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Code blocks sit on <code>surface2</code> — <em>lighter</em> than the body background. This is the warm ink-paper relationship inverted: the code feels like ink on lit paper, not text in a black box. Token colors: <code>kw</code>=cyan, <code>str</code>=green, <code>com</code>=faint italic, <code>n</code>=orange, <code>fn</code>=purple, <code>type</code>=yellow.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>surface2</code> fill (lighter than page), 1px border, IBM Plex Mono 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (10–16px), padding, syntax token colors within the Flexoki palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Plex Mono at <code>0.92em</code>, <code>surface2</code> wash, cyan ink color, small radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Magenta border + magenta ink, Plex Mono 12px, pill shape (<code>border-radius: 999px</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), optional <code>secondary-soft</code> background.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 for live diagrams.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Plex italic light in <code>--faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size (13–15px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid is the default — used for "X vs Y" comparisons and "pick this when / don't pick this when" framing (see §02 above).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings and let the language control <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at <code>720px</code> or narrower.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value, child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams are ink on dark paper. Box outlines run through an SVG <code>feTurbulence</code> + <code>feDisplacementMap</code> pair (the <code>#ink-bleed</code> filter) so edges wobble like a fountain pen on absorbent stock, and strokes carry an irregular dash (<code>9 2 4 3</code>) that suggests ink pickup. Arrows are 2.5px cyan with a chiseled nib marker; each important arrow starts with a small terracotta (or magenta, for async) dot — the moment the pen touches the page. Body labels stay IBM Plex Sans; the small marginal "scrawl" is Plex italic light, slightly offset from the lines.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--surface2)</code></td><td><code>var(--ink-soft)</code></td><td>1.5px stroke under <code>url(#ink-bleed)</code>; irregular dash <code>9 2 4 3</code>.</td></tr>
+            <tr><td><code>hot</code></td><td><code>#143936</code> (cyan-dark)</td><td><code>var(--cyan)</code></td><td>2px stroke under ink-bleed; terracotta touch-down dot at arrow origin.</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--surface2)</code></td><td><code>var(--rule-strong)</code></td><td>2px stroke; ink-bleed filter retained.</td></tr>
+            <tr><td><code>external</code></td><td><code>#3A1A2A</code> (magenta-dark)</td><td><code>var(--magenta)</code></td><td>Pen-wobble outline; magenta dot at arrow origin.</td></tr>
+            <tr><td><code>warn</code></td><td><code>var(--warn-soft)</code></td><td><code>var(--yellow)</code></td><td>Yellow ink-bleed region; mono caps alert text floats above.</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--paper)</code></td><td><code>var(--ink-ghost)</code>, dashed</td><td>Skips the displacement filter — stays crisp to read as "not yet shipped".</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 160" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt    { font: 14px "IBM Plex Sans", sans-serif; fill: var(--ink); }
+              .small  { font: 12px "IBM Plex Sans", sans-serif; fill: var(--ink-soft); }
+              .scrawl { font: italic 300 11px "IBM Plex Sans", sans-serif; fill: var(--faint); }
+              .default  { fill: var(--surface2); stroke: var(--ink-soft); }
+              .hot      { fill: #143936;         stroke: var(--cyan); }
+              .store    { fill: var(--surface2); stroke: var(--rule-strong); }
+              .external { fill: #3A1A2A;         stroke: var(--magenta); }
+              .box      { stroke-width: 1.5; stroke-dasharray: 9 2 4 3; }
+              .box.hot  { stroke-width: 2; }
+              .box.store{ stroke-width: 2; }
+              .arrow    { stroke: var(--cyan); stroke-width: 2.5; fill: none; marker-end: url(#fi-nib); stroke-linecap: round; }
+            </style>
+            <defs>
+              <filter id="ink-bleed" x="-2%" y="-2%" width="104%" height="104%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.2" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <marker id="fi-nib" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 L2,4.5 Z" fill="var(--cyan)"/>
+              </marker>
+            </defs>
+
+            <g filter="url(#ink-bleed)">
+              <rect class="box default"  x="20"  y="40" width="150" height="70" rx="14"/>
+              <rect class="box hot"      x="210" y="40" width="160" height="70" rx="14"/>
+              <rect class="box store"    x="410" y="40" width="160" height="70" rx="14"/>
+              <rect class="box external" x="610" y="40" width="170" height="70" rx="14"/>
+            </g>
+
+            <text class="txt"   x="40"  y="72">Trigger</text>
+            <text class="small" x="40"  y="93">user request</text>
+            <text class="txt"   x="230" y="72">Process</text>
+            <text class="small" x="230" y="93">in focus</text>
+            <text class="txt"   x="430" y="72">Store</text>
+            <text class="small" x="430" y="93">persist</text>
+            <text class="txt"   x="630" y="72">Notify</text>
+            <text class="small" x="630" y="93">third party</text>
+
+            <circle cx="172" cy="75" r="3"  fill="var(--orange)"/>
+            <path class="arrow" d="M174 75 H210"/>
+            <circle cx="372" cy="75" r="3"  fill="var(--orange)"/>
+            <path class="arrow" d="M374 75 H410"/>
+            <circle cx="572" cy="75" r="3"  fill="var(--orange)"/>
+            <path class="arrow" d="M574 75 H610"/>
+
+            <text class="scrawl" x="190" y="132">— nib touch-down marks the start of each flow —</text>
+          </svg>
+          <figcaption class="caption">Linear flow with ink-bleed displacement — <code>hot</code> is the step the prose is on; terracotta dots are pen touch-down marks.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 560" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 14px "IBM Plex Sans", sans-serif; fill: var(--ink); }
+              .small      { font: 11px "IBM Plex Mono", monospace; fill: var(--ink-soft); letter-spacing: 0.04em; }
+              .note       { font: italic 300 12px "IBM Plex Sans", sans-serif; fill: var(--faint); }
+              .scrawl     { font: italic 300 11px "IBM Plex Sans", sans-serif; fill: var(--faint); }
+              .step       { font: 500 11px "IBM Plex Mono", monospace; fill: var(--magenta); letter-spacing: 0.12em; }
+              .alert-txt  { font: 600 11px "IBM Plex Mono", monospace; fill: var(--yellow);  letter-spacing: 0.14em; }
+              .default  { fill: var(--surface2); stroke: var(--ink-soft); }
+              .hot      { fill: #143936;         stroke: var(--cyan); }
+              .external { fill: #3A1A2A;         stroke: var(--magenta); }
+              .box        { stroke-width: 1.5; stroke-dasharray: 9 2 4 3; }
+              .box.hot    { stroke-width: 2; }
+              .arrow       { stroke: var(--cyan);        stroke-width: 2.5; fill: none; marker-end: url(#fi-nib2); stroke-linecap: round; }
+              .arrow-muted { stroke: var(--rule-strong); stroke-width: 1.5; fill: none; marker-end: url(#fi-nib-muted2); stroke-dasharray: 7 2 3 2; stroke-linecap: round; }
+              .arrow-warn  { stroke: var(--yellow);      stroke-width: 2.5; fill: none; marker-end: url(#fi-nib-warn2); stroke-linecap: round; }
+              .arrow-async { stroke: var(--cyan);        stroke-width: 2.5; fill: none; stroke-dasharray: 6 3; marker-end: url(#fi-nib2); stroke-linecap: round; }
+            </style>
+            <defs>
+              <filter id="ink-bleed-seq" x="-2%" y="-2%" width="104%" height="104%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" result="noise"/>
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.1" xChannelSelector="R" yChannelSelector="G"/>
+              </filter>
+              <marker id="fi-nib2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 L2,4.5 Z" fill="var(--cyan)"/>
+              </marker>
+              <marker id="fi-nib-muted2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 L2,4.5 Z" fill="var(--rule-strong)"/>
+              </marker>
+              <marker id="fi-nib-warn2" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 L2,4.5 Z" fill="var(--yellow)"/>
+              </marker>
+            </defs>
+
+            <g filter="url(#ink-bleed-seq)">
+              <rect class="box default"  x="60"  y="20" width="120" height="50" rx="12"/>
+              <rect class="box default"  x="260" y="20" width="120" height="50" rx="12"/>
+              <rect class="box hot"      x="440" y="20" width="120" height="50" rx="12"/>
+              <rect class="box external" x="620" y="20" width="200" height="50" rx="12"/>
+            </g>
+
+            <text class="txt" x="120" y="52" text-anchor="middle">Client</text>
+            <text class="txt" x="320" y="52" text-anchor="middle">API</text>
+            <text class="txt" x="500" y="52" text-anchor="middle">Worker</text>
+            <text class="txt" x="720" y="52" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="540" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="540" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="540" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="540" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <circle cx="120" cy="125" r="3" fill="var(--orange)"/>
+            <path class="arrow" d="M122 125 H320"/>
+            <text class="small" x="135" y="118">POST /jobs</text>
+            <text class="scrawl"  x="135" y="146">— sync create, blocking call</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="305" y="163" text-anchor="end">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="scrawl"  x="335" y="200">background dispatch — fire &amp; forget ✱</text>
+            <circle cx="320" cy="215" r="3" fill="var(--magenta)"/>
+            <path class="arrow-async" d="M322 215 H500"/>
+            <text class="small" x="335" y="234">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <circle cx="500" cy="275" r="3" fill="var(--orange)"/>
+            <path class="arrow" d="M502 275 H720"/>
+            <text class="small" x="515" y="268">POST /provision</text>
+
+            <g filter="url(#ink-bleed-seq)">
+              <rect x="340" y="295" width="480" height="100" rx="12"
+                    fill="rgba(208, 162, 21, 0.08)" stroke="var(--yellow)" stroke-width="1.5" stroke-dasharray="6 2 3 2"/>
+            </g>
+
+            <path class="arrow-warn" d="M720 320 H500"/>
+            <text class="alert-txt" x="610" y="315" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="38" rx="8"
+                  fill="var(--warn-soft)" stroke="var(--yellow)" stroke-width="1.5"
+                  filter="url(#ink-bleed-seq)"/>
+            <circle cx="378" cy="364" r="3" fill="var(--yellow)"/>
+            <text class="alert-txt" x="390" y="368">RETRY POLICY ENGAGED</text>
+            <text class="scrawl"    x="560" y="368">— backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="423">04</text>
+            <circle cx="500" cy="420" r="3" fill="var(--orange)"/>
+            <path class="arrow" d="M502 420 H720"/>
+            <text class="small" x="515" y="413">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 465 H500"/>
+            <text class="small" x="705" y="458" text-anchor="end">201 Created</text>
+
+            <text class="step" x="15" y="508">05</text>
+            <text class="scrawl" x="310" y="488" text-anchor="middle">async fan-out — terminal step</text>
+            <circle cx="500" cy="505" r="3" fill="var(--magenta)"/>
+            <path class="arrow-async" d="M498 505 H120"/>
+            <text class="small" x="485" y="498" text-anchor="end">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — pen-wobble box outlines via <code>feDisplacementMap</code>, terracotta and magenta nib touch-downs at each message origin, marginalia in Plex italic light.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <pre><span class="kw">.txt</span>    { font: <span class="n">14</span>px <span class="str">"IBM Plex Sans"</span>, sans-serif; fill: var(<span class="kw">--ink</span>); }
+<span class="kw">.small</span>  { font: <span class="n">11</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--ink-soft</span>); letter-spacing: <span class="n">0.04</span>em; }
+<span class="kw">.scrawl</span> { font: italic <span class="n">300</span> <span class="n">11</span>px <span class="str">"IBM Plex Sans"</span>, sans-serif; fill: var(<span class="kw">--faint</span>); }
+<span class="kw">.step</span>   { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--magenta</span>); letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--yellow</span>);  letter-spacing: <span class="n">0.14</span>em; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>SVG body text is IBM Plex Sans (matches body prose). Inline annotations are Plex italic light in <code>--faint</code>. Step numbers and alert text use Plex Mono — magenta for steps, yellow for alerts.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Whether to use step numbers (small diagrams omit them), exact letter-spacing (0.10–0.16em), annotation placement.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>Wrap failure-path messages in a yellow-tinted dashed rectangle and place an inline alert pill (<code>warn-soft</code> fill + yellow border + yellow mono caps text). The pattern is visible in the sequence diagram above between messages 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Region background uses <code>rgba(208, 162, 21, 0.08)</code> + dashed yellow border. The inline alert pill stacks a yellow dot, a mono-caps label, and a Plex italic light detail.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert pill copy, whether to include the colored dot.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: <code>var(--cyan)</code> at 2.5px with a chiseled nib marker (a path, not a triangle — it reads as a fountain-pen tip). Return paths use <code>arrow-muted</code> (<code>var(--rule-strong)</code>) with an irregular dash. Async paths use <code>stroke-dasharray: 6 3</code>. Warn paths use <code>var(--yellow)</code>. Important origins carry a 3px terracotta (or magenta, for async) circle — the pen touch-down.</p>
+
+        <h3>Caption</h3>
+        <p>Plex italic light, <code>var(--faint)</code>, 14px, centered with <code>margin-top: 12px</code>.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

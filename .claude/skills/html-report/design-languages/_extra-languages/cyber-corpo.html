@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cyber-Corpo — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #0a0e17;
+      --bg-deep:   #060912;
+      --bg-card:   #0f1421;
+      --bg-soft:   #11172a;
+      --bg-code:   #0a0f1c;
+
+      --border:     #1c2436;
+      --border-hi:  #2a3550;
+      --border-low: #131a2a;
+
+      --text:        #e3e7f0;
+      --text-muted:  #99a0b3;
+      --text-dim:    #5b6479;
+      --text-faint:  #3a4258;
+
+      --cyan:        #25E1ED;
+      --cyan-deep:   #0ea5b8;
+      --magenta:     #ED1E79;
+      --red:         #dc2626;
+      --teal:        #39c4b6;
+      --olive:       #c0c750;
+
+      --rule:        var(--border);
+      --rule-soft:   var(--border-low);
+      --rule-strong: var(--border-hi);
+
+      --accent:         var(--cyan);
+      --accent-soft:    rgba(37, 225, 237, 0.10);
+      --secondary:      var(--magenta);
+      --secondary-soft: rgba(237, 30, 121, 0.08);
+      --warn:           var(--red);
+      --warn-soft:      rgba(220, 38, 38, 0.10);
+      --ink:        var(--text);
+      --ink-soft:   var(--text-muted);
+      --ink-ghost:  var(--text-faint);
+
+      --sans:    "Inter", -apple-system, "Helvetica Neue", sans-serif;
+      --display: "Barlow Condensed", "Inter", sans-serif;
+      --mono:    "IBM Plex Mono", "JetBrains Mono", "SF Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 400;
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    /* subtle grid + diagonal corpo wash */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(180deg, rgba(37, 225, 237, 0.020) 0%, transparent 25%, transparent 75%, rgba(237, 30, 121, 0.015) 100%),
+        radial-gradient(ellipse at 50% 0%, rgba(37, 225, 237, 0.04) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: rgba(255,255,255,0.04); }
+    .progress::after {
+      content: ""; display: block; height: 100%;
+      width: var(--scroll, 0%);
+      background: linear-gradient(90deg, var(--cyan-deep) 0%, var(--cyan) 100%);
+      box-shadow: 0 0 6px rgba(37, 225, 237, 0.4);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute; left: -9999px; top: auto;
+      width: 1px; height: 1px; overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static; width: auto; height: auto; overflow: visible;
+      padding: 6px 12px; background: var(--cyan); color: var(--bg-deep);
+      font-family: var(--mono);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      margin: 0 0 18px;
+    }
+
+    aside.toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 7px 0 7px 12px;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 400;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s, background 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text-faint);
+      margin-right: 12px;
+      letter-spacing: 0.08em;
+    }
+
+    aside.toc a:hover { color: var(--text); border-left-color: var(--border-hi); }
+    aside.toc a.active {
+      color: var(--cyan);
+      border-left-color: var(--cyan);
+      background: linear-gradient(90deg, rgba(37, 225, 237, 0.08) 0%, transparent 100%);
+    }
+    aside.toc a.active::before { color: var(--cyan); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background:
+        linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+      margin: 0 -48px 80px;
+      padding: 100px 48px 64px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      box-shadow: inset 0 1px 0 0 rgba(37, 225, 237, 0.15);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+    .eyebrow .dot {
+      width: 7px; height: 7px;
+      background: var(--cyan);
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(37, 225, 237, 0.6);
+    }
+
+    h1.title {
+      font-family: var(--display);
+      font-weight: 600;
+      font-size: clamp(54px, 7.5vw, 96px);
+      line-height: 0.95;
+      letter-spacing: -0.005em;
+      text-transform: uppercase;
+      margin: 0 0 28px;
+      color: var(--text);
+    }
+    h1.title em {
+      font-style: normal;
+      font-weight: 300;
+      color: var(--cyan);
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-weight: 300;
+      font-size: clamp(19px, 1.9vw, 22px);
+      line-height: 1.45;
+      color: var(--text-muted);
+      max-width: 660px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 36px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+    .meta-row .k {
+      font-family: var(--mono); font-size: 10px;
+      letter-spacing: 0.20em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .meta-row .v {
+      font-family: var(--sans); font-size: 14px; font-weight: 500;
+      color: var(--text);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 104px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -68px;
+      top: 10px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--cyan);
+      letter-spacing: 0.18em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--display);
+      font-size: 46px;
+      font-weight: 500;
+      line-height: 1.0;
+      letter-spacing: -0.005em;
+      text-transform: uppercase;
+      margin: 0 0 24px;
+      color: var(--text);
+    }
+
+    h3 {
+      font-family: var(--display);
+      font-size: 26px;
+      font-weight: 500;
+      line-height: 1.15;
+      letter-spacing: 0.005em;
+      text-transform: uppercase;
+      margin: 44px 0 14px;
+      color: var(--text);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+      color: var(--cyan);
+    }
+
+    p { margin: 0 0 16px; max-width: 70ch; }
+
+    a {
+      color: var(--cyan);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(37, 225, 237, 0.35);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    a:hover { color: var(--text); border-bottom-color: var(--text); }
+
+    .card {
+      border: 1px solid var(--border);
+      background:
+        linear-gradient(180deg, var(--bg-card) 0%, var(--bg) 100%);
+      border-radius: 4px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      position: relative;
+      box-shadow:
+        inset 0 1px 0 0 rgba(255, 255, 255, 0.03),
+        0 1px 0 0 rgba(0, 0, 0, 0.4);
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 12px; right: 12px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(37, 225, 237, 0.4) 50%, transparent 100%);
+    }
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 3px solid var(--cyan);
+      background: rgba(37, 225, 237, 0.05);
+      padding: 16px 20px;
+      border-radius: 0 4px 4px 0;
+      margin: 22px 0;
+      box-shadow: inset 0 1px 0 0 rgba(37, 225, 237, 0.10);
+    }
+    .callout strong {
+      font-family: var(--mono);
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--cyan);
+      font-size: 11px;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    .callout.warn {
+      border-left-color: var(--red);
+      background: rgba(220, 38, 38, 0.06);
+      box-shadow: inset 0 1px 0 0 rgba(220, 38, 38, 0.12);
+    }
+    .callout.warn strong { color: var(--red); }
+
+    .callout.success {
+      border-left-color: var(--magenta);
+      background: rgba(237, 30, 121, 0.05);
+      box-shadow: inset 0 1px 0 0 rgba(237, 30, 121, 0.12);
+    }
+    .callout.success strong { color: var(--magenta); }
+
+    .quote {
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: 30px;
+      line-height: 1.2;
+      letter-spacing: 0;
+      color: var(--cyan);
+      border-left: 1px solid var(--border-hi);
+      padding: 6px 0 6px 28px;
+      margin: 36px 0;
+      max-width: 60ch;
+      text-transform: uppercase;
+    }
+
+    details {
+      border-top: 1px solid var(--border);
+      padding: 16px 0;
+    }
+    details:last-of-type { border-bottom: 1px solid var(--border); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      list-style: none;
+      text-transform: uppercase;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before {
+      content: "+";
+      font-family: var(--mono);
+      color: var(--cyan);
+      margin-right: 12px;
+      font-size: 18px;
+      vertical-align: 1px;
+    }
+    details[open] > summary::before { content: "−"; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 22px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-low);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    th {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--cyan);
+      background: var(--bg-deep);
+      border-bottom: 1px solid var(--border-hi);
+    }
+    td { font-family: var(--sans); font-size: 14px; color: var(--text-muted); }
+    td strong { color: var(--text); font-weight: 500; }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 18px 0;
+      color: var(--text);
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.025);
+    }
+
+    pre .kw   { color: var(--magenta); }
+    pre .str  { color: var(--cyan); }
+    pre .com  { color: var(--text-dim); font-style: italic; }
+    pre .n    { color: var(--olive); }
+    pre .fn   { color: var(--teal); }
+    pre .type { color: var(--cyan-deep); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: rgba(37, 225, 237, 0.08);
+      color: var(--cyan);
+      padding: 2px 6px;
+      border-radius: 2px;
+      border: 1px solid rgba(37, 225, 237, 0.18);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border: 1px solid rgba(37, 225, 237, 0.5);
+      border-radius: 2px;
+      color: var(--cyan);
+      background: rgba(37, 225, 237, 0.05);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 22px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 14px;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--border-hi);
+      background: var(--bg-deep);
+      border-radius: 0 4px 4px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-muted);
+      box-shadow: inset 0 1px 0 0 rgba(255,255,255,0.025);
+    }
+    .contract .row { display: grid; grid-template-columns: 90px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+    .contract .label {
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--text-dim); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+    .swatch {
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+    .swatch .chip { height: 60px; border-bottom: 1px solid var(--border); }
+    .swatch .label {
+      padding: 9px 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+    .swatch .label strong { display: block; color: var(--text); font-weight: 500; }
+    .swatch .label span { color: var(--text-dim); }
+
+    .gallery-item { margin: 0 0 46px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Dossier Index</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">Deployment</a></li>
+        <li><a href="#stack">Brand stack</a></li>
+        <li><a href="#palette">Palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Components</a></li>
+        <li><a href="#diagrams">Diagrams</a></li>
+        <li><a href="#exemplars">Exemplars</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language · Series C</div>
+          <h1 class="title">Cyber-Corpo, <em>boardroom register</em></h1>
+          <p class="lede">A measured cyberpunk dossier register — for product surfaces, technical white papers, and corporate-cyber documentation that needs the edge without the glitch. The variation a megacorp's polished UI team would actually ship.</p>
+          <div class="meta">
+            <span class="pill">Series C · v1</span>
+            <span class="pill">Audience: Product</span>
+            <span class="pill">Confidential</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 36px auto 0;">
+          <div class="row"><span class="label">LOCKED</span><span>Barlow Condensed 600 uppercase h1, cyan light-weight 300 em, Inter 300 lede, mono cyan eyebrow with cyan square dot + glow, dark navy background with subtle cyan inset highlight on top edge.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Padding, lede max-width, meta as pills or key/value rows, glow intensity.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Cyber-Corpo is the version of cyberpunk that survives a procurement review. The aesthetic is dark navy <code>#0a0e17</code>, cyan as a measured lead accent (never as a billboard), Barlow Condensed for the display register so headings carry editorial weight without shouting, and Inter for body so sustained reading isn't punishing. The mono is IBM Plex — corporate-credible, terminal-aware. The result reads as a luxury dossier with a cyber edge — boardroom, not back-alley.</p>
+        <div class="quote">Two reports in this language should feel like two chapters of the same megacorp annual — different content, identical institutional voice.</div>
+        <p>Cyan is the lead, but cyan is restrained. It carries links, the title em phrase, the active TOC item, primary diagram nodes, table headers, and inline code. Magenta is reserved for success/confirmation (used sparingly — this register doesn't celebrate often). Red is reserved for failure. The trio is calibrated for a product surface where the wrong tone reads as glitch when the room expects commerce.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to deploy</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>DEPLOY WHEN</h4>
+            <p>Product overviews, technical white papers, enterprise security dossiers, internal strategy documents with a cyber-product angle. Anywhere the audience expects polish and the content has technical or security DNA.</p>
+          </div>
+          <div class="card mini">
+            <h4>DO NOT DEPLOY WHEN</h4>
+            <p>The audience is fully internal-engineering and a more confrontational register is fine — pick <code>cyber-2077</code>. The document is long-form sequential prose where condensed display tires the eye — pick <code>editorial-parchment</code>.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Three faces. Inter for body, Barlow Condensed for display, IBM Plex Mono for code and metadata. The weight ranges are part of the brand — Inter 300 is the lede, Inter 400 is body, Inter 500/600 are emphasis.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@300;400;500;600;700&amp;family=Inter:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--sans</span>:    <span class="str">"Inter"</span>, -apple-system, <span class="str">"Helvetica Neue"</span>, sans-serif;
+<span class="kw">--display</span>: <span class="str">"Barlow Condensed"</span>, <span class="str">"Inter"</span>, sans-serif;
+<span class="kw">--mono</span>:    <span class="str">"IBM Plex Mono"</span>, <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Inter 400</td><td>15px, line-height 1.6, antialiased</td></tr>
+            <tr><td>Lede</td><td><code>var(--sans)</code> — Inter 300</td><td>19–22px, generous line-height</td></tr>
+            <tr><td>Display h1 / h2 / h3 / quote / summary</td><td><code>var(--display)</code> — Barlow Condensed</td><td>500–600 weight, ALL CAPS</td></tr>
+            <tr><td>Card h4 / table th / eyebrow / pill / caption / TOC label / contract / code</td><td><code>var(--mono)</code> — IBM Plex Mono</td><td>11–13px, generous tracking</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Display headings (h1/h2/h3) and pull quotes use Barlow Condensed uppercase — never sentence-case.</li>
+          <li>Body prose is Inter 400, sentence-case. The em inside h1 uses Inter Condensed 300 in cyan — light weight is the contrast against the heavy h1.</li>
+          <li>Eyebrow, captions, pills, and contract labels all use IBM Plex Mono with letter-spacing 0.10–0.24em.</li>
+          <li>No italics. No serifs. Hierarchy comes from face + weight + size + caps.</li>
+          <li>Subtle inset 1px highlight on the top edge of cards — the only "lighting" in the design.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>Dark navy backgrounds, cool grays for text, cyan lead, magenta sparingly, red for failure only. Paste these hex values verbatim.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #0a0e17"></div><div class="label"><strong>--bg</strong><span>#0a0e17</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #060912"></div><div class="label"><strong>--bg-deep</strong><span>#060912</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0f1421"></div><div class="label"><strong>--bg-card</strong><span>#0f1421</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #11172a"></div><div class="label"><strong>--bg-soft</strong><span>#11172a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1c2436"></div><div class="label"><strong>--border</strong><span>#1c2436</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #2a3550"></div><div class="label"><strong>--border-hi</strong><span>#2a3550</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #e3e7f0"></div><div class="label"><strong>--text</strong><span>#e3e7f0</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #99a0b3"></div><div class="label"><strong>--text-muted</strong><span>#99a0b3</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #5b6479"></div><div class="label"><strong>--text-dim</strong><span>#5b6479</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #3a4258"></div><div class="label"><strong>--text-faint</strong><span>#3a4258</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #25E1ED"></div><div class="label"><strong>--cyan</strong><span>#25E1ED</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0ea5b8"></div><div class="label"><strong>--cyan-deep</strong><span>#0ea5b8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ED1E79"></div><div class="label"><strong>--magenta</strong><span>#ED1E79</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #dc2626"></div><div class="label"><strong>--red</strong><span>#dc2626</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #39c4b6"></div><div class="label"><strong>--teal</strong><span>#39c4b6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #c0c750"></div><div class="label"><strong>--olive</strong><span>#c0c750</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Aliases route the generic kit tokens to this language's concrete colors:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--cyan</span>);
+<span class="kw">--accent-soft</span>:    rgba(<span class="n">37, 225, 237, 0.10</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--magenta</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">237, 30, 121, 0.08</span>);
+<span class="kw">--warn</span>:           var(<span class="kw">--red</span>);
+<span class="kw">--warn-soft</span>:      rgba(<span class="n">220, 38, 38, 0.10</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Discipline:</strong> Do not introduce yellow. Yellow belongs to <code>cyber-2077</code> — its loudness is wrong for this register. Magenta is the only "loud" color permitted here, and even magenta is used sparingly.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No yellow primary. Yellow reads as cyber-2077, not cyber-corpo.</li>
+          <li>No serif typefaces. No italic for emphasis — use weight or color.</li>
+          <li>No purple/violet anywhere. This is not synthwave.</li>
+          <li>No rounded corners over 4px. Buttons, cards, pills are crisp.</li>
+          <li>No drop shadows beyond the locked 1px inset highlight and the subtle below-shadow on cards.</li>
+          <li>No light theme. This is dark-only.</li>
+          <li>No emoji. No mascots. No illustration with personality.</li>
+          <li>No bright photography. Treat any imagery as SVG schematic or product render.</li>
+          <li>No more than one magenta element per visible viewport — magenta is rare on purpose.</li>
+          <li>No paper grain or textile texture.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in Cyber-Corpo with its locked/free contract. Selectors are stable across all languages; values shown here are this language's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The top of every report. See the document hero above — Barlow Condensed 600 uppercase h1, cyan light-weight em, Inter 300 lede, mono cyan eyebrow with glowing cyan square dot, navy gradient with a subtle cyan inset highlight on the top edge.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Barlow Condensed 600 uppercase h1, cyan weight-300 em (not italic), Inter 300 lede, mono eyebrow with cyan dot + glow, navy gradient bg, inset cyan 1px top highlight.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, lede max-width, meta as pills or key/value rows, dot glow radius (6–10px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Every top-level section. Cyan mono coordinate in the left gutter (formatted as a two-digit numeral). Barlow Condensed 500 uppercase h2 at 46px.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Cyan mono coordinate in gutter (<code>position: absolute; left: -68px</code>), Barlow Condensed 500 uppercase h2.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact left offset (±8px), h2 size (38–52px), section rhythm (88–112px bottom margin).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>DOSSIER MODULE</h4>
+            <p>Cards have a vertical navy gradient fill, 1px border, 4px corner radius, and a 1px inset highlight on the top edge that catches the cyan ambient light. The result reads as a hardware panel — subtly lit, not glowing.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Navy linear-gradient fill, 1px border, 4px radius, 1px inset highlight on top edge (centered cyan falloff), 1px below-shadow.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact radius (2–6px), whether top highlight is centered falloff or full-width.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note</strong> Default callouts use cyan — 3px cyan left border, 5% cyan fill, mono uppercase label.
+          </div>
+          <div class="callout warn">
+            <strong>Warning</strong> Warn callouts use red <code>#dc2626</code> — deeper and more corporate than the magenta. Reserve for genuine alarm.
+          </div>
+          <div class="callout success">
+            <strong>Confirmed</strong> Success callouts use magenta. Magenta is the celebratory accent here — used sparingly, hits harder when it appears.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>3px left border, ~5% tinted background, 1px inset top highlight matched to variant. Mono uppercase strong label, color-matched. Default = cyan, warn = red, success = magenta.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact tint opacity (4–7%), whether the label ends in a colon.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The single sentence the executive remembers from this section.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Barlow Condensed 400, uppercase, cyan color, 1px <code>--border-hi</code> left rule.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact font-size (26–34px), max-width, padding-left (20–32px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Phase 1. Acquisition</summary>
+            <p>First in a series carries <code>open</code> by convention. Summary uses Barlow Condensed 500 uppercase with a cyan <code>+ / −</code> mono toggle.</p>
+          </details>
+          <details>
+            <summary>Phase 2. Integration</summary>
+            <p>Subsequent phases collapse. The toggle remains a simple <code>+ / −</code> — no chevron, no triangle.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Barlow Condensed 500 uppercase summary, cyan mono <code>+ / −</code> toggle, 1px border top rule per item.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Summary font-size (20–26px), padding, optional hover state.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Endpoint</th><th>Status</th><th>P95 Latency</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>auth.service</strong></td><td>Online</td><td><code>34 ms</code></td></tr>
+              <tr><td><strong>job.queue</strong></td><td>Online</td><td><code>67 ms</code></td></tr>
+              <tr><td><strong>provider.api</strong></td><td>Degraded</td><td><code>410 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono uppercase cyan <code>th</code> on <code>bg-deep</code> with <code>border-hi</code> bottom border. 4px outer radius, row separators in <code>border-low</code>.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Column widths, row striping (default: none), <code>td strong</code> emphasis convention.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">handshake</span>(host): <span class="com"># initiate</span>
+  <span class="kw">return</span> <span class="str">"AUTHORIZED"</span>, <span class="n">200</span></pre>
+          <p>Spans are classified manually: <code>kw</code> (magenta), <code>str</code> (cyan), <code>com</code> (dim italic), <code>n</code> (olive), <code>fn</code> (teal), <code>type</code> (cyan-deep). No runtime highlighter.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>bg-code</code> fill, 1px border, 4px radius, IBM Plex Mono 13px, 1px inset top highlight.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, line-height (1.55–1.7), exact token mapping within the locked palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The flag <code>--strict</code> raises when the <code>HANDSHAKE</code> phase fails. Use for type names, flag names, field names, and short literals.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono at <code>0.88em</code>, cyan ink, 8% cyan fill, 1px cyan-18% border, 2px radius.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding (1–2px vert), exact tint opacity (6–10%).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked under <span class="pill">PROD-2077</span> and shipped in <span class="pill">REL.C14</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>1px cyan-50% border, cyan ink on 5% cyan fill, mono 11px uppercase, 2px corner radius.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding (3–5px vert), font-size (10–12px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 — each diagram is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and a mono caption. The card inherits the navy gradient and top-edge highlight.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Inherits <code>.card</code> chrome (gradient + top inset highlight). Caption is mono, centered, <code>--text-dim</code>.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding-bottom for caption rhythm, caption font-size (11–13px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>LEFT MODULE</h4>
+              <p>2-up grid is the default — used for deploy/don't-deploy and pro/con framing.</p>
+            </div>
+            <div class="card mini">
+              <h4>RIGHT MODULE</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings; the language controls <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>display: grid</code>, 16px gap, single-column collapse at 720px.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Column count (2–4), gap (14–20px), child card variant.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams are restrained schematics. 4px corner radius on nodes, 1px borders, navy fills consistent with cards. Text inside diagrams uses Inter (matching body); coordinates and step markers use IBM Plex Mono. The cyan lead carries the active path; magenta and red appear only where the role demands.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--bg-card)</code></td><td><code>var(--border-hi)</code></td><td>1.5px stroke, <code>rx="4"</code></td></tr>
+            <tr><td><code>hot</code></td><td><code>rgba(37,225,237,0.10)</code></td><td><code>var(--cyan)</code></td><td>Cyan — the focus state</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--bg-deep)</code></td><td><code>var(--border-hi)</code></td><td>2px stroke, slightly heavier</td></tr>
+            <tr><td><code>external</code></td><td><code>rgba(237,30,121,0.08)</code></td><td><code>var(--magenta)</code></td><td>Magenta — third-party boundary, used sparingly</td></tr>
+            <tr><td><code>warn</code></td><td><code>rgba(220,38,38,0.10)</code></td><td><code>var(--red)</code></td><td>Deep corporate red — failure path</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--bg)</code></td><td><code>var(--text-faint)</code>, dashed</td><td><code>stroke-dasharray: 4 3</code></td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 500 14px "Inter", sans-serif; fill: #e3e7f0; }
+              .small { font: 400 12px "Inter", sans-serif; fill: #99a0b3; }
+              .default  { fill: #0f1421;                stroke: #2a3550; }
+              .hot      { fill: rgba(37,225,237,0.10);  stroke: #25E1ED; }
+              .store    { fill: #060912;                stroke: #2a3550; }
+              .external { fill: rgba(237,30,121,0.08);  stroke: #ED1E79; }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: #25E1ED; stroke-width: 1.8; fill: none; marker-end: url(#cc-a); }
+            </style>
+            <defs>
+              <marker id="cc-a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="#25E1ED"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70" rx="4"/>
+            <text class="txt"   x="40"  y="68">Trigger</text>
+            <text class="small" x="40"  y="88">user request</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70" rx="4"/>
+            <text class="txt"   x="230" y="68">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70" rx="4"/>
+            <text class="txt"   x="430" y="68">Store</text>
+            <text class="small" x="430" y="88">persist</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70" rx="4"/>
+            <text class="txt"   x="630" y="68">Provider</text>
+            <text class="small" x="630" y="88">third-party</text>
+          </svg>
+          <figcaption class="caption">Linear flow — hot marks the step the prose is currently discussing</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 500 14px "Inter", sans-serif; fill: #e3e7f0; }
+              .small      { font: 400 12px "Inter", sans-serif; fill: #99a0b3; }
+              .note       { font: 400 12px "Inter", sans-serif; fill: #99a0b3; }
+              .step       { font: 500 11px "IBM Plex Mono", monospace; fill: #25E1ED; letter-spacing: 0.16em; }
+              .alert-txt  { font: 500 12px "IBM Plex Mono", monospace; fill: #25E1ED; letter-spacing: 0.20em; text-transform: uppercase; }
+              .default  { fill: #0f1421;                stroke: #2a3550; }
+              .hot      { fill: rgba(37,225,237,0.10);  stroke: #25E1ED; }
+              .external { fill: rgba(237,30,121,0.08);  stroke: #ED1E79; }
+              .box   { stroke-width: 1.5; }
+              .arrow       { stroke: #25E1ED;  stroke-width: 1.8; fill: none; marker-end: url(#cc-b); }
+              .arrow-muted { stroke: #2a3550;  stroke-width: 1.5; fill: none; marker-end: url(#cc-b-m); }
+              .arrow-warn  { stroke: #dc2626;  stroke-width: 2.2; fill: none; marker-end: url(#cc-b-w); }
+              .arrow-async { stroke: #25E1ED;  stroke-width: 1.8; fill: none; stroke-dasharray: 6 3; marker-end: url(#cc-b); }
+            </style>
+            <defs>
+              <marker id="cc-b"   markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#25E1ED"/></marker>
+              <marker id="cc-b-m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2a3550"/></marker>
+              <marker id="cc-b-w" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#dc2626"/></marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50" rx="4"/>
+            <text class="txt" x="120" y="50" text-anchor="middle">Client</text>
+            <rect class="box default"  x="260" y="20" width="120" height="50" rx="4"/>
+            <text class="txt" x="320" y="50" text-anchor="middle">API</text>
+            <rect class="box hot"      x="440" y="20" width="120" height="50" rx="4"/>
+            <text class="txt" x="500" y="50" text-anchor="middle">Worker</text>
+            <rect class="box external" x="620" y="20" width="200" height="50" rx="4"/>
+            <text class="txt" x="720" y="50" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="#1c2436" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="#1c2436" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="#1c2436" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="#1c2436" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="14" y="128">01</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="14" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="14" y="278">03</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="98" rx="4"
+                  fill="rgba(220,38,38,0.08)" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+            <path class="arrow-warn" d="M720 322 H500"/>
+            <text class="alert-txt" x="610" y="317" text-anchor="middle" fill="#dc2626">503 Service Unavailable</text>
+
+            <rect x="358" y="348" width="444" height="36" rx="4"
+                  fill="rgba(37,225,237,0.10)" stroke="#25E1ED" stroke-width="1.5"/>
+            <rect x="368" y="358" width="6" height="16" fill="#25E1ED"/>
+            <text class="alert-txt" x="384" y="371">Retry Policy Engaged</text>
+            <text class="note"      x="600" y="371" fill="#e3e7f0">backoff +2s · max 3 attempts</text>
+
+            <text class="step" x="14" y="423">04</text>
+            <path class="arrow" d="M500 420 H720"/>
+            <text class="small" x="610" y="415" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 465 H500"/>
+            <text class="small" x="610" y="460" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="14" y="508">05</text>
+            <text class="note"  x="310" y="488" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 505 H120"/>
+            <text class="small" x="310" y="523" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — corporate red on the 503 leg, cyan retry-policy callout on the recovery path</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Base text classes — Inter inside SVG so diagram text and body prose stay in conversation:</p>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">500</span> <span class="n">14</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--text</span>); }
+<span class="kw">.small</span> { font: <span class="n">400</span> <span class="n">12</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--text-muted</span>); }</pre>
+
+        <p>Step coordinates, annotations, alert text — mono for the operational signal:</p>
+        <pre><span class="kw">.note</span>      { font: <span class="n">400</span> <span class="n">12</span>px <span class="str">"Inter"</span>, sans-serif; fill: var(<span class="kw">--text-muted</span>); }
+<span class="kw">.step</span>      { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--cyan</span>); letter-spacing: <span class="n">0.16</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">500</span> <span class="n">12</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--cyan</span>); letter-spacing: <span class="n">0.20</span>em; text-transform: uppercase; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">LOCKED</span><span>Diagram text in Inter. Step coords and alert text in IBM Plex Mono with wide tracking. Step coords cyan. Alert text inherits role color (cyan for the policy pill, red for the 503 message).</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Whether to include step coords on small diagrams, tracking (0.12–0.20em on steps), Inter weight inside boxes (400–600).</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>When a sequence has a failure leg, wrap the affected messages in a red-tinted dashed rectangle. The inline alert callout uses cyan — not red — so the recovery action reads as primary signal while the failure stays as context. This is the corpo register: red marks the problem, cyan marks the response. The alert pill is the loudest element on the page after the failure arrow itself.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">LOCKED</span><span>Region: <code>rgba(220,38,38,0.08)</code> + dashed red border. Failure message in mono red. Recovery pill in 10% cyan fill + 1.5px cyan border, with cyan tick block, mono uppercase cyan label, neutral Inter detail.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Region size, pill copy, whether the recovery pill includes a tick block or just bare text.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: <code>var(--cyan)</code>, 1.8px stroke. Async arrows: cyan dashed (6 3). Return paths use <code>var(--border-hi)</code> muted. Warn arrows: <code>var(--red)</code>, 2.2px stroke — failure leg always heavier than the success leg.</p>
+
+        <h3>Caption</h3>
+        <p>IBM Plex Mono, <code>var(--text-dim)</code>, 12px, centered under the diagram with <code>margin-top: 14px</code>. See the captions above.</p>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">08</span>
+        <h2>Exemplar reports</h2>
+        <p>Read at least one before deploying. Exemplars are evidence of the language fielded — not templates to clone. This file is the canonical vocabulary; exemplars show vocabulary deployed.</p>
+        <ul>
+          <li><code>~/notes/04_Research/product-runtime-overview.html</code> — full product surface, every component, dense sequence diagrams. Reference for "everything this language can do at full scale."</li>
+          <li><code>~/notes/04_Research/enterprise-security-dossier.html</code> — shorter security white paper; same language at mid-scale.</li>
+        </ul>
+        <p>Two reports in this language should feel like two chapters of the same megacorp annual: visibly the same institutional voice, visibly different content. If they feel xeroxed, the author leaned too hard on locked elements. If they feel like different brands, someone reached for unauthorized accents.</p>
+        <div class="quote">Cyan leads. Magenta accents. Red alarms. Anything else dilutes the signal.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

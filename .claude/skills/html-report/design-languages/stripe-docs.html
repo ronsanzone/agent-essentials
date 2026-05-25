@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stripe Docs — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy-deep:   #0A2540;
+      --white:       #FFFFFF;
+      --surface-1:   #F8FAFC;
+      --surface-2:   #F0F4F8;
+      --code-bg:     #F8FAFC;
+      --border:      #E3E8EF;
+      --border-soft: #EEF2F7;
+      --text:        #425466;
+      --text-light:  #697386;
+      --text-ghost:  #8C9AAE;
+
+      --purple:    #635BFF;
+      --purple-soft: #EBE9FF;
+      --link-blue: #008cdd;
+      --link-blue-soft: #DEF1FB;
+      --link-blue-deep: #0073B8;
+
+      --warn:      #dc2626;
+      --warn-soft: #FEE2E2;
+      --success:   #047857;
+      --success-soft: #D1FAE5;
+
+      --accent:         var(--link-blue);
+      --accent-soft:    var(--link-blue-soft);
+      --secondary:      var(--purple);
+      --secondary-soft: var(--purple-soft);
+
+      --bg:        var(--white);
+      --bg-soft:   var(--surface-1);
+      --bg-card:   var(--white);
+      --bg-code:   var(--code-bg);
+      --ink:       var(--navy-deep);
+      --ink-soft:  var(--text);
+      --ink-faint: var(--text-light);
+      --ink-ghost: var(--text-ghost);
+      --rule:        var(--border);
+      --rule-soft:   var(--border-soft);
+      --rule-strong: #C9D2DC;
+
+      --sans:  "Inter", "Söhne", "Helvetica Neue", -apple-system, sans-serif;
+      --mono:  "IBM Plex Mono", "Söhne Mono", "SF Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--white);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 15px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--link-blue);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link { position: absolute; left: -9999px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+    .skip-link:focus {
+      position: static; width: auto; height: auto; overflow: visible;
+      padding: 6px 12px; background: var(--link-blue); color: var(--white); border-radius: 4px;
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 96px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 56px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 32px; padding: 0 24px 64px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      max-height: calc(100vh - 24px);
+      overflow-y: auto;
+      padding-top: 28px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      margin: 0 0 12px;
+    }
+
+    aside.toc ol { list-style: none; padding: 0; margin: 0; counter-reset: toc; }
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 5px 0;
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      padding-left: 10px;
+      margin-left: -12px;
+      transition: color 0.1s, border-color 0.1s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-ghost);
+      margin-right: 8px;
+    }
+
+    aside.toc a:hover { color: var(--link-blue); }
+    aside.toc a.active { color: var(--link-blue); border-left-color: var(--link-blue); font-weight: 500; }
+    aside.toc a.active::before { color: var(--link-blue); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--surface-1);
+      margin: 0 -48px 56px;
+      padding: 56px 48px 48px;
+      border-bottom: 1px solid var(--border);
+    }
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 40px; padding: 40px 24px 32px; }
+    }
+
+    .hero-inner { max-width: 920px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-light);
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--link-blue); display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: clamp(32px, 4vw, 44px);
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      margin: 0 0 16px;
+      color: var(--navy-deep);
+    }
+    h1.title em {
+      font-style: italic;
+      font-weight: 500;
+      color: var(--link-blue);
+    }
+
+    .lede {
+      font-family: var(--sans);
+      font-weight: 400;
+      font-size: 17px;
+      line-height: 1.5;
+      color: var(--text);
+      max-width: 760px;
+      margin: 0 0 28px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-light);
+    }
+    .meta-row .v { font-family: var(--sans); font-size: 13px; color: var(--navy-deep); font-weight: 500; }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 72px;
+      scroll-margin-top: 24px;
+    }
+
+    .num {
+      position: absolute;
+      left: -60px;
+      top: 6px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--link-blue);
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--sans);
+      font-size: 28px;
+      font-weight: 600;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin: 0 0 16px;
+      color: var(--navy-deep);
+    }
+
+    h3 {
+      font-family: var(--sans);
+      font-size: 19px;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      margin: 36px 0 10px;
+      color: var(--navy-deep);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 6px;
+      color: var(--navy-deep);
+    }
+
+    p { margin: 0 0 14px; max-width: 75ch; }
+
+    a {
+      color: var(--link-blue);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.1s, color 0.1s;
+    }
+    a:hover { color: var(--link-blue-deep); border-bottom-color: currentColor; }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--white);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 20px 0;
+    }
+    .card.mini { padding: 16px 18px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .grid > .card { margin: 0; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .callout {
+      border-left: 3px solid var(--link-blue);
+      background: var(--link-blue-soft);
+      padding: 14px 18px;
+      border-radius: 0 6px 6px 0;
+      margin: 20px 0;
+      color: var(--navy-deep);
+      font-size: 14px;
+    }
+    .callout.warn { border-left-color: var(--warn); background: var(--warn-soft); color: #7F1D1D; }
+    .callout.success { border-left-color: var(--success); background: var(--success-soft); color: #064E3B; }
+    .callout strong { font-weight: 600; }
+
+    .quote {
+      font-family: var(--sans);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 19px;
+      line-height: 1.45;
+      color: var(--navy-deep);
+      border-left: 3px solid var(--purple);
+      padding: 4px 0 4px 20px;
+      margin: 28px 0;
+      max-width: 65ch;
+    }
+
+    details { border-top: 1px solid var(--border); padding: 14px 0; }
+    details:last-of-type { border-bottom: 1px solid var(--border); }
+    summary {
+      cursor: pointer;
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--navy-deep);
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "▸ "; color: var(--link-blue); margin-right: 4px; font-size: 0.85em; }
+    details[open] > summary::before { content: "▾ "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 20px 0;
+      font-size: 13.5px;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border-soft);
+      vertical-align: top;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:nth-child(even) td { background: var(--surface-1); }
+    th {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-light);
+      background: var(--surface-2);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--link-blue);
+      border-radius: 0 6px 6px 0;
+      padding: 14px 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0;
+      color: var(--navy-deep);
+    }
+
+    pre .kw   { color: var(--purple); font-weight: 500; }
+    pre .str  { color: #008060; }
+    pre .com  { color: var(--text-light); font-style: italic; }
+    pre .n    { color: #C9460C; }
+    pre .fn   { color: var(--link-blue); }
+    pre .type { color: var(--navy-deep); font-weight: 600; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: var(--surface-2);
+      color: var(--navy-deep);
+      padding: 1.5px 6px;
+      border-radius: 3px;
+      font-weight: 500;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border: 1px solid var(--link-blue);
+      border-radius: 4px;
+      color: var(--link-blue);
+      background: var(--white);
+      display: inline-block;
+      line-height: 1.4;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .pill.method-get    { color: var(--link-blue); border-color: var(--link-blue); }
+    .pill.method-post   { color: var(--success); border-color: var(--success); }
+    .pill.method-delete { color: var(--warn); border-color: var(--warn); }
+    .pill.method-patch  { color: #B45309; border-color: #B45309; }
+
+    figure.card.diagram { padding: 20px 18px 14px; margin: 24px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--sans);
+      font-style: italic;
+      color: var(--text-light);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .contract {
+      margin: 12px 0 28px;
+      padding: 12px 16px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--surface-1);
+      border-radius: 0 4px 4px 0;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+    .contract .row { display: grid; grid-template-columns: 70px 1fr; gap: 12px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+    .contract .label {
+      color: var(--link-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--text-light); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 8px;
+      margin: 20px 0;
+    }
+    .swatch {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--white);
+    }
+    .swatch .chip { height: 48px; border-bottom: 1px solid var(--border); }
+    .swatch .label { padding: 6px 10px; font-family: var(--mono); font-size: 10.5px; line-height: 1.4; color: var(--text); }
+    .swatch .label strong { display: block; color: var(--navy-deep); font-weight: 500; }
+    .swatch .label span { color: var(--text-light); }
+
+    .gallery-item { margin: 0 0 40px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 3px; font-size: 9.5px; text-transform: lowercase; letter-spacing: 0.02em; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>On this page</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language · Docs Register</div>
+          <h1 class="title">Stripe Docs, <em>built for reference</em></h1>
+          <p class="lede">A developer-docs register — dense, scannable, code-heavy. For API reference, integration guides, runbooks, and engineering reports that get re-read, not read once. Optimized for utility over airiness.</p>
+          <div class="meta">
+            <span class="pill method-get">GET</span>
+            <span class="pill method-post">POST</span>
+            <span class="pill">v2026-05-23</span>
+            <span class="pill">stable</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 920px; margin: 24px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Inter 600 h1 at clamp(32px,4vw,44px), link-blue italic <code>&lt;em&gt;</code>, mono eyebrow, off-white hero panel, dense 15px body, link-blue lead accent.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero meta as <code>.meta-row</code> or method-typed <code>.pill</code> chips.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Stripe Docs is the API-reference register: white background, dense body text, code blocks everywhere, link-blue (<code>#008cdd</code>) as the lead accent. This is the register a developer scrolls through with a terminal open in the other window. Utility over airiness, scannability over breathing room.</p>
+        <div class="quote">Reference docs are not read; they are scanned. Every visual decision should serve the scan.</div>
+        <p>Link-blue is the lead accent for a reason: it reads as a hyperlink, and reference docs are dense networks of hyperlinks. Purple is reserved as a secondary accent for special emphasis — pull quotes, highlighted sections — to keep the link-blue economy clean. Red (<code>#dc2626</code>) is the proper warn color because API errors carry a different weight than press-page caution: deprecations, breaking changes, 4xx/5xx responses.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>API reference. Integration guides. Runbooks. Engineering postmortems. Any report with high code-block density and reference-style scanning patterns. Tables of methods, parameters, error codes.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>Marketing-grade announcements — use <code>stripe-press</code>. Long-form essays — use <code>stripe-blog</code>. Reports that are read once and forgotten don't need this density.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Same fallback rationale as <code>stripe-press</code>: <strong>Söhne</strong> is the Stripe brand face, paid and Google-Fonts-unavailable; <strong>Inter</strong> is the realistic web fallback. The docs register loads slightly fewer weights — display work is lighter (600, not 800).</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--sans</span>:  <span class="str">"Inter"</span>, <span class="str">"Söhne"</span>, <span class="str">"Helvetica Neue"</span>, -apple-system, sans-serif;
+<span class="kw">--mono</span>:  <span class="str">"IBM Plex Mono"</span>, <span class="str">"Söhne Mono"</span>, <span class="str">"SF Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Inter</td><td>15px, line-height 1.6 — dense</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--sans)</code> — Inter</td><td>600 weight (lighter than press), h1 at 32–44px</td></tr>
+            <tr><td>Code, eyebrows, pills, method tags</td><td><code>var(--mono)</code> — IBM Plex Mono</td><td>Heavy code-block presence — code is first-class content</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>H1 carries an italic <code>em</code> phrase in link-blue: <code>&lt;h1&gt;Title, &lt;em&gt;italic phrase&lt;/em&gt;&lt;/h1&gt;</code>.</li>
+          <li>Display sizes are <strong>moderate</strong> — h1 at 32–44px, h2 at 28px. The docs register reads at desk-distance, not screen-projection.</li>
+          <li>Body line-height is 1.6 (vs press's 1.65) and font-size is 15px (vs press's 17px) — density beats airiness.</li>
+          <li>Code blocks get a 3px <code>--link-blue</code> left border — they're navigational landmarks.</li>
+          <li>Method pills use semantic color: <code>GET</code> = link-blue, <code>POST</code> = success-green, <code>DELETE</code> = warn-red, <code>PATCH</code> = amber.</li>
+          <li><strong>Never</strong> bold body prose for emphasis — use italic or inline <code>code</code>.</li>
+          <li>Tables stripe even rows in <code>--surface-1</code> — reference scanning wants the visual anchor.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>Link-blue is the lead. Purple is reserved as a secondary accent. Red is the warn color. The palette stays cool and crisp — no warm tints anywhere.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #FFFFFF; border-bottom: 1px solid var(--border)"></div><div class="label"><strong>--white</strong><span>#FFFFFF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F8FAFC"></div><div class="label"><strong>--surface-1</strong><span>#F8FAFC</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F0F4F8"></div><div class="label"><strong>--surface-2</strong><span>#F0F4F8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E3E8EF"></div><div class="label"><strong>--border</strong><span>#E3E8EF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0A2540"></div><div class="label"><strong>--navy-deep</strong><span>#0A2540</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #425466"></div><div class="label"><strong>--text</strong><span>#425466</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #697386"></div><div class="label"><strong>--text-light</strong><span>#697386</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #008cdd"></div><div class="label"><strong>--link-blue</strong><span>#008cdd</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #DEF1FB"></div><div class="label"><strong>--link-blue-soft</strong><span>#DEF1FB</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0073B8"></div><div class="label"><strong>--link-blue-deep</strong><span>#0073B8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #635BFF"></div><div class="label"><strong>--purple</strong><span>#635BFF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #EBE9FF"></div><div class="label"><strong>--purple-soft</strong><span>#EBE9FF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #dc2626"></div><div class="label"><strong>--warn</strong><span>#dc2626</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FEE2E2"></div><div class="label"><strong>--warn-soft</strong><span>#FEE2E2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #047857"></div><div class="label"><strong>--success</strong><span>#047857</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #D1FAE5"></div><div class="label"><strong>--success-soft</strong><span>#D1FAE5</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Link-blue is the primary <code>--accent</code>; purple is the <code>--secondary</code>.</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--link-blue</span>);
+<span class="kw">--accent-soft</span>:    var(<span class="kw">--link-blue-soft</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--purple</span>);
+<span class="kw">--secondary-soft</span>: var(<span class="kw">--purple-soft</span>);</pre>
+
+        <h3>Why red for warn</h3>
+        <p>API errors carry weight that the press register's amber doesn't. <code>4xx</code> / <code>5xx</code> responses, breaking changes, deprecations, and failure paths all need a color that reads as "something went wrong" — not "be careful." Red (<code>#dc2626</code>) is the conventional choice in developer tooling and the right choice here.</p>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Use red sparingly. Reserve <code>.callout.warn</code> for breaking changes, deprecations, security advisories, and known-broken states. Overuse of red causes alert fatigue and erodes its signal value.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No serif body. (Serif body belongs to <code>stripe-blog</code>.)</li>
+          <li>No oversized display headings — the press-page h1 sizes (88px) are wrong here. Reference docs read at 32–44px max.</li>
+          <li>No warm surfaces — no parchment, no cream, no beige. Cool only.</li>
+          <li>No purple as the lead accent — purple is the secondary accent in docs. Link-blue leads.</li>
+          <li>No amber warn — red is the docs warn color.</li>
+          <li>No drop-shadows on cards. Docs cards are flat: border + background only.</li>
+          <li>No body line-heights above 1.6 — that's the press register.</li>
+          <li>No emoji in headings or callouts.</li>
+          <li>No marketing-page gradients, no pull-out illustration cards, no testimonial slabs.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, in the docs register. CSS selectors are stable. Compared to <code>stripe-press</code>: tighter spacing, smaller type, denser tables, code blocks with left-border accent, method-typed pills.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>See the document's own hero above — Inter 600 h1, link-blue italic <code>em</code>, method-typed pills in the meta row. Off-white panel (not white) — separates hero from the white page body.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter 600 h1 clamp(32px,4vw,44px), link-blue italic <code>&lt;em&gt;</code>, off-white hero panel, mono eyebrow with link-blue dot.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (40–56px vertical), meta-row contents, method-typed pill variants.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Link-blue mono <code>.num</code> in the left gutter, Inter 600 h2 at 28px. Tighter rhythm than press — 72px between sections.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter h2 at 28px/600/−0.02em, link-blue mono number, <code>position: absolute; left: -60px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 font-weight (500–700), section spacing.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>Reference card</h4>
+            <p>Docs cards are utility containers — flat border, no shadow, smaller radius (8px vs press's 16px). They group reference content, not feature highlights.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>White fill, <code>1px solid var(--border)</code>, <strong>no shadow</strong>, border-radius 8px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (16–24px), content layout inside, border-radius (6–10px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use link-blue. Place directly after the paragraph they annotate.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn is red (<code>#dc2626</code>). Use for breaking changes, deprecations, and API errors.
+          </div>
+          <div class="callout success">
+            <strong>Done:</strong> Success uses green. Use for confirmed migrations, verified configurations, "this is the right approach."
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>3px left border + tinted background. Default: link-blue. Warn: red. Success: green.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius, bold label presence.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — the one a scanning developer must absorb.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter italic 500 at 19px, navy ink, 3px purple left border (the purple secondary accent gets its moment here).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (17–22px), border-thickness (2–4px), padding-left.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Inter 600 summary, link-blue chevron marker (<code>▸/▾</code>). Tighter spacing than press — 14px padding vs 20px.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse. The chevron is more docs-y than the press register's <code>+/−</code>.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inter 600 summary in navy at 15px, border-top rule, chevron marker in link-blue.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>▸/▾</code> vs <code>+/−</code>), padding, font-weight.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>customer</code></td><td>string</td><td>yes</td><td>Customer identifier.</td></tr>
+              <tr><td><code>amount</code></td><td>integer</td><td>yes</td><td>Amount in smallest currency unit.</td></tr>
+              <tr><td><code>currency</code></td><td>string</td><td>yes</td><td>Three-letter ISO code.</td></tr>
+              <tr><td><code>metadata</code></td><td>hash</td><td>no</td><td>Up to 50 keys.</td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>13.5px body, mono uppercase <code>th</code>, zebra-striped <code>tr:nth-child(even)</code> in <code>--surface-1</code>, 6px border-radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, presence of striping (default: on for reference tables).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">create_payment</span>(amount, currency=<span class="str">"usd"</span>): <span class="com"># core handler</span>
+  <span class="kw">if</span> amount &lt; <span class="n">50</span>:
+    <span class="kw">raise</span> ValueError(<span class="str">"amount below minimum"</span>)
+  <span class="kw">return</span> stripe.PaymentIntent.create(amount=amount, currency=currency)</pre>
+          <p>Code blocks carry a 3px <code>--link-blue</code> left border — they're navigational landmarks in dense reference pages. Background <code>#F8FAFC</code> distinguishes from the white page.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>--code-bg</code> fill, <code>--border</code> 1px on top/right/bottom + <strong>3px link-blue left border</strong>, IBM Plex Mono 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (12–18px), token color tuning within cool palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>Pass <code>customer_id</code> to <code>retrieve()</code> and check the returned <code>status</code> field. Use for parameters, methods, fields, and short literals in prose.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>IBM Plex Mono at <code>0.88em</code>, <code>--surface-2</code> wash, navy ink, 500 weight, 3px radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, border-radius (2–4px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Generic ID: <span class="pill">stable</span>. Method-typed pills carry HTTP verb semantics:
+            <span class="pill method-get">GET</span>
+            <span class="pill method-post">POST</span>
+            <span class="pill method-patch">PATCH</span>
+            <span class="pill method-delete">DELETE</span>
+          </p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono 10.5px uppercase, square radius (4px — NOT pill-shape). Method variants: GET=link-blue, POST=green, PATCH=amber, DELETE=red.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (3–5px vertical), font-size (10–12px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 for live diagrams. Diagrams in docs are utility — flow charts that aid the reference, not decorative architecture pieces.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome (flat, no shadow), caption is Inter italic in <code>--text-light</code> at 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, caption alignment.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Request</h4>
+              <p>2-up grid for request/response pairs, X-vs-Y comparisons, parameter groupings.</p>
+            </div>
+            <div class="card mini">
+              <h4>Response</h4>
+              <p>The docs register frequently uses 2-up grids for paired code samples in different languages.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, 16px gap, single-column collapse at <code>720px</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value, child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams read as <em>API reference cards</em>. Boxes are pure rectangles (0px or 2px corners, never rounded), all labels in IBM Plex Mono, and node-internal HTTP method pills are drawn inline as SVG <code>&lt;rect&gt;</code> + <code>&lt;text&gt;</code> chips next to a monospace endpoint path. Connectors are 1.5px <code>#008cdd</code> with right-angle bends — wiring-diagram geometry, not curves — and chevron heads drawn as path strokes rather than triangle markers. Status codes (<code>201</code>, <code>429</code>, <code>503</code>) ride the arrows in small mono. Alert regions render as rectangular HTTP error-response panels with a <code>4xx</code> / <code>5xx</code> code header.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--white)</code></td><td><code>var(--border)</code></td><td>1.5px stroke, <strong><code>rx="0"</code></strong> — pure rectangles.</td></tr>
+            <tr><td><code>hot</code></td><td><code>var(--link-blue-soft)</code></td><td><code>var(--link-blue)</code></td><td>Carries an inline HTTP method pill (<code>POST</code>, <code>GET</code>) + endpoint path in mono.</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--surface-1)</code></td><td><code>var(--navy-deep)</code></td><td>2px stroke, <code>rx="2"</code>; stacked-disks <code>db</code> glyph in the corner.</td></tr>
+            <tr><td><code>external</code></td><td><code>var(--purple-soft)</code></td><td><code>var(--purple)</code></td><td>Third-party wordmark (e.g. <code>STRIPE</code>) sits inside the box.</td></tr>
+            <tr><td><code>warn</code></td><td><code>var(--warn-soft)</code></td><td><code>var(--warn)</code></td><td>HTTP error-response panel: red header bar with <code>4xx</code>/<code>5xx</code> code, body underneath.</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--white)</code></td><td><code>var(--text-ghost)</code>, dashed</td><td>Planned, not yet shipped.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 180" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .label    { font: 600 11px "IBM Plex Mono", monospace; fill: var(--navy-deep); letter-spacing: 0.04em; }
+              .endpoint { font: 500 11px "IBM Plex Mono", monospace; fill: var(--navy-deep); }
+              .meta     { font: 10px "IBM Plex Mono", monospace; fill: var(--text-light); letter-spacing: 0.06em; }
+              .status   { font: 600 10px "IBM Plex Mono", monospace; fill: var(--link-blue); letter-spacing: 0.08em; }
+              .pill-txt { font: 600 9px "IBM Plex Mono", monospace; fill: var(--white); letter-spacing: 0.08em; }
+              .wordmark { font: 700 11px "IBM Plex Mono", monospace; fill: var(--purple); letter-spacing: 0.14em; }
+              .default  { fill: var(--white);          stroke: var(--border);     stroke-width: 1.5; }
+              .hot      { fill: var(--link-blue-soft); stroke: var(--link-blue);  stroke-width: 1.5; }
+              .store    { fill: var(--surface-1);      stroke: var(--navy-deep);  stroke-width: 2; }
+              .external { fill: var(--purple-soft);    stroke: var(--purple);     stroke-width: 1.5; }
+              .wire     { stroke: var(--link-blue); stroke-width: 1.5; fill: none; }
+              .chev     { stroke: var(--link-blue); stroke-width: 1.5; fill: none; stroke-linecap: square; stroke-linejoin: miter; }
+            </style>
+
+            <rect class="default" x="20"  y="50" width="160" height="80" rx="0"/>
+            <text class="label"    x="32" y="74">CLIENT</text>
+            <text class="meta"     x="32" y="92">browser · sdk</text>
+            <text class="endpoint" x="32" y="115">stripe.payments</text>
+
+            <rect class="hot" x="220" y="50" width="200" height="80" rx="0"/>
+            <text class="label"    x="232" y="74">API</text>
+            <rect x="232" y="84" width="42" height="16" rx="2" fill="var(--success)"/>
+            <text class="pill-txt" x="240" y="95">POST</text>
+            <text class="endpoint" x="282" y="96">/v1/payments</text>
+            <text class="meta"     x="232" y="118">validate · route</text>
+
+            <rect class="store" x="460" y="50" width="160" height="80" rx="2"/>
+            <text class="label" x="472" y="74">DATABASE</text>
+            <text class="meta"  x="472" y="92">payments_v1</text>
+            <text class="endpoint" x="472" y="115">INSERT row</text>
+            <g transform="translate(596, 64)">
+              <ellipse cx="6" cy="2"  rx="6" ry="2" fill="none" stroke="var(--navy-deep)" stroke-width="1"/>
+              <path d="M0,2 V8 a6,2 0 0 0 12,0 V2"  fill="none" stroke="var(--navy-deep)" stroke-width="1"/>
+              <path d="M0,8 V14 a6,2 0 0 0 12,0 V8" fill="none" stroke="var(--navy-deep)" stroke-width="1"/>
+            </g>
+
+            <rect class="external" x="660" y="50" width="200" height="80" rx="0"/>
+            <text class="wordmark" x="672" y="74">STRIPE</text>
+            <rect x="672" y="84" width="42" height="16" rx="2" fill="var(--purple)"/>
+            <text class="pill-txt" x="685" y="95">GET</text>
+            <text class="endpoint" x="722" y="96">/webhook</text>
+            <text class="meta"     x="672" y="118">third-party</text>
+
+            <path class="wire" d="M180 90 H220"/>
+            <polyline class="chev" points="212,84 220,90 212,96"/>
+            <text class="status" x="200" y="80" text-anchor="middle">201</text>
+
+            <path class="wire" d="M420 90 H460"/>
+            <polyline class="chev" points="452,84 460,90 452,96"/>
+            <text class="status" x="440" y="80" text-anchor="middle">WRITE</text>
+
+            <path class="wire" d="M620 90 H660"/>
+            <polyline class="chev" points="652,84 660,90 652,96"/>
+            <text class="status" x="640" y="80" text-anchor="middle">EMIT</text>
+
+            <text class="meta" x="20"  y="160">node</text>
+            <text class="meta" x="220" y="160">handler</text>
+            <text class="meta" x="460" y="160">store</text>
+            <text class="meta" x="660" y="160">external</text>
+          </svg>
+          <figcaption class="caption">Architecture as an API reference card — pure rectangles, inline method pills, mono everywhere, chevron connectors with status-code labels.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 580" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .label    { font: 600 11px "IBM Plex Mono", monospace; fill: var(--navy-deep); letter-spacing: 0.04em; }
+              .endpoint { font: 500 11px "IBM Plex Mono", monospace; fill: var(--navy-deep); }
+              .small    { font: 10px "IBM Plex Mono", monospace; fill: var(--text); letter-spacing: 0.04em; }
+              .note     { font: 10px "IBM Plex Mono", monospace; fill: var(--text-light); }
+              .status   { font: 600 10px "IBM Plex Mono", monospace; fill: var(--link-blue); letter-spacing: 0.08em; }
+              .status-warn { font: 700 10px "IBM Plex Mono", monospace; fill: var(--warn); letter-spacing: 0.08em; }
+              .step     { font: 500 10px "IBM Plex Mono", monospace; fill: var(--link-blue); letter-spacing: 0.1em; }
+              .pill-txt { font: 600 9px "IBM Plex Mono", monospace; fill: var(--white); letter-spacing: 0.08em; }
+              .wordmark { font: 700 10px "IBM Plex Mono", monospace; fill: var(--purple); letter-spacing: 0.14em; }
+              .err-head { font: 700 11px "IBM Plex Mono", monospace; fill: var(--white); letter-spacing: 0.12em; }
+              .err-body { font: 500 10px "IBM Plex Mono", monospace; fill: #7F1D1D; }
+              .default  { fill: var(--white);          stroke: var(--border);     stroke-width: 1.5; }
+              .hot      { fill: var(--link-blue-soft); stroke: var(--link-blue);  stroke-width: 1.5; }
+              .external { fill: var(--purple-soft);    stroke: var(--purple);     stroke-width: 1.5; }
+              .wire     { stroke: var(--link-blue); stroke-width: 1.5; fill: none; }
+              .wire-muted { stroke: var(--rule-strong); stroke-width: 1.5; fill: none; }
+              .wire-warn  { stroke: var(--warn);       stroke-width: 1.5; fill: none; }
+              .wire-async { stroke: var(--link-blue); stroke-width: 1.5; fill: none; stroke-dasharray: 4 3; }
+              .chev       { stroke-width: 1.5; fill: none; stroke-linecap: square; stroke-linejoin: miter; }
+            </style>
+
+            <rect class="default" x="40"  y="20" width="160" height="56" rx="0"/>
+            <text class="label" x="52" y="42">CLIENT</text>
+            <text class="note"  x="52" y="60">browser</text>
+
+            <rect class="default" x="260" y="20" width="160" height="56" rx="0"/>
+            <text class="label" x="272" y="42">API</text>
+            <text class="note"  x="272" y="60">gateway</text>
+
+            <rect class="hot" x="480" y="20" width="160" height="56" rx="0"/>
+            <text class="label" x="492" y="42">WORKER</text>
+            <rect x="492" y="50" width="42" height="16" rx="2" fill="var(--success)"/>
+            <text class="pill-txt" x="500" y="61">POST</text>
+            <text class="endpoint" x="542" y="62">/charge</text>
+
+            <rect class="external" x="700" y="20" width="160" height="56" rx="0"/>
+            <text class="wordmark" x="712" y="40">PAYMENT API</text>
+            <rect x="712" y="50" width="42" height="16" rx="2" fill="var(--purple)"/>
+            <text class="pill-txt" x="724" y="61">GET</text>
+            <text class="endpoint" x="762" y="62">/status</text>
+
+            <line x1="120" y1="76" x2="120" y2="560" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="340" y1="76" x2="340" y2="560" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="560" y1="76" x2="560" y2="560" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+            <line x1="780" y1="76" x2="780" y2="560" stroke="var(--border)" stroke-width="1" stroke-dasharray="3 3"/>
+
+            <text class="step" x="10" y="118">01</text>
+            <path class="wire" d="M120 115 H340"/>
+            <polyline class="chev" points="332,109 340,115 332,121" stroke="var(--link-blue)"/>
+            <text class="small" x="230" y="108" text-anchor="middle">POST /v1/payments</text>
+            <text class="status" x="230" y="132" text-anchor="middle">201 CREATED</text>
+
+            <path class="wire-muted" d="M340 158 H120"/>
+            <polyline class="chev" points="128,152 120,158 128,164" stroke="var(--rule-strong)"/>
+            <text class="small" x="230" y="151" text-anchor="middle">{ payment_id, status }</text>
+
+            <text class="step" x="10" y="208">02</text>
+            <text class="note" x="450" y="194" text-anchor="middle">async enqueue · 202 ACCEPTED</text>
+            <path class="wire-async" d="M340 215 V230 H540 V215 H560"/>
+            <polyline class="chev" points="552,209 560,215 552,221" stroke="var(--link-blue)"/>
+            <text class="small" x="450" y="248" text-anchor="middle">queue.publish(payment)</text>
+
+            <text class="step" x="10" y="288">03</text>
+            <path class="wire" d="M560 285 H780"/>
+            <polyline class="chev" points="772,279 780,285 772,291" stroke="var(--link-blue)"/>
+            <text class="small" x="670" y="278" text-anchor="middle">POST /v1/charges</text>
+
+            <rect x="380" y="305" width="460" height="110" rx="0"
+                  fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1.5"/>
+            <rect x="380" y="305" width="460" height="20" rx="0" fill="var(--warn)"/>
+            <text class="err-head" x="394" y="320">5xx · ERROR RESPONSE</text>
+            <text class="err-head" x="826" y="320" text-anchor="end">503</text>
+
+            <path class="wire-warn" d="M780 345 H560"/>
+            <polyline class="chev" points="568,339 560,345 568,351" stroke="var(--warn)"/>
+            <text class="status-warn" x="670" y="340" text-anchor="middle">503 SERVICE_UNAVAILABLE</text>
+
+            <text class="err-body" x="394" y="368">{ "error": "upstream_timeout", "retry_after": 2 }</text>
+            <rect x="394" y="378" width="80" height="18" rx="0" fill="var(--white)" stroke="var(--warn)" stroke-width="1"/>
+            <text class="status-warn" x="402" y="391">BACKOFF</text>
+            <text class="err-body" x="484" y="391">exponential · max 3 attempts</text>
+
+            <text class="step" x="10" y="448">04</text>
+            <path class="wire" d="M560 445 H780"/>
+            <polyline class="chev" points="772,439 780,445 772,451" stroke="var(--link-blue)"/>
+            <text class="small" x="670" y="438" text-anchor="middle">POST /v1/charges (retry 1)</text>
+
+            <path class="wire-muted" d="M780 488 H560"/>
+            <polyline class="chev" points="568,482 560,488 568,494" stroke="var(--rule-strong)"/>
+            <text class="status" x="670" y="481" text-anchor="middle">200 OK</text>
+
+            <text class="step" x="10" y="538">05</text>
+            <text class="note"  x="340" y="518" text-anchor="middle">async webhook delivery</text>
+            <path class="wire-async" d="M560 535 V548 H140 V535 H120"/>
+            <polyline class="chev" points="128,529 120,535 128,541" stroke="var(--link-blue)"/>
+            <text class="small" x="340" y="565" text-anchor="middle">payment.succeeded</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — angular wiring, status codes as mono labels, chevron heads drawn as paths. The 503 alert renders as a rectangular API error-response panel with an HTTP code header and JSON body.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Diagrams in the docs register are mono everywhere — labels, endpoints, status codes, notes. Inter does <em>not</em> appear inside diagrams; the visual goal is "diagram = API reference card", and the reference voice is monospace.</p>
+        <pre><span class="kw">.label</span>    { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--navy-deep</span>); letter-spacing: <span class="n">0.04</span>em; }
+<span class="kw">.endpoint</span> { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--navy-deep</span>); }
+<span class="kw">.small</span>    { font: <span class="n">10</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--text</span>); letter-spacing: <span class="n">0.04</span>em; }
+<span class="kw">.status</span>   { font: <span class="n">600</span> <span class="n">10</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--link-blue</span>); letter-spacing: <span class="n">0.08</span>em; }
+<span class="kw">.status-warn</span> { font: <span class="n">700</span> <span class="n">10</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--warn</span>); letter-spacing: <span class="n">0.08</span>em; }
+<span class="kw">.pill-txt</span> { font: <span class="n">600</span> <span class="n">9</span>px  <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--white</span>); letter-spacing: <span class="n">0.08</span>em; }</pre>
+
+        <h4>Inline HTTP method pill</h4>
+        <p>The signature trick: <code>hot</code> and <code>external</code> nodes carry an inline HTTP-method chip drawn as a small filled <code>&lt;rect&gt;</code> + white <code>.pill-txt</code> label, placed next to a monospace endpoint path. <code>POST</code> uses <code>--success</code> (green), <code>GET</code> uses <code>--link-blue</code> or <code>--purple</code> (external), <code>DELETE</code> uses <code>--warn</code>. The chip stays inside the SVG so the diagram is self-contained.</p>
+        <pre><span class="com">&lt;!-- inline POST pill, drawn inside the node --&gt;</span>
+<span class="kw">&lt;rect</span> <span class="fn">x</span>=<span class="str">"492"</span> <span class="fn">y</span>=<span class="str">"50"</span> <span class="fn">width</span>=<span class="str">"42"</span> <span class="fn">height</span>=<span class="str">"16"</span> <span class="fn">rx</span>=<span class="str">"2"</span> <span class="fn">fill</span>=<span class="str">"var(--success)"</span><span class="kw">/&gt;</span>
+<span class="kw">&lt;text</span> <span class="fn">class</span>=<span class="str">"pill-txt"</span> <span class="fn">x</span>=<span class="str">"500"</span> <span class="fn">y</span>=<span class="str">"61"</span><span class="kw">&gt;</span>POST<span class="kw">&lt;/text&gt;</span>
+<span class="kw">&lt;text</span> <span class="fn">class</span>=<span class="str">"endpoint"</span> <span class="fn">x</span>=<span class="str">"542"</span> <span class="fn">y</span>=<span class="str">"62"</span><span class="kw">&gt;</span>/charge<span class="kw">&lt;/text&gt;</span></pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>All diagram labels in IBM Plex Mono. Inline method pills drawn as SVG <code>rect</code> + <code>text</code>. Status codes (<code>201</code>, <code>503</code>) ride arrows in <code>.status</code> / <code>.status-warn</code>.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Step number presence, exact letter-spacing (0.04–0.14em), pill width.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>Failure paths render as <strong>HTTP error-response panels</strong>: a pure rectangle (no rounded corners) with a red header bar showing <code>4xx</code>/<code>5xx</code> + status code, and a JSON-shaped body below. A small <code>BACKOFF</code> chip — white fill, red border, mono caps — sits inline with the retry policy detail.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Panel: <code>rx="0"</code>, <code>--warn-soft</code> fill, 1.5px <code>--warn</code> stroke. Header: 20px-tall <code>--warn</code> bar with white mono <code>4xx</code>/<code>5xx</code> label + status code. Body: JSON-shaped <code>err-body</code> in dark red.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Panel height, exact JSON content, presence of the inline <code>BACKOFF</code> chip.</span></div>
+        </aside>
+
+        <h3>Arrow geometry</h3>
+        <p>Default: <code>var(--link-blue)</code> at 1.5px with right-angle bends — wiring diagrams, not curves. Chevron heads are drawn as <code>&lt;polyline&gt;</code> paths (<code>points="x1,y1 x2,y2 x3,y3"</code>) rather than triangle markers, so the head reads as a literal <code>&gt;</code>. Return paths use <code>--rule-strong</code>. Async paths use <code>stroke-dasharray: 4 3</code>. Warn paths use <code>--warn</code>.</p>
+
+        <h3>Caption</h3>
+        <p>Inter italic, <code>--text-light</code>, 13px, centered with <code>margin-top: 10px</code>.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

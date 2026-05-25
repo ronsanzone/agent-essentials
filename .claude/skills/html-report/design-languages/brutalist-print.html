@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brutalist Print — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:           #FAFAFA;
+      --bg-alt:       #F2F0EC;
+      --bg-card:      #FAFAFA;
+      --bg-code:      #F2F0EC;
+      --bg-soft:      #F2F0EC;
+
+      --text:         #1a1a1a;
+      --text-soft:    #1a1a1a;
+      --text-faint:   #555555;
+      --text-ghost:   #888888;
+      --ink:          #1a1a1a;
+      --ink-soft:     #1a1a1a;
+      --ink-faint:    #555555;
+      --ink-ghost:    #888888;
+
+      --rule:         #1a1a1a;
+      --rule-soft:    #1a1a1a;
+      --rule-strong:  #1a1a1a;
+
+      --accent-blue:  #0000AA;
+
+      --accent:         var(--accent-blue);
+      --accent-soft:    var(--bg-alt);
+      --secondary:      var(--accent-blue);
+      --secondary-soft: var(--bg-alt);
+      --warn:           var(--accent-blue);
+      --warn-soft:      var(--bg-alt);
+
+      --serif: "Spectral", "Charter", "Iowan Old Style", Georgia, serif;
+      --mono:  "Courier Prime", "Courier New", Courier, monospace;
+      --sans:  var(--serif);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--serif);
+      font-size: 17px;
+      line-height: 1.75;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--accent-blue);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--accent-blue);
+      color: var(--bg);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+    aside.toc li { counter-increment: toc; }
+
+    aside.toc a {
+      display: block;
+      padding: 5px 0;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      text-decoration: none;
+      letter-spacing: -0.005em;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero) ".";
+      color: var(--accent-blue);
+      margin-right: 10px;
+    }
+
+    aside.toc a:hover { color: var(--accent-blue); }
+    aside.toc a.active { color: var(--accent-blue); font-weight: 700; }
+    aside.toc a.active::before { color: var(--text); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--bg);
+      margin: 0 -48px 72px;
+      padding: 88px 48px 56px;
+      border-bottom: 1px solid var(--text);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 48px; padding: 56px 24px 36px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-blue);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(32px, 4.5vw, 48px);
+      line-height: 1.15;
+      letter-spacing: -0.005em;
+      margin: 0 0 24px;
+      color: var(--text);
+      text-align: left;
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--accent-blue);
+    }
+
+    .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 19px;
+      line-height: 1.65;
+      color: var(--text);
+      max-width: 660px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 36px;
+      padding-top: 22px;
+      border-top: 1px solid var(--text);
+      margin-top: 26px;
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+      font-weight: 700;
+    }
+    .meta-row .v { font-family: var(--serif); font-size: 14px; color: var(--text); }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 88px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent-blue);
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.25;
+      margin: 0 0 22px;
+      color: var(--text);
+      letter-spacing: -0.005em;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1.3;
+      margin: 36px 0 12px;
+      color: var(--text);
+      letter-spacing: 0;
+    }
+
+    h4 {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin: 0 0 8px;
+      color: var(--text);
+      text-transform: uppercase;
+    }
+
+    p { margin: 0 0 18px; max-width: 68ch; }
+
+    em, i { color: var(--accent-blue); }
+
+    a { color: var(--accent-blue); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 4px; }
+    a:hover { color: var(--text); }
+
+    ul, ol { padding-left: 22px; margin: 0 0 18px; max-width: 68ch; }
+    li { margin-bottom: 6px; }
+
+    .card {
+      border: 1px solid var(--text);
+      background: var(--bg-card);
+      padding: 18px 22px;
+      margin: 22px 0;
+    }
+    .card.mini { padding: 14px 18px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin: 24px 0;
+    }
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+
+    .callout {
+      border: 1px solid var(--text);
+      border-left: 6px solid var(--accent-blue);
+      background: var(--bg-alt);
+      padding: 16px 20px;
+      margin: 22px 0;
+    }
+    .callout.warn { border-left-color: var(--text); }
+    .callout.success { border-left-color: var(--accent-blue); }
+    .callout strong { font-family: var(--mono); font-weight: 700; text-transform: uppercase; font-size: 0.9em; letter-spacing: 0.06em; }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--accent-blue);
+      padding: 6px 0 6px 26px;
+      margin: 32px 0;
+      max-width: 60ch;
+      border-left: 1px solid var(--text);
+    }
+
+    .em-divider {
+      border: none;
+      border-top: 1px solid var(--text);
+      margin: 48px 0;
+      position: relative;
+      max-width: 68ch;
+    }
+    .em-divider::before {
+      content: "————————————————";
+      font-family: var(--mono);
+      color: var(--text);
+      letter-spacing: -0.05em;
+      position: absolute;
+      top: -0.7em;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      padding: 0 8px;
+      font-size: 14px;
+    }
+
+    details {
+      border-top: 1px solid var(--text);
+      padding: 16px 0;
+    }
+    details:last-of-type { border-bottom: 1px solid var(--text); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      list-style: none;
+      letter-spacing: -0.005em;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; color: var(--accent-blue); }
+    details[open] > summary::before { content: "- "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg);
+      border: 1px solid var(--text);
+      margin: 24px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border: 1px solid var(--text);
+      vertical-align: top;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.10em;
+      color: var(--text);
+      background: var(--bg-alt);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--text);
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.65;
+      margin: 18px 0;
+      color: var(--text);
+    }
+
+    pre .kw   { color: var(--accent-blue); font-weight: 700; }
+    pre .str  { color: var(--text); font-style: italic; }
+    pre .com  { color: var(--text-faint); font-style: italic; }
+    pre .n    { color: var(--accent-blue); }
+    pre .fn   { color: var(--text); font-weight: 700; }
+    pre .type { color: var(--accent-blue); font-style: italic; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--bg-alt);
+      color: var(--accent-blue);
+      padding: 1px 5px;
+      border: 1px solid var(--text);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 9px;
+      border: 1px solid var(--text);
+      background: var(--bg);
+      color: var(--text);
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    figure.card.diagram { padding: 20px 18px 14px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; background: var(--bg); }
+
+    .caption {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--text);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 14px;
+      max-width: none;
+    }
+    .caption .fig-prefix {
+      font-family: var(--mono);
+      font-style: normal;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text);
+    }
+    .fig-divider {
+      font-family: var(--mono);
+      color: var(--text);
+      text-align: center;
+      margin: 32px 0;
+      font-size: 14px;
+      letter-spacing: 0.2em;
+    }
+
+    .contract {
+      margin: 14px 0 30px;
+      padding: 14px 18px;
+      border: 1px solid var(--text);
+      border-left: 6px solid var(--text);
+      background: var(--bg-alt);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--text); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin: 24px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--text);
+      background: var(--bg);
+    }
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--text); }
+    .swatch .label { padding: 7px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.5; color: var(--text); }
+    .swatch .label strong { display: block; color: var(--text); font-weight: 700; text-transform: uppercase; }
+    .swatch .label span { color: var(--text-faint); }
+
+    .gallery-item { margin: 0 0 40px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 2px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Brutalist Print, <em>set in a typewriter that never had a display face</em></h1>
+          <p class="lede">A typewriter manuscript conceit: monospace headings, serif body, generous line-height, deep ink-blue as the only accent. The medium is paper that has been through a carriage.</p>
+          <div class="meta">
+            <span class="pill">Status: shipped</span>
+            <span class="pill">Audience: long-form</span>
+            <span class="pill">v1</span>
+          </div>
+          <aside class="contract" style="margin: 32px 0 0;">
+            <div class="row"><span class="label">Locked</span><span>Courier Prime h1, Spectral italic <code>em</code> in ink-blue, Spectral italic lede, mono caps eyebrow with 8px ink-blue square dot, single 1px bottom rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, footer composition.</span></div>
+          </aside>
+        </div>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>BRUTALIST_PRINT.md</h2>
+        <p>The conceit of Brutalist Print is that the document was typed on a machine which had only one face. Headings, code blocks, and any structural mark are therefore set in Courier Prime — the typewriter. Body prose is set in Spectral, a humanist serif designed for screen reading that stands in for Charter (Charter is not on Google Fonts; Spectral is the working substitute). The two faces sit next to each other on the page: the running text is a book; the structure is a manuscript.</p>
+        <div class="quote">A typewriter never had a separate display face. This styleguide preserves that fact and turns it into a design decision.</div>
+        <p>The line-height is intentionally generous (1.75). Letter-spacing on caps is tight. Headings are flush-left; nothing is centered except diagram captions. Em-dashes do real structural work — see the divider rule below — because the typewriter had em-dashes and not horizontal rules. A document in this language should feel like it has been <em>typed</em>, not <em>laid out</em>.</p>
+        <hr class="em-divider">
+        <p>One accent only: ink-blue (<code>#0000AA</code>), the deeper, slightly desaturated blue of fountain-pen ink on bond paper. The accent does the work of italic emphasis, links, marginalia counters, and pull quotes. There is no warn color, no secondary color, no success color — manuscripts had ink and absence of ink, and that is the palette.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>WHEN_TO_PICK.md</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Essays. Design treatises. Long-form architectural prose where the reader will spend twenty or more minutes. Documents that aspire to be re-read on paper. Anything where the typewriter conceit reinforces the seriousness of the argument.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>Operator runbooks (the conceit gets in the way). Short status reports (overdressed). Anything performance-dense — the generous line-height eats screen real estate. Audiences who read primarily on mobile.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>LOCKED_BRAND_STACK.md</h2>
+        <p>Load exactly this Google Fonts URL:</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&amp;family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="kw">--serif</span>: <span class="str">"Spectral"</span>, <span class="str">"Charter"</span>, <span class="str">"Iowan Old Style"</span>, Georgia, serif;
+<span class="kw">--mono</span>:  <span class="str">"Courier Prime"</span>, <span class="str">"Courier New"</span>, Courier, monospace;
+<span class="kw">--sans</span>:  var(<span class="kw">--serif</span>);   <span class="com">/* alias — there is no sans */</span></pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--serif)</code> — Spectral</td><td>17px, line-height 1.75</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--mono)</code> — Courier Prime 700</td><td>The typewriter conceit. NO serif headings.</td></tr>
+            <tr><td>Ledes, pull quotes, italic-em</td><td><code>var(--serif)</code> italic, ink-blue</td><td>Italic Spectral is the voice register</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td><code>var(--mono)</code></td><td>Same family as headings — typewriter-native</td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Headings render in Courier Prime, often with a <code>.md</code>-style filename suffix as a self-aware nod (free: drop the suffix on documents that don't want the conceit foregrounded).</li>
+          <li>Italic-emphasis is set in Spectral italic, ink-blue. The italic does triple duty: stress, voice, and color accent.</li>
+          <li>Pull quotes are large Spectral italic, ink-blue, indented behind a thin black rule.</li>
+          <li>Em-dash dividers (<code>.em-divider</code>) separate sub-passages within a section — see §01 above for a live example. Used sparingly; one or two per long section.</li>
+          <li>Bold is allowed but rare; italic carries most emphasis.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>ANCHOR_PALETTE.md</h2>
+        <p>Five colors. The brand is "ink on bond paper."</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #FAFAFA"></div><div class="label"><strong>--bg</strong><span>#FAFAFA</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F2F0EC"></div><div class="label"><strong>--bg-alt</strong><span>#F2F0EC</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1a1a1a"></div><div class="label"><strong>--text</strong><span>#1a1a1a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #555555"></div><div class="label"><strong>--text-faint</strong><span>#555555</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #888888"></div><div class="label"><strong>--text-ghost</strong><span>#888888</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1a1a1a"></div><div class="label"><strong>--rule</strong><span>#1a1a1a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0000AA"></div><div class="label"><strong>--accent-blue</strong><span>#0000AA</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>So the canonical SVG <code>&lt;style&gt;</code> block renders unchanged:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--accent-blue</span>);
+<span class="kw">--accent-soft</span>:    var(<span class="kw">--bg-alt</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--accent-blue</span>);   <span class="com">/* same as accent — single-accent variation */</span>
+<span class="kw">--secondary-soft</span>: var(<span class="kw">--bg-alt</span>);
+<span class="kw">--warn</span>:           var(<span class="kw">--accent-blue</span>);   <span class="com">/* warn uses dashed/heavy strokes, not color */</span>
+<span class="kw">--warn-soft</span>:      var(<span class="kw">--bg-alt</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not introduce red, green, or any second hue. The single-accent constraint is load-bearing — it is what distinguishes Brutalist Print from the other two variations. If a report needs three colors, it is the wrong language.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>ANTI_PATTERNS.md</h2>
+        <ul>
+          <li><strong>No serif headings.</strong> Headings are Courier Prime. Always. The typewriter conceit requires it.</li>
+          <li><strong>No border-radius.</strong> A typewriter could not type a rounded corner.</li>
+          <li><strong>No box-shadow.</strong> Paper sits flat.</li>
+          <li><strong>No gradients.</strong> Ink does not gradient.</li>
+          <li><strong>No second accent color.</strong> Ink-blue is the only non-neutral.</li>
+          <li><strong>No dark mode.</strong> This language is paper. Paper is light.</li>
+          <li><strong>No tight line-height.</strong> Body line-height is 1.7 or greater. The rhythm IS the language.</li>
+          <li><strong>No centered headings or body text.</strong> Flush-left, like a manuscript draft. Diagram captions are the only exception (Spectral italic, centered).</li>
+          <li><strong>No emoji.</strong>
+          </li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>COMPONENT_GALLERY.md</h2>
+        <p>Every component a report uses, in this language, with locked/free contract.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>See above. Courier Prime h1, Spectral italic ink-blue <code>em</code> phrase, Spectral italic lede, single bottom rule.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Courier Prime h1 with italic Spectral ink-blue <code>em</code>, italic Spectral lede, 1px solid black bottom border, mono caps eyebrow + 8px ink-blue square dot.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer composition, <code>.md</code> suffix on title (yes/no).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Each section. Ink-blue mono <code>.num</code> in the gutter, Courier Prime h2 — often suffixed <code>.md</code> as a stylistic flourish.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Courier Prime h2, ink-blue mono <code>.num</code> at <code>left: -64px</code>, no underline rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact left offset (±8px), h2 font-size (24–28px), <code>.md</code> suffix on heading text.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>A 1px black rectangle on bond paper. No fill change, no shadow, no radius. Generous internal padding so the prose breathes.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black border, page-bg fill, no radius, no shadow, generous padding.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, optional <code>.mini</code> reduced-padding variant.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use the bond-paper alt-bg with a 6px ink-blue left border. Label is Courier Prime caps.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant swaps the left border to solid black. With no secondary accent, severity is communicated by reverting the accent rather than introducing red.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px black border + 6px ink-blue left accent (default). Warn swaps left to solid black — never red. Success keeps ink-blue. Label is Courier Prime caps.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, presence of bold label, label glyph.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">A pull quote is a single sentence in Spectral italic, ink-blue, set off by a thin black rule on the left. The most decorative element in this language.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Spectral italic, ink-blue, ≥20px, 1px black left rule, generous left padding.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (20–24px), padding-left, presence of trailing attribution.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Summary is Courier Prime 15px. Marker is ink-blue <code>+ / -</code>.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black top border on each details, Courier Prime summary, ink-blue <code>+/-</code> marker.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>+/-</code> vs chevron), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>-2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Every cell 1px solid black border. Courier Prime caps <code>th</code> on <code>#F2F0EC</code>. All cells in Courier Prime — typewriter-style grid.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, exact cell font-size (12–14px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host): <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Token classes are restrained: <code>kw</code> (keyword, ink-blue bold), <code>fn</code> (function, black bold), <code>com</code> (comment, grey italic), <code>n</code> (numeric, ink-blue), <code>str</code> (string, black italic), <code>type</code> (type, ink-blue italic). All token color stays within the ink-blue + black + grey palette.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>#F2F0EC</code> fill, 1px solid black border, Courier Prime 13px, line-height 1.65.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, exact token mapping within ink-blue + black + grey palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes. Inline code is ink-blue Courier Prime with a 1px black border.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.92em</code>, ink-blue text, 1px solid black border, <code>#F2F0EC</code> fill.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding (1–2px), font-size within ±0.04em.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and <span class="pill">PROGRAM-173</span>. Pills are rectangular — a typewriter could not type a pill.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>1px solid black border, page-bg fill, Courier Prime caps 11px. No radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (10–12px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07. Each diagram is a <code>&lt;figure class="card diagram"&gt;</code>. Caption is Spectral italic, centered — the only centered text in the language.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> 1px border. Caption is Spectral italic 14px black, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini"><h4>Left card</h4><p>2-up default — see §02.</p></div>
+            <div class="card mini"><h4>Right card</h4><p>For 4-up, add two more <code>.card.mini</code> siblings.</p></div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at 720px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value.</span></div>
+          </aside>
+        </div>
+
+        <h3>Em-dash divider <span class="pill">.em-divider</span></h3>
+        <p>A native typewriter convention. Used to separate sub-passages within a section. See §01 above for a live example. The CSS renders a row of em-dashes centered over a 1px black rule:</p>
+        <pre><span class="kw">.em-divider::before</span> {
+  content: <span class="str">"————————————————"</span>;
+  font-family: var(<span class="kw">--mono</span>);
+  position: absolute;
+  top: -0.7em; left: 50%;
+  transform: translateX(-50%);
+  background: var(<span class="kw">--bg</span>);
+  padding: <span class="n">0</span> <span class="n">8</span>px;
+}</pre>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>A row of em-dashes centered over a 1px black <code>hr</code>. Background-bg padding behind the em-dashes punches the rule visually.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Number of em-dashes, exact font-size (12–16px).</span></div>
+        </aside>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>DIAGRAM_PHILOSOPHY.md</h2>
+        <p>Diagrams are typewriter line art. Boxes are drawn with <code>+</code>, <code>-</code>, and <code>|</code> characters set in Courier Prime; arrows are em-dashes (<code>──&gt;</code>) rendered as SVG <code>&lt;text&gt;</code> rather than paths. The single ink-blue accent (<code>#0000AA</code>) appears only on the <code>hot</code> role; the alert region is signalled by <strong>stroke weight</strong> (3px black) — there is no red in this language. Captions are Spectral italic with a <code>FIG. N.</code> mono prefix; figures are separated by an em-dash divider rule.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke / glyph</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td>none</td><td>black <code>+ - |</code> glyphs</td><td>Box drawn as monospace text; no SVG <code>&lt;rect&gt;</code>.</td></tr>
+            <tr><td><code>hot</code></td><td>none</td><td>ink-blue <code>+ - |</code> glyphs</td><td>The single accent. Same glyph set, blue ink.</td></tr>
+            <tr><td><code>store</code></td><td>none</td><td>black <code>+ # |</code> glyphs</td><td>Hash-fill across the interior signals persistence.</td></tr>
+            <tr><td><code>external</code></td><td>none</td><td>black <code>+ . :</code> glyphs</td><td>Dotted glyph border — outside the system.</td></tr>
+            <tr><td><code>warn</code></td><td>none</td><td>black, 3px outline rule</td><td>Geometry — not color — signals the alarm.</td></tr>
+            <tr><td><code>future</code></td><td>none</td><td>grey glyphs</td><td>Ghosted ASCII; speculative.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four typewriter-art boxes built from plus, minus and pipe characters. Em-dash arrows between them. The hot panel is ink-blue.">
+            <style>
+              .ascii      { font: 700 13px "Courier Prime", monospace; fill: #1a1a1a; white-space: pre; }
+              .ascii-hot  { font: 700 13px "Courier Prime", monospace; fill: #0000AA; }
+              .arrow-txt  { font: 700 14px "Courier Prime", monospace; fill: #1a1a1a; }
+              .arrow-hot  { font: 700 14px "Courier Prime", monospace; fill: #0000AA; }
+              .lbl        { font: italic 12px "Spectral", serif; fill: #1a1a1a; }
+              .sub        { font: 700 11px "Courier Prime", monospace; fill: #1a1a1a; letter-spacing: 0.08em; }
+              .note       { font: italic 11px "Spectral", serif; fill: #555555; }
+            </style>
+
+            <!-- Box (a): default — plus-minus-pipe -->
+            <text class="ascii" x="20"  y="105" xml:space="preserve">+--------------+</text>
+            <text class="ascii" x="20"  y="123" xml:space="preserve">|              |</text>
+            <text class="ascii" x="20"  y="141" xml:space="preserve">|    (a)       |</text>
+            <text class="ascii" x="20"  y="159" xml:space="preserve">|              |</text>
+            <text class="ascii" x="20"  y="177" xml:space="preserve">+--------------+</text>
+
+            <!-- arrow (a) -> (b): em-dash -->
+            <text class="arrow-txt" x="158" y="143" xml:space="preserve">──&gt;</text>
+
+            <!-- Box (b): hot — ink blue -->
+            <text class="ascii-hot" x="210" y="105" xml:space="preserve">+--------------+</text>
+            <text class="ascii-hot" x="210" y="123" xml:space="preserve">|              |</text>
+            <text class="ascii-hot" x="210" y="141" xml:space="preserve">|    (b)       |</text>
+            <text class="ascii-hot" x="210" y="159" xml:space="preserve">|              |</text>
+            <text class="ascii-hot" x="210" y="177" xml:space="preserve">+--------------+</text>
+
+            <text class="arrow-txt" x="348" y="143" xml:space="preserve">──&gt;</text>
+
+            <!-- Box (c): store — hash-fill -->
+            <text class="ascii" x="400" y="105" xml:space="preserve">+--------------+</text>
+            <text class="ascii" x="400" y="123" xml:space="preserve">|##############|</text>
+            <text class="ascii" x="400" y="141" xml:space="preserve">|##  (c)    ###|</text>
+            <text class="ascii" x="400" y="159" xml:space="preserve">|##############|</text>
+            <text class="ascii" x="400" y="177" xml:space="preserve">+--------------+</text>
+
+            <text class="arrow-txt" x="538" y="143" xml:space="preserve">──&gt;</text>
+
+            <!-- Box (d): external — dotted glyph border -->
+            <text class="ascii" x="590" y="105" xml:space="preserve">+. . . . . . .+</text>
+            <text class="ascii" x="590" y="123" xml:space="preserve">.              .</text>
+            <text class="ascii" x="590" y="141" xml:space="preserve">.   (d)        .</text>
+            <text class="ascii" x="590" y="159" xml:space="preserve">.              .</text>
+            <text class="ascii" x="590" y="177" xml:space="preserve">+. . . . . . .+</text>
+
+            <!-- Labels above each box -->
+            <text class="lbl" x="22"  y="80">trigger / request</text>
+            <text class="lbl" x="212" y="80">process under inquiry</text>
+            <text class="lbl" x="402" y="80">store (hash-fill)</text>
+            <text class="lbl" x="592" y="80">external (dotted)</text>
+
+            <!-- Sub-letter index strip -->
+            <text class="sub" x="20"  y="220">(a) default   (b) hot — ink blue   (c) store   (d) external</text>
+            <text class="note" x="20" y="240">Boxes drawn with + - | characters. Em-dash arrows. The blue is the only ink-blue in the figure.</text>
+          </svg>
+          <figcaption class="caption"><span class="fig-prefix">FIG. 01.</span> <em>A linear flow rendered in typewriter line art — four labelled boxes joined by em-dash arrows; the hot panel is set in ink blue (#0000AA), the only departure from black ink in the figure.</em></figcaption>
+        </figure>
+
+        <div class="fig-divider" aria-hidden="true">— — — — — — — — — — — — — — — — — — — — — — — — — — — — — —</div>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram in typewriter style with four actor headers built from plus/minus/pipe characters. Lifelines are columns of pipe characters; arrows are em-dashes set in text. The alert region is signalled by 3px black stroke weight, not by color.">
+            <style>
+              .ascii      { font: 700 12px "Courier Prime", monospace; fill: #1a1a1a; }
+              .ascii-hot  { font: 700 12px "Courier Prime", monospace; fill: #0000AA; }
+              .actor-txt  { font: 700 12px "Courier Prime", monospace; fill: #1a1a1a; letter-spacing: 0.06em; }
+              .actor-hot  { font: 700 12px "Courier Prime", monospace; fill: #0000AA; letter-spacing: 0.06em; }
+              .arrow-txt  { font: 700 14px "Courier Prime", monospace; fill: #1a1a1a; }
+              .arrow-warn { font: 700 14px "Courier Prime", monospace; fill: #1a1a1a; }
+              .msg        { font: italic 12px "Spectral", serif; fill: #1a1a1a; }
+              .note       { font: italic 11px "Spectral", serif; fill: #555555; }
+              .ord        { font: 700 11px "Courier Prime", monospace; fill: #1a1a1a; letter-spacing: 0.08em; }
+              .alert-txt  { font: 700 12px "Courier Prime", monospace; fill: #1a1a1a; letter-spacing: 0.12em; }
+            </style>
+
+            <!-- Actor headers: typewriter boxes -->
+            <text class="ascii" x="60"  y="22" xml:space="preserve">+----------+</text>
+            <text class="ascii" x="60"  y="40" xml:space="preserve">|          |</text>
+            <text class="ascii" x="60"  y="58" xml:space="preserve">+----------+</text>
+            <text class="actor-txt" x="120" y="40" text-anchor="middle">CLIENT</text>
+
+            <text class="ascii" x="260" y="22" xml:space="preserve">+----------+</text>
+            <text class="ascii" x="260" y="40" xml:space="preserve">|          |</text>
+            <text class="ascii" x="260" y="58" xml:space="preserve">+----------+</text>
+            <text class="actor-txt" x="320" y="40" text-anchor="middle">API</text>
+
+            <text class="ascii-hot" x="440" y="22" xml:space="preserve">+----------+</text>
+            <text class="ascii-hot" x="440" y="40" xml:space="preserve">|          |</text>
+            <text class="ascii-hot" x="440" y="58" xml:space="preserve">+----------+</text>
+            <text class="actor-hot" x="500" y="40" text-anchor="middle">WORKER</text>
+
+            <text class="ascii" x="620" y="22" xml:space="preserve">+. . . . . . . . . .+</text>
+            <text class="ascii" x="620" y="40" xml:space="preserve">.                    .</text>
+            <text class="ascii" x="620" y="58" xml:space="preserve">+. . . . . . . . . .+</text>
+            <text class="actor-txt" x="720" y="40" text-anchor="middle">PROVIDER</text>
+
+            <!-- Lifelines as columns of pipe characters -->
+            <text class="ascii" x="120" y="82"  text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="104" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="146" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="190" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="234" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="278" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="320" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="404" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="448" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="490" text-anchor="middle">|</text>
+            <text class="ascii" x="120" y="532" text-anchor="middle">|</text>
+
+            <text class="ascii" x="320" y="82"  text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="104" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="146" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="190" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="234" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="278" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="320" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="404" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="448" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="490" text-anchor="middle">|</text>
+            <text class="ascii" x="320" y="532" text-anchor="middle">|</text>
+
+            <text class="ascii-hot" x="500" y="82"  text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="104" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="146" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="190" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="234" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="278" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="320" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="404" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="448" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="490" text-anchor="middle">|</text>
+            <text class="ascii-hot" x="500" y="532" text-anchor="middle">|</text>
+
+            <text class="ascii" x="720" y="82"  text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="104" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="146" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="190" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="234" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="278" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="320" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="404" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="448" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="490" text-anchor="middle">:</text>
+            <text class="ascii" x="720" y="532" text-anchor="middle">:</text>
+
+            <!-- 01: em-dash arrow client -> api -->
+            <text class="ord" x="20" y="128">01.</text>
+            <text class="arrow-txt" x="125" y="128" xml:space="preserve">─────────────────────────────────&gt;</text>
+            <text class="msg"  x="220" y="118" text-anchor="middle">POST /jobs</text>
+            <text class="note" x="220" y="142" text-anchor="middle">(synchronous create)</text>
+
+            <!-- return arrow muted -->
+            <text class="arrow-txt" x="125" y="170" xml:space="preserve" fill="#888888">&lt;─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─</text>
+            <text class="msg" x="220" y="164" text-anchor="middle">201 + job_id</text>
+
+            <!-- 02 enqueue async -->
+            <text class="ord" x="20" y="218">02.</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <text class="arrow-txt" x="325" y="218" xml:space="preserve">─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─&gt;</text>
+            <text class="msg" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <!-- 03 worker -> provider -->
+            <text class="ord" x="20" y="278">03.</text>
+            <text class="arrow-txt" x="505" y="278" xml:space="preserve">─────────────────────────────────&gt;</text>
+            <text class="msg" x="610" y="268" text-anchor="middle">POST /provision</text>
+
+            <!-- Alert region: thin 1px outline + 3px outer frame (weight is the alarm) -->
+            <rect x="340" y="295" width="480" height="98" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+            <rect x="350" y="305" width="460" height="78" fill="none" stroke="#1a1a1a" stroke-width="1" stroke-dasharray="3 3"/>
+            <!-- Alert banner: typewriter caps -->
+            <text class="alert-txt" x="358" y="324">[!] ALERT REGION — FAILURE PATH</text>
+
+            <!-- warn arrow: 3px black with em-dash overlay -->
+            <text class="arrow-warn" x="505" y="345" xml:space="preserve" font-weight="700">&lt;═════════════════════════════════</text>
+            <text class="alert-txt" x="610" y="339" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <!-- Inner alert pill: typewriter box, top + bottom rules and label between -->
+            <text class="ascii" x="360" y="362" xml:space="preserve">+----------------------------------------------------+</text>
+            <text class="alert-txt" x="376" y="380">[#] RETRY POLICY ENGAGED</text>
+            <text class="note"      x="580" y="380">backoff +2s, max 3 attempts</text>
+            <text class="ascii" x="360" y="394" xml:space="preserve">+----------------------------------------------------+</text>
+
+            <!-- 04 retry -->
+            <text class="ord" x="20" y="423">04.</text>
+            <text class="arrow-txt" x="505" y="423" xml:space="preserve">─────────────────────────────────&gt;</text>
+            <text class="msg" x="610" y="413" text-anchor="middle">POST /provision (retry)</text>
+
+            <text class="arrow-txt" x="505" y="468" xml:space="preserve" fill="#888888">&lt;─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─</text>
+            <text class="msg" x="610" y="462" text-anchor="middle">201 Created</text>
+
+            <!-- 05 fan-out -->
+            <text class="ord" x="20" y="513">05.</text>
+            <text class="note"  x="310" y="495" text-anchor="middle">async fan-out — terminal step</text>
+            <text class="arrow-txt" x="125" y="513" xml:space="preserve">&lt;─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─</text>
+            <text class="msg" x="310" y="528" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption"><span class="fig-prefix">FIG. 02.</span> <em>Sequence with an alert region. The alarm is signalled by stroke weight — a 3px outer frame around the failure region — not by a second color. The only ink-blue in the figure is the worker actor and its lifeline, marking the hot role.</em></figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>The diagram is text, drawn at typewriter cadence. Boxes are <code>+ - |</code> characters in Courier Prime; arrows are em-dashes; the only serif is in inline message labels and the caption.</p>
+        <pre><span class="kw">.ascii</span>     { font: <span class="n">700</span> <span class="n">12</span>px <span class="str">"Courier Prime"</span>, monospace; fill: <span class="str">#1a1a1a</span>; }
+<span class="kw">.ascii-hot</span> { font: <span class="n">700</span> <span class="n">12</span>px <span class="str">"Courier Prime"</span>, monospace; fill: <span class="str">#0000AA</span>; }
+<span class="kw">.arrow-txt</span> { font: <span class="n">700</span> <span class="n">14</span>px <span class="str">"Courier Prime"</span>, monospace; fill: <span class="str">#1a1a1a</span>; }
+<span class="kw">.msg</span>       { font: italic <span class="n">12</span>px <span class="str">"Spectral"</span>, serif; fill: <span class="str">#1a1a1a</span>; }
+<span class="kw">.ord</span>       { font: <span class="n">700</span> <span class="n">11</span>px <span class="str">"Courier Prime"</span>, monospace; fill: <span class="str">#1a1a1a</span>; }
+<span class="kw">.alert-txt</span> { font: <span class="n">700</span> <span class="n">12</span>px <span class="str">"Courier Prime"</span>, monospace; fill: <span class="str">#1a1a1a</span>; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Boxes drawn with <code>+ - |</code> in Courier Prime, NOT SVG <code>&lt;rect&gt;</code>. Arrows are em-dashes (<code>──&gt;</code>) in <code>&lt;text&gt;</code>. Ink-blue is reserved for the <code>hot</code> role. Caption: Spectral italic, with a <code>FIG. NN.</code> Courier Prime prefix.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Glyph density (— vs — — — — ), letter-spacing on caps, whether to mix Spectral italic message labels into the typewriter scaffold or render the labels themselves in Courier Prime.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>The alert region is drawn as a 3px black outer frame around a 1px dashed inner frame — the doubled stroke is the alarm. There is <em>no color shift</em> anywhere in the region. An inner alert pill is built from <code>+ - |</code> characters and carries a Courier Prime caps label (<code>[#] RETRY POLICY ENGAGED</code>); the <code>[#]</code> marker is the typewriter equivalent of a sidebar dingbat. Visible in <q>FIG. 02.</q> between steps 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Outer frame: 3px black solid. Inner frame: 1px black dashed. Alert pill: drawn from <code>+ - |</code> glyphs in Courier Prime caps. Sidebar marker: <code>[!]</code> or <code>[#]</code> in caps.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert copy, choice of dingbat marker (<code>[!]</code>, <code>[#]</code>, <code>[*]</code>).</span></div>
+        </aside>
+
+        <h3>Arrow rendering</h3>
+        <p>Arrows are <code>&lt;text&gt;</code> elements containing em-dash sequences, not SVG <code>&lt;path&gt;</code>. Default: solid black em-dashes <code>──&gt;</code>. Muted return: grey em-dashes with spaces <code>&lt;─ ─ ─</code>. Async: dashed em-dashes <code>─ ─ ─&gt;</code>. Warn: double-rule glyphs <code>═══&gt;</code> for the failure-path arrow.</p>
+
+        <h3>Caption convention</h3>
+        <p>Each caption opens with a Courier Prime caps prefix <code>FIG. NN.</code> followed by a Spectral italic sentence describing what the figure shows. Figures are separated by an em-dash divider rule (<code>— — — — —</code>) running the full text-column width.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

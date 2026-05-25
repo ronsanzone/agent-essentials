@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editorial Parchment — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:        #faf7f0;
+      --bg-soft:   #f4efe2;
+      --bg-card:   #fdfcf8;
+      --bg-code:   #f1ece0;
+
+      --ink:       #1c1a17;
+      --ink-soft:  #4d4842;
+      --ink-faint: #8a8175;
+      --ink-ghost: #b4ac9e;
+
+      --rule:        #d9d2c1;
+      --rule-soft:   #e8e2d2;
+      --rule-strong: #b9b09c;
+
+      --teal:            #0a5c4f;
+      --teal-soft:       #dae5e0;
+      --teal-deep:       #064038;
+      --terracotta:      #a84e1a;
+      --terracotta-soft: #f3e3d2;
+
+      --warn:      #9a6300;
+      --warn-soft: #f8ecd5;
+
+      --accent:         var(--teal);
+      --accent-soft:    var(--teal-soft);
+      --secondary:      var(--terracotta);
+      --secondary-soft: var(--terracotta-soft);
+
+      --serif: "Fraunces", "Iowan Old Style", "Charter", Georgia, serif;
+      --sans:  "Geist", "Söhne", "Helvetica Neue", -apple-system, sans-serif;
+      --mono:  "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 16px;
+      line-height: 1.65;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 23% 17%, rgba(184, 156, 100, 0.04) 0, transparent 40%),
+        radial-gradient(circle at 78% 83%, rgba(140, 110, 60, 0.03) 0, transparent 35%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--teal);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--teal);
+      color: var(--bg);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li {
+      counter-increment: toc;
+      margin: 0;
+    }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--teal-deep); }
+    aside.toc a.active { color: var(--teal); }
+    aside.toc a.active::before { color: var(--terracotta); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 100%);
+      margin: 0 -48px 80px;
+      padding: 96px 48px 72px;
+      border-bottom: 1px solid var(--rule);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--terracotta);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--serif);
+      font-weight: 400;
+      font-size: clamp(44px, 6vw, 78px);
+      line-height: 1.02;
+      letter-spacing: -0.025em;
+      font-variation-settings: "opsz" 144;
+      margin: 0 0 28px;
+      color: var(--ink);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 300;
+      color: var(--teal);
+    }
+
+    .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(19px, 2vw, 23px);
+      line-height: 1.45;
+      color: var(--ink-soft);
+      font-variation-settings: "opsz" 32;
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+    }
+
+    .meta-row .v {
+      font-family: var(--sans);
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 7px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--terracotta);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 450;
+      line-height: 1.12;
+      letter-spacing: -0.015em;
+      font-variation-settings: "opsz" 60;
+      margin: 0 0 24px;
+      color: var(--ink);
+    }
+
+    h3 {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1.2;
+      font-variation-settings: "opsz" 36;
+      margin: 40px 0 12px;
+      color: var(--ink);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.005em;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--teal); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--teal-deep); }
+
+    .card {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 10px 30px rgba(60, 45, 20, 0.04);
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--teal);
+      background: var(--teal-soft);
+      padding: 18px 20px;
+      border-radius: 12px;
+      margin: 22px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 600; }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 25px;
+      line-height: 1.35;
+      color: var(--teal);
+      border-left: 1px solid var(--rule);
+      padding-left: 24px;
+      margin: 30px 0;
+      font-variation-settings: "opsz" 32;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 1px solid var(--rule);
+      padding: 16px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--serif);
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--teal);
+      list-style: none;
+      font-variation-settings: "opsz" 30;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: var(--mono); color: var(--terracotta); margin-right: 6px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      margin: 22px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-faint);
+      background: var(--bg-soft);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule);
+      border-radius: 16px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--teal); }
+    pre .str  { color: var(--terracotta); }
+    pre .com  { color: var(--ink-faint); font-style: italic; }
+    pre .n    { color: #6b4520; }
+    pre .fn   { color: var(--teal-deep); }
+    pre .type { color: #5a3a8a; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: rgba(241, 236, 224, 0.75);
+      color: var(--teal-deep);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--terracotta);
+      border-radius: 999px;
+      color: var(--terracotta);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--ink-faint);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 12px;
+      font-variation-settings: "opsz" 24;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--bg-card);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--terracotta);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--ink-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--ink); font-weight: 500; }
+    .swatch .label span { color: var(--ink-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+        <li><a href="#exemplars">Exemplar reports</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Editorial Parchment, <em>set in long form</em></h1>
+          <p class="lede">A typographic register for ramp-up tours, operator references, and PR reviews — for engineers who will sit and read sequentially for twenty minutes.</p>
+          <div class="meta">
+            <span class="pill">Status: shipped</span>
+            <span class="pill">Audience: engineer-internal</span>
+            <span class="pill">v1</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Fraunces h1 with <code>opsz 144</code>, teal italic <code>&lt;em&gt;</code>, Fraunces italic lede at <code>opsz 32</code>, mono caps eyebrow with 6px terracotta dot, <code>bg-soft → bg</code> linear gradient.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> key/values or <code>.meta</code> pill chips.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Editorial Parchment feels like a long-form <em>New York Review of Books</em> essay set with a tasteful technical accent. Warm parchment paper, distinctive Fraunces serif display, clean Geist sans body, characterful JetBrains Mono for code and marginalia. Teal as primary accent — links, italic-em in titles, active TOC, primary diagram nodes. Terracotta as secondary — eyebrow dot, marginalia number, ticket pills.</p>
+        <div class="quote">Two reports in this language should feel like two articles in the same publication: visibly the same voice, visibly not xeroxed.</div>
+        <p>The serif/sans split is load-bearing. Headings and ledes are Fraunces because Fraunces is what gives the document its <em>register</em>. Body is Geist because long sequential reading wants a sans with a steady rhythm. Code is JetBrains Mono because the marginalia and eyebrows lean on its narrow uppercase forms. Swap any of these out and the language stops feeling like itself.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Dense ramp-up tours engineers will read for 20+ minutes. Operator reference docs re-read across incidents. PR review tours with <code>file:line</code> citation density. Technical documents read sequentially.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The report is outcomes-forward and feels more like a field report or postmortem — use a future <code>field-report</code> language. The report is short (under ~5 minutes reading time) and would feel overdressed in this register.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL — the weight and axis ranges are part of the brand.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&amp;family=Geist:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>: <span class="str">"Fraunces"</span>, <span class="str">"Iowan Old Style"</span>, <span class="str">"Charter"</span>, Georgia, serif;
+<span class="kw">--sans</span>:  <span class="str">"Geist"</span>, <span class="str">"Söhne"</span>, <span class="str">"Helvetica Neue"</span>, -apple-system, sans-serif;
+<span class="kw">--mono</span>:  <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--sans)</code> — Geist</td><td>16px, line-height 1.65</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--serif)</code> — Fraunces</td><td>Use <code>opsz</code> variation axis</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td><code>var(--mono)</code> — JetBrains Mono</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Optical-size settings</h3>
+        <ul>
+          <li><code>h1</code>: <code>font-variation-settings: "opsz" 144</code> — maximum optical size, most refined letterforms.</li>
+          <li><code>h2</code>: <code>font-variation-settings: "opsz" 60</code> (renderer may tune ±10).</li>
+          <li>Ledes and pull quotes: <code>font-variation-settings: "opsz" 32</code>.</li>
+        </ul>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Italic serif for ledes, pull quotes, and italic-em phrases inside <code>h1</code> titles: <code>&lt;h1&gt;Title, &lt;em&gt;italic phrase&lt;/em&gt;&lt;/h1&gt;</code>.</li>
+          <li>Mono caps with letter-spacing for eyebrows and meta-row labels.</li>
+          <li><strong>Never</strong> bold body prose for emphasis — use italic instead.</li>
+          <li>Pull quotes are large (≥24px), serif, italicized, set off by a thin left rule.</li>
+          <li>The eyebrow dot is always <code>var(--terracotta)</code> — it is the brand's smallest terracotta touch.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>These hex values are the brand. Do not approximate; paste verbatim.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #faf7f0"></div><div class="label"><strong>--bg</strong><span>#faf7f0</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f4efe2"></div><div class="label"><strong>--bg-soft</strong><span>#f4efe2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #fdfcf8"></div><div class="label"><strong>--bg-card</strong><span>#fdfcf8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f1ece0"></div><div class="label"><strong>--bg-code</strong><span>#f1ece0</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1c1a17"></div><div class="label"><strong>--ink</strong><span>#1c1a17</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #4d4842"></div><div class="label"><strong>--ink-soft</strong><span>#4d4842</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #8a8175"></div><div class="label"><strong>--ink-faint</strong><span>#8a8175</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #b4ac9e"></div><div class="label"><strong>--ink-ghost</strong><span>#b4ac9e</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #d9d2c1"></div><div class="label"><strong>--rule</strong><span>#d9d2c1</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #e8e2d2"></div><div class="label"><strong>--rule-soft</strong><span>#e8e2d2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #b9b09c"></div><div class="label"><strong>--rule-strong</strong><span>#b9b09c</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0a5c4f"></div><div class="label"><strong>--teal</strong><span>#0a5c4f</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #dae5e0"></div><div class="label"><strong>--teal-soft</strong><span>#dae5e0</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #064038"></div><div class="label"><strong>--teal-deep</strong><span>#064038</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #a84e1a"></div><div class="label"><strong>--terracotta</strong><span>#a84e1a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f3e3d2"></div><div class="label"><strong>--terracotta-soft</strong><span>#f3e3d2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #9a6300"></div><div class="label"><strong>--warn</strong><span>#9a6300</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f8ecd5"></div><div class="label"><strong>--warn-soft</strong><span>#f8ecd5</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Four aliases let the canonical SVG <code>&lt;style&gt;</code> block from <code>references/diagram-kit.html</code> render unchanged:</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--teal</span>);
+<span class="kw">--accent-soft</span>:    var(<span class="kw">--teal-soft</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--terracotta</span>);
+<span class="kw">--secondary-soft</span>: var(<span class="kw">--terracotta-soft</span>);</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not add a third primary accent. The teal/terracotta duo is load-bearing for the language's identity. A success palette belongs to <code>field-report</code>, not here.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No Inter, Roboto, Arial, or system-font defaults.</li>
+          <li>No purple gradients on white backgrounds.</li>
+          <li>No dark themes — this language is light-only.</li>
+          <li>No shadows heavier than <code>0 10px 30px rgba(60, 45, 20, 0.04)</code>. Heavier shadows kill the paper feel.</li>
+          <li>No full-bleed photographs. This is a typographic language.</li>
+          <li>No emoji in headings or callouts.</li>
+          <li>No bright/saturated accents outside the warm palette (no electric blue, no neon green).</li>
+          <li>No decorative gradients or patterns beyond the subtle paper grain (radial-gradient at very low opacity).</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in this language with its locked/free contract. The CSS selectors below are stable — copy them verbatim. The HTML structure mirrors the contract defined in <code>references/content-components.html</code>; the values shown here are this language's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The top of every report. See the document's own hero above — it demonstrates the locked elements (Fraunces h1, teal <code>em</code>, italic Fraunces lede, mono eyebrow with terracotta dot, parchment gradient).</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Fraunces h1 (opsz 144), teal italic <code>&lt;em&gt;</code>, Fraunces italic lede (opsz 32), mono caps eyebrow, terracotta dot, <code>bg-soft → bg</code> gradient.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, footer as key/value <code>.meta-row</code> or pill <code>.meta</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Every top-level section in the body. Each section in this document is a live example: terracotta mono <code>.num</code> in the left gutter, Fraunces h2 at 36px / opsz 60. The <code>id</code> matches <code>href="#id"</code> in the TOC.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif h2 at opsz 60, terracotta mono number, <code>position: absolute; left: -64px</code> gutter placement.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 font-weight (400–500), section vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Use a card to enclose a concept, code path, or feature facet — anything that benefits from a visual boundary. Cards nest any prose or sub-components.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-card</code> fill, <code>1px solid var(--rule)</code> border, shadow at ceiling <code>0 10px 30px rgba(60, 45, 20, 0.04)</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (16–24px), padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use the teal-soft background with a 4px teal left border. Place directly after the paragraph they annotate.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant uses <code>--warn</code> / <code>--warn-soft</code>. Reserve for deprecation, failure path, and known gaps. The success variant lives in <code>field-report</code>, not here.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Teal-soft background + 4px teal left-border (default). Warn swaps both colors only — geometry unchanged.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius, padding, presence of icon or bold label.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — the one a skimming reader must absorb. One per section maximum.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Fraunces serif, teal color, ≥24px, thin left rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Rule weight, exact font-size (22–28px), italic on/off, padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>The first item in a series commonly carries <code>open</code> so context is immediately visible. Summary uses Fraunces 22px teal — it feels like a collapsible sub-heading.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse so the reader can skip well-understood steps. The terracotta <code>+ / −</code> marker is part of this language's expression.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif summary in teal at ~22px, rule top-border on each <code>details</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>+/−</code> vs chevron), padding, exact summary font-weight.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>−2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono uppercase <code>th</code> on <code>bg-soft</code>, rule border, row separators in <code>rule-soft</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping (default: none), <code>td</code> font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host): <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Spans are classified manually — <code>kw</code> (keyword), <code>str</code> (string), <code>com</code> (comment), <code>n</code> (numeric), <code>fn</code> (function), <code>type</code> (type name). No runtime highlighter is involved.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-code</code> fill, <code>var(--rule)</code> border, JetBrains Mono 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (12–20px), padding, exact syntax token colors within the warm palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes. Use for type names, method names, field names, and short literals embedded in prose.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.92em</code>, <code>bg-code</code> wash, teal-deep ink color, small radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact opacity (0.7–0.85), padding, border-radius.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Terracotta border + terracotta ink, mono 12px, pill shape (<code>border-radius: 999px</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), optional <code>terracotta-soft</code> background wash.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 for live diagrams — each one is a <code>&lt;figure class="card diagram"&gt;</code> wrapper with an inline SVG and a Fraunces italic caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Fraunces italic in <code>ink-faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size (13–15px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid is the default — used for "X vs Y" comparisons and "pick this when / don't pick this when" framing (see §02 above).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings and let the language control <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at <code>720px</code> or narrower.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value, child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams here are quiet and precise — not decorative. Boxes have thin borders, generous padding, parchment fill, teal arrows. Text inside diagrams uses Geist sans (matching body) to keep the diagram and the surrounding prose in conversation.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--bg-card)</code></td><td><code>var(--rule)</code></td><td>1.5px stroke, <code>rx="14"</code> rounded corners.</td></tr>
+            <tr><td><code>hot</code></td><td><code>var(--teal-soft)</code></td><td><code>var(--teal)</code></td><td>Same geometry; teal accents.</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--bg-soft)</code></td><td><code>var(--rule-strong)</code></td><td>Slightly heavier stroke (2px).</td></tr>
+            <tr><td><code>external</code></td><td><code>var(--terracotta-soft)</code></td><td><code>var(--terracotta)</code></td><td>Terracotta family.</td></tr>
+            <tr><td><code>warn</code></td><td><code>var(--warn-soft)</code></td><td><code>var(--warn)</code></td><td>Only when the warn palette is permitted.</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--bg)</code></td><td><code>var(--ink-ghost)</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 14px "Geist", sans-serif; fill: var(--ink); }
+              .small { font: 12px "Geist", sans-serif; fill: var(--ink-soft); }
+              .default  { fill: var(--bg-card);        stroke: var(--rule); }
+              .hot      { fill: var(--teal-soft);      stroke: var(--teal); }
+              .store    { fill: var(--bg-soft);        stroke: var(--rule-strong); }
+              .external { fill: var(--terracotta-soft); stroke: var(--terracotta); }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: var(--teal); stroke-width: 2; fill: none; marker-end: url(#ep-arrow); }
+            </style>
+            <defs>
+              <marker id="ep-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--teal)"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70" rx="14"/>
+            <text class="txt"   x="40"  y="67">Trigger</text>
+            <text class="small" x="40"  y="88">user request</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="230" y="67">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="430" y="67">Store</text>
+            <text class="small" x="430" y="88">persist</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70" rx="14"/>
+            <text class="txt"   x="630" y="67">Notify</text>
+            <text class="small" x="630" y="88">third party</text>
+          </svg>
+          <figcaption class="caption">Linear flow — <code>hot</code> marks the step the prose is currently discussing.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 260" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 14px "Geist", sans-serif; fill: var(--ink); }
+              .small { font: 12px "Geist", sans-serif; fill: var(--ink-soft); }
+              .default  { fill: var(--bg-card); stroke: var(--rule); }
+              .hot      { fill: var(--teal-soft); stroke: var(--teal); }
+              .warn     { fill: var(--warn-soft); stroke: var(--warn); }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: var(--teal); stroke-width: 2; fill: none; marker-end: url(#ep-arrow2); }
+            </style>
+            <defs>
+              <marker id="ep-arrow2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--teal)"/>
+              </marker>
+            </defs>
+            <text class="small" x="200" y="22" text-anchor="middle">Before</text>
+            <text class="small" x="640" y="22" text-anchor="middle">After</text>
+            <line x1="430" y1="28" x2="430" y2="240" stroke="var(--rule)" stroke-width="1"/>
+            <rect class="box default" x="50"  y="50" width="140" height="60" rx="12"/>
+            <text class="txt" x="70"  y="84">Old Step 1</text>
+            <path class="arrow" d="M190 80 H230"/>
+            <rect class="box warn"    x="230" y="50" width="140" height="60" rx="12"/>
+            <text class="txt" x="250" y="84">Old Step 2</text>
+            <path class="arrow" d="M140 110 V170"/>
+            <rect class="box default" x="50"  y="170" width="320" height="50" rx="12"/>
+            <text class="txt" x="120" y="200">Old outcome</text>
+            <rect class="box default" x="460" y="50"  width="140" height="60" rx="12"/>
+            <text class="txt" x="480" y="84">New Step 1</text>
+            <path class="arrow" d="M600 80 H640"/>
+            <rect class="box hot"     x="640" y="50"  width="160" height="60" rx="12"/>
+            <text class="txt" x="660" y="84">New Step 2</text>
+            <path class="arrow" d="M570 110 V170"/>
+            <rect class="box hot"     x="460" y="170" width="340" height="50" rx="12"/>
+            <text class="txt" x="530" y="200">Improved outcome</text>
+          </svg>
+          <figcaption class="caption">Before/after — <code>warn</code> on the problematic node, <code>hot</code> on the improved equivalent.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 14px "Geist", sans-serif; fill: var(--ink); }
+              .small      { font: 12px "Geist", sans-serif; fill: var(--ink-soft); }
+              .note       { font: italic 12px "Fraunces", serif; fill: var(--ink-faint); }
+              .step       { font: 500 11px "JetBrains Mono", monospace; fill: var(--terracotta); letter-spacing: 0.12em; }
+              .alert-txt  { font: 600 11px "JetBrains Mono", monospace; fill: var(--warn); letter-spacing: 0.14em; }
+              .default  { fill: var(--bg-card); stroke: var(--rule); }
+              .hot      { fill: var(--teal-soft); stroke: var(--teal); }
+              .external { fill: var(--terracotta-soft); stroke: var(--terracotta); }
+              .box   { stroke-width: 1.5; }
+              .arrow       { stroke: var(--teal);         stroke-width: 2;   fill: none; marker-end: url(#ep-arrow3); }
+              .arrow-muted { stroke: var(--rule-strong);  stroke-width: 1.5; fill: none; marker-end: url(#ep-arrow-muted3); }
+              .arrow-warn  { stroke: var(--warn);         stroke-width: 2;   fill: none; marker-end: url(#ep-arrow-warn3); }
+              .arrow-async { stroke: var(--teal);         stroke-width: 2;   fill: none; stroke-dasharray: 6 3; marker-end: url(#ep-arrow3); }
+            </style>
+            <defs>
+              <marker id="ep-arrow3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--teal)"/>
+              </marker>
+              <marker id="ep-arrow-muted3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--rule-strong)"/>
+              </marker>
+              <marker id="ep-arrow-warn3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--warn)"/>
+              </marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="120" y="52" text-anchor="middle">Client</text>
+
+            <rect class="box default"  x="260" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="320" y="52" text-anchor="middle">API</text>
+
+            <rect class="box hot"      x="440" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="500" y="52" text-anchor="middle">Worker</text>
+
+            <rect class="box external" x="620" y="20" width="200" height="50" rx="12"/>
+            <text class="txt" x="720" y="52" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="var(--rule)" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="90" rx="12"
+                  fill="rgba(154, 99, 0, 0.06)" stroke="var(--warn)" stroke-width="1" stroke-dasharray="4 3"/>
+
+            <path class="arrow-warn" d="M720 320 H500"/>
+            <text class="alert-txt" x="610" y="315" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="32" rx="8"
+                  fill="var(--warn-soft)" stroke="var(--warn)" stroke-width="1"/>
+            <circle cx="378" cy="361" r="3" fill="var(--warn)"/>
+            <text class="alert-txt" x="390" y="365">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="365">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="413">04</text>
+            <path class="arrow" d="M500 410 H720"/>
+            <text class="small" x="610" y="405" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 455 H500"/>
+            <text class="small" x="610" y="450" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="15" y="498">05</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 495 H120"/>
+            <text class="small" x="310" y="513" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — italic Fraunces commentary between messages, dashed arrows for async dispatch, and a warn-tinted alert region with an inline <code>RETRY POLICY ENGAGED</code> callout on the failure path.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Base text classes from <code>diagram-kit</code>:</p>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">14</span>px <span class="str">"Geist"</span>, sans-serif; fill: var(<span class="kw">--ink</span>); }
+<span class="kw">.small</span> { font: <span class="n">12</span>px <span class="str">"Geist"</span>, sans-serif; fill: var(<span class="kw">--ink-soft</span>); }</pre>
+
+        <p>Language extensions — used when a diagram needs inline annotation, step numbering, or alert text (see the annotated sequence above):</p>
+        <pre><span class="kw">.note</span>      { font: italic <span class="n">12</span>px <span class="str">"Fraunces"</span>, serif; fill: var(<span class="kw">--ink-faint</span>); }
+<span class="kw">.step</span>      { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--terracotta</span>); letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--warn</span>);       letter-spacing: <span class="n">0.14</span>em; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Inline annotations use Fraunces italic in <code>ink-faint</code>. Step numbers and alert text use JetBrains Mono with letter-spacing — terracotta for steps, warn for alerts.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Whether to use step numbers at all (small diagrams omit them), exact letter-spacing (0.10–0.16em), annotation placement (above arrow vs. below).</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>When a diagram has a failure path or exceptional region, wrap the affected messages in a <code>warn</code>-tinted dashed rectangle and place an inline alert pill (<code>warn-soft</code> fill + <code>warn</code> border + <code>warn</code>-colored mono caps text) explaining the consequence. The pattern is visible in the sequence diagram above between messages 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Warn-tinted background uses <code>rgba(154, 99, 0, 0.06)</code> + dashed warn border. The inline alert pill stacks a colored dot, a mono-caps label, and a Fraunces italic detail.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert pill copy, whether to include the colored dot.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: <code>var(--teal)</code>. 2px stroke for primary flow, 1px for secondary references. Return paths in a sequence diagram use <code>arrow-muted</code> (<code>var(--rule-strong)</code>) so direction is legible at a glance.</p>
+
+        <h3>Caption</h3>
+        <p>Italic Fraunces, <code>var(--ink-faint)</code>, 14px, centered under the diagram with <code>margin-top: 12px</code>. See the captions on the figures above.</p>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">08</span>
+        <h2>Exemplar reports</h2>
+        <p>Read at least one before writing a fresh report. Exemplars are evidence of the language in real content — not templates to clone. This file is the canonical reference for vocabulary; exemplars show vocabulary deployed.</p>
+        <ul>
+          <li><code>~/notes/04_Research/atlas-on-alibaba-cloud-tour.html</code> — dense ramp-up tour with the full component set. Reference for "everything this language can do at full scale."</li>
+          <li><code>~/notes/04_Research/admin-backup-snapshots-overview.html</code> — shorter operator reference (~70 lines minified). Same language at smaller scale; useful when the report is mid-length.</li>
+        </ul>
+        <p>The two exemplars are visibly different in composition but instantly recognizable as the same language. That's the goal: locked brand stack, free composition.</p>
+        <div class="quote">If two reports in this language feel xeroxed, one of them is wrong. If two reports in this language feel like different brands, both of them are wrong.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

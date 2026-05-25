@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flexoki Paper — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400;1,7..72,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      /* Flexoki light — Steph Ango */
+      --paper:     #FFFCF0;
+      --surface1:  #F2F0E5;
+      --surface2:  #E6E4D9;
+      --border:    #DAD8CE;
+      --ui-active: #CECDC3;
+      --faint:     #878580;
+      --ink:       #1C1B1A;
+      --red:       #AF3029;
+      --orange:    #BC5215;
+      --yellow:    #AD8301;
+      --green:     #66800B;
+      --cyan:      #24837B;
+      --blue:      #205EA6;
+      --purple:    #5E409D;
+      --magenta:   #A02F6F;
+
+      /* Shell-facing aliases — let canonical components paint correctly */
+      --bg:        var(--paper);
+      --bg-soft:   var(--surface1);
+      --bg-card:   #FFFEF7;
+      --bg-code:   var(--surface1);
+
+      --ink-soft:  #403E3C;
+      --ink-faint: var(--faint);
+      --ink-ghost: #B7B5AA;
+
+      --rule:        var(--border);
+      --rule-soft:   #E8E6DC;
+      --rule-strong: #B7B5AA;
+
+      --warn:      var(--orange);
+      --warn-soft: #F7E2D0;
+
+      --accent:         var(--blue);
+      --accent-soft:    #DDE7F2;
+      --secondary:      var(--red);
+      --secondary-soft: #F3D9D5;
+
+      --serif: "Literata", "Iowan Old Style", "Charter", Georgia, serif;
+      --sans:  "Literata", "Iowan Old Style", "Charter", Georgia, serif;
+      --mono:  "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
+      font-size: 17px;
+      line-height: 1.68;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 21% 14%, rgba(135, 133, 128, 0.045) 0, transparent 42%),
+        radial-gradient(circle at 80% 86%, rgba(173, 131, 1, 0.03) 0, transparent 38%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--blue);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--blue);
+      color: var(--paper);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--faint);
+      margin: 0 0 16px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li { counter-increment: toc; margin: 0; }
+
+    aside.toc a {
+      display: block;
+      padding: 6px 0;
+      font-family: var(--serif);
+      font-size: 14.5px;
+      color: var(--ink-soft);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--blue); }
+    aside.toc a.active { color: var(--blue); }
+    aside.toc a.active::before { color: var(--red); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: linear-gradient(180deg, var(--surface1) 0%, var(--paper) 100%);
+      margin: 0 -48px 80px;
+      padding: 104px 48px 76px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 48px; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--red);
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--serif);
+      font-weight: 500;
+      font-size: clamp(42px, 5.8vw, 72px);
+      line-height: 1.05;
+      letter-spacing: -0.022em;
+      font-variation-settings: "opsz" 72;
+      margin: 0 0 28px;
+      color: var(--ink);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 400;
+      color: var(--blue);
+    }
+
+    .lede {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: clamp(19px, 1.9vw, 22px);
+      line-height: 1.5;
+      color: var(--ink-soft);
+      font-variation-settings: "opsz" 24;
+      max-width: 640px;
+      margin: 0 0 36px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--mono);
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+
+    .meta-row .v {
+      font-family: var(--serif);
+      font-size: 14.5px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 8px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--red);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 36px;
+      font-weight: 600;
+      line-height: 1.14;
+      letter-spacing: -0.013em;
+      font-variation-settings: "opsz" 60;
+      margin: 0 0 24px;
+      color: var(--ink);
+    }
+
+    h3 {
+      font-family: var(--serif);
+      font-size: 23px;
+      font-weight: 600;
+      line-height: 1.25;
+      font-variation-settings: "opsz" 36;
+      margin: 40px 0 12px;
+      color: var(--ink);
+    }
+
+    h4 {
+      font-family: var(--serif);
+      font-size: 16px;
+      font-weight: 600;
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    a { color: var(--blue); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--ink); }
+
+    .card {
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      border-radius: 18px;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: 0 8px 24px rgba(28, 27, 26, 0.03);
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 22px 0;
+    }
+
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--blue);
+      background: var(--accent-soft);
+      padding: 18px 20px;
+      border-radius: 10px;
+      margin: 22px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--orange);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 600; }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-size: 25px;
+      line-height: 1.38;
+      color: var(--blue);
+      border-left: 1px solid var(--border);
+      padding-left: 24px;
+      margin: 30px 0;
+      font-variation-settings: "opsz" 32;
+      max-width: 60ch;
+    }
+
+    details {
+      border-top: 1px solid var(--border);
+      padding: 16px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--border); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--serif);
+      font-size: 21px;
+      font-weight: 600;
+      color: var(--blue);
+      list-style: none;
+      font-variation-settings: "opsz" 30;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: var(--mono); color: var(--red); margin-right: 6px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      margin: 22px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--faint);
+      background: var(--surface1);
+    }
+
+    pre {
+      background: var(--surface1);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--blue); }
+    pre .str  { color: var(--green); }
+    pre .com  { color: var(--faint); font-style: italic; }
+    pre .n    { color: var(--orange); }
+    pre .fn   { color: var(--purple); }
+    pre .type { color: var(--cyan); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: rgba(230, 228, 217, 0.7);
+      color: var(--blue);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 4px 10px;
+      border: 1px solid var(--red);
+      border-radius: 999px;
+      color: var(--red);
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 24px 20px 18px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--serif);
+      font-style: italic;
+      color: var(--faint);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 12px;
+      font-variation-settings: "opsz" 20;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 2px solid var(--rule-strong);
+      background: var(--bg-card);
+      border-radius: 0 8px 8px 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--red);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 500;
+      font-size: 10px;
+    }
+
+    .contract .label.free { color: var(--faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--border); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--ink); font-weight: 500; }
+    .swatch .label span { color: var(--faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Contents</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+        <li><a href="#exemplars">Exemplar reports</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Flexoki Paper, <em>inked on warm stock</em></h1>
+          <p class="lede">A prose-led register for engineers who write the way they read — at a desk, sequentially, with the lamp on and the notebook open.</p>
+          <div class="meta">
+            <span class="pill">Status: candidate</span>
+            <span class="pill">Audience: engineer-internal</span>
+            <span class="pill">Light only</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Literata h1 with <code>opsz 72</code>, blue italic <code>&lt;em&gt;</code>, Literata italic lede at <code>opsz 24</code>, mono caps eyebrow with 6px red dot, <code>surface1 → paper</code> linear gradient.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as <code>.meta-row</code> key/values or <code>.meta</code> pill chips.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Flexoki Paper takes Steph Ango's "inky color scheme for prose and code" and renders it as a long-form reading surface. The warm-grey ramp never goes fully cold — even the rules and borders carry a paper tone. Body and headings are Literata; code, eyebrows, and marginalia are JetBrains Mono. The lead accent is <em>blue</em> — used on links, the italic-em phrase inside hero titles, the active TOC entry, and primary diagram nodes. Red is the secondary touch — the eyebrow dot, the marginalia counter, ticket pills. Orange is reserved for warnings.</p>
+        <div class="quote">A page in this language should feel like ink soaking into uncoated paper — warm, soft-edged, and quietly opinionated about what matters.</div>
+        <p>The paper background is load-bearing. <code>#FFFCF0</code> is not "almost white" — it is specifically warmer than any cool grey, and the subtle radial-gradient grain reinforces that warmth without becoming texture. Drop the grain and the page goes flat; raise it and it becomes a stationery sample. The 17px body and 1.68 line-height give the page a slower cadence than a typical web doc; that cadence is the language.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>The report is essay-shaped — a long-form ramp-up, a deep operator reference, an annotated tour of a system. The reader will sit with it for 15+ minutes. The content benefits from a serif voice and a generous reading rhythm.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The reader will skim a dashboard in 90 seconds — Flexoki Paper's rhythm is too slow. Pick a denser sans-led language. Also avoid when the document needs dark mode (use <code>flexoki-ink</code>) or when the brand is mono-first (use <code>flexoki-prose</code>).</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL — the weight and axis ranges are part of the brand.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,500;0,7..72,600;0,7..72,700;1,7..72,400;1,7..72,500&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>: <span class="str">"Literata"</span>, <span class="str">"Iowan Old Style"</span>, <span class="str">"Charter"</span>, Georgia, serif;
+<span class="kw">--sans</span>:  <span class="str">"Literata"</span>, <span class="str">"Iowan Old Style"</span>, <span class="str">"Charter"</span>, Georgia, serif;
+<span class="kw">--mono</span>:  <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;</pre>
+
+        <p>Yes — <code>--serif</code> and <code>--sans</code> resolve to the same family. Flexoki Paper is intentionally a single-typeface body experiment; the variation comes from Literata's optical-size axis, not from a serif/sans split.</p>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--serif)</code> — Literata</td><td>17px, line-height 1.68</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--serif)</code> — Literata</td><td>Use <code>opsz</code> variation axis (24–72)</td></tr>
+            <tr><td>Code, eyebrows, marginalia, pills, meta keys</td><td><code>var(--mono)</code> — JetBrains Mono</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Optical-size settings</h3>
+        <ul>
+          <li><code>h1</code>: <code>font-variation-settings: "opsz" 72</code> — Literata's display end of the axis.</li>
+          <li><code>h2</code>: <code>font-variation-settings: "opsz" 60</code>.</li>
+          <li>Ledes and pull quotes: <code>font-variation-settings: "opsz" 24</code> — body-leaning, for italic phrases that should read as part of the prose register.</li>
+        </ul>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Italic serif for ledes, pull quotes, and italic-em phrases inside <code>h1</code> titles: <code>&lt;h1&gt;Title, &lt;em&gt;italic phrase&lt;/em&gt;&lt;/h1&gt;</code>.</li>
+          <li>Mono caps with letter-spacing for eyebrows and meta-row labels.</li>
+          <li><strong>Never</strong> bold body prose for emphasis — use italic instead.</li>
+          <li>The eyebrow dot is always <code>var(--red)</code> — Flexoki Paper's smallest red touch.</li>
+          <li>Links are <code>var(--blue)</code>; hover collapses to <code>var(--ink)</code>. No purple visited state.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>These hex values come from Flexoki's published palette (Steph Ango). Do not approximate; paste verbatim.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #FFFCF0"></div><div class="label"><strong>--paper</strong><span>#FFFCF0</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F2F0E5"></div><div class="label"><strong>--surface1</strong><span>#F2F0E5</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E6E4D9"></div><div class="label"><strong>--surface2</strong><span>#E6E4D9</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #DAD8CE"></div><div class="label"><strong>--border</strong><span>#DAD8CE</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #CECDC3"></div><div class="label"><strong>--ui-active</strong><span>#CECDC3</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #878580"></div><div class="label"><strong>--faint</strong><span>#878580</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #1C1B1A"></div><div class="label"><strong>--ink</strong><span>#1C1B1A</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #AF3029"></div><div class="label"><strong>--red</strong><span>#AF3029</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #BC5215"></div><div class="label"><strong>--orange</strong><span>#BC5215</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #AD8301"></div><div class="label"><strong>--yellow</strong><span>#AD8301</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #66800B"></div><div class="label"><strong>--green</strong><span>#66800B</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #24837B"></div><div class="label"><strong>--cyan</strong><span>#24837B</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #205EA6"></div><div class="label"><strong>--blue</strong><span>#205EA6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #5E409D"></div><div class="label"><strong>--purple</strong><span>#5E409D</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #A02F6F"></div><div class="label"><strong>--magenta</strong><span>#A02F6F</span></div></div>
+        </div>
+
+        <h3>Role assignment</h3>
+        <ul>
+          <li><strong>Lead accent</strong> — <code>--blue</code>. Links, italic-em in titles, active TOC, primary diagram arrows and <code>hot</code> nodes.</li>
+          <li><strong>Secondary</strong> — <code>--red</code>. Eyebrow dot, marginalia counter, pill borders, active-TOC counter prefix.</li>
+          <li><strong>Warn</strong> — <code>--orange</code>. Failure paths, deprecation, retry callouts.</li>
+          <li>The remaining hues (<code>--green</code>, <code>--cyan</code>, <code>--yellow</code>, <code>--purple</code>, <code>--magenta</code>) are reserved for syntax tokens in code blocks and the occasional categorical diagram. They are not load-bearing brand colors.</li>
+        </ul>
+
+        <h3>Diagram-kit aliases</h3>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--blue</span>);
+<span class="kw">--accent-soft</span>:    <span class="str">#DDE7F2</span>;
+<span class="kw">--secondary</span>:      var(<span class="kw">--red</span>);
+<span class="kw">--secondary-soft</span>: <span class="str">#F3D9D5</span>;</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not promote orange to a lead accent or treat green as a "success" brand color. Flexoki's strength is restraint — blue leads, red supports, everything else stays in code blocks or tertiary diagram roles.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No system-font defaults. Literata must load — fallback to Iowan/Charter/Georgia only if the network fails.</li>
+          <li>No cool-grey neutrals. The ramp is warm; <code>#F5F5F5</code> kills the brand.</li>
+          <li>No dark themes — use <code>flexoki-ink</code> instead.</li>
+          <li>No bold body prose for emphasis. Italic only.</li>
+          <li>No saturated accents outside the Flexoki palette. No electric blue, no neon green, no pastel pinks.</li>
+          <li>No shadows heavier than <code>0 8px 24px rgba(28, 27, 26, 0.03)</code>. Heavy shadows destroy the paper feel.</li>
+          <li>No full-bleed photos or decorative gradients beyond the subtle paper grain.</li>
+          <li>No emoji in headings, callouts, or marginalia.</li>
+          <li>No purple visited-link state — links stay blue regardless of history.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in this language with its locked/free contract. The CSS selectors below are stable — copy them verbatim. The HTML structure mirrors the contract defined in <code>references/content-components.md</code>; the values shown here are Flexoki Paper's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The top of every report. See the document's own hero above — it demonstrates the locked elements (Literata h1, blue <code>em</code>, italic Literata lede, mono eyebrow with red dot, surface1→paper gradient).</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Literata h1 (opsz 72), blue italic <code>&lt;em&gt;</code>, Literata italic lede (opsz 24), mono caps eyebrow, red dot, <code>surface1 → paper</code> gradient.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, footer as key/value <code>.meta-row</code> or pill <code>.meta</code>.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Every top-level section in the body. Each section in this document is a live example: red mono <code>.num</code> in the left gutter, Literata h2 at 36px / opsz 60. The <code>id</code> matches <code>href="#id"</code> in the TOC.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif h2 at opsz 60, red mono number, <code>position: absolute; left: -64px</code> gutter placement.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact <code>left</code> offset (±8px), h2 font-weight (500–600), section vertical rhythm.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A self-contained card</h4>
+            <p>Use a card to enclose a concept, code path, or feature facet — anything that benefits from a visual boundary. Cards nest any prose or sub-components.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>bg-card</code> fill, <code>1px solid var(--border)</code> border, shadow at ceiling <code>0 8px 24px rgba(28, 27, 26, 0.03)</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (14–22px), padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use a 4px blue left border with a tinted blue wash. Place directly after the paragraph they annotate.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant swaps to <code>--orange</code> / <code>warn-soft</code>. Reserve for deprecation, failure paths, and known gaps.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Blue-soft background + 4px blue left-border (default). Warn swaps both colors only — geometry unchanged.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius, padding, presence of icon or bold label.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — the one a skimming reader must absorb. One per section maximum.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Literata serif, blue color, ≥24px, thin left rule.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Rule weight, exact font-size (22–28px), italic on/off, padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>The first item in a series commonly carries <code>open</code> so context is immediately visible. Summary uses Literata 21px blue — it feels like a collapsible sub-heading.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse so the reader can skip well-understood steps. The red <code>+ / −</code> marker is Flexoki Paper's only marker glyph.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Serif summary in blue at ~21px, border-top rule on each <code>details</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Marker glyph (<code>+/−</code> vs chevron), padding, exact summary font-weight.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>−2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono uppercase <code>th</code> on <code>surface1</code>, border, row separators in <code>rule-soft</code>.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping (default: none), <code>td</code> font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host: <span class="type">str</span>) -&gt; <span class="type">int</span>:  <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Token colors lean on the full Flexoki ramp: <code>kw</code>=blue, <code>str</code>=green, <code>com</code>=faint italic, <code>n</code>=orange, <code>fn</code>=purple, <code>type</code>=cyan. No runtime highlighter is involved — spans are classified manually.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>surface1</code> fill, <code>var(--border)</code> border, JetBrains Mono 13px.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Border-radius (12–18px), padding, exact syntax token colors within the Flexoki palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes. Use for type names, method names, field names, and short literals embedded in prose.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono at <code>0.92em</code>, <code>surface2</code> wash, blue ink color, small radius.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact opacity (0.6–0.85), padding, border-radius.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Red border + red ink, mono 12px, pill shape (<code>border-radius: 999px</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, font-size (11–13px), optional <code>secondary-soft</code> background wash.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 for live diagrams — each one is a <code>&lt;figure class="card diagram"&gt;</code> wrapper with an inline SVG and a Literata italic caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome; caption is Literata italic in <code>--faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size (13–15px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid is the default — used for "X vs Y" comparisons and "pick this when / don't pick this when" framing (see §02 above).</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings and let the language control <code>grid-template-columns</code>.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>display: grid</code>, gap, single-column collapse at <code>720px</code> or narrower.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), gap value, child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Diagrams here are quiet and precise — paper-fill rectangles, thin borders, blue arrows. SVG text uses Literata (matching body) so the diagram and the surrounding prose share a register. Use <code>hot</code> sparingly — only on the step the prose is currently discussing.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>var(--bg-card)</code></td><td><code>var(--border)</code></td><td>1.5px stroke, <code>rx="14"</code> rounded corners.</td></tr>
+            <tr><td><code>hot</code></td><td><code>#DDE7F2</code> (blue wash)</td><td><code>var(--blue)</code></td><td>Same geometry; blue accents.</td></tr>
+            <tr><td><code>store</code></td><td><code>var(--surface1)</code></td><td><code>var(--rule-strong)</code></td><td>Slightly heavier stroke (2px).</td></tr>
+            <tr><td><code>external</code></td><td><code>#F3D9D5</code> (red wash)</td><td><code>var(--red)</code></td><td>Red family.</td></tr>
+            <tr><td><code>warn</code></td><td><code>var(--warn-soft)</code></td><td><code>var(--orange)</code></td><td>Only when the warn palette is permitted.</td></tr>
+            <tr><td><code>future</code></td><td><code>var(--paper)</code></td><td><code>var(--ink-ghost)</code>, dashed</td><td><code>stroke-dasharray: 4 3</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 140" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt   { font: 14px "Literata", serif; fill: var(--ink); }
+              .small { font: 12px "Literata", serif; fill: var(--ink-soft); }
+              .default  { fill: var(--bg-card);   stroke: var(--border); }
+              .hot      { fill: #DDE7F2;          stroke: var(--blue); }
+              .store    { fill: var(--surface1);  stroke: var(--rule-strong); }
+              .external { fill: #F3D9D5;          stroke: var(--red); }
+              .box   { stroke-width: 1.5; }
+              .arrow { stroke: var(--blue); stroke-width: 2; fill: none; marker-end: url(#fp-arrow); }
+            </style>
+            <defs>
+              <marker id="fp-arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--blue)"/>
+              </marker>
+            </defs>
+            <rect class="box default" x="20"  y="35" width="150" height="70" rx="14"/>
+            <text class="txt"   x="40"  y="67">Trigger</text>
+            <text class="small" x="40"  y="88">user request</text>
+            <path class="arrow" d="M170 70 H210"/>
+            <rect class="box hot"     x="210" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="230" y="67">Process</text>
+            <text class="small" x="230" y="88">in focus</text>
+            <path class="arrow" d="M370 70 H410"/>
+            <rect class="box store"   x="410" y="35" width="160" height="70" rx="14"/>
+            <text class="txt"   x="430" y="67">Store</text>
+            <text class="small" x="430" y="88">persist</text>
+            <path class="arrow" d="M570 70 H610"/>
+            <rect class="box external" x="610" y="35" width="170" height="70" rx="14"/>
+            <text class="txt"   x="630" y="67">Notify</text>
+            <text class="small" x="630" y="88">third party</text>
+          </svg>
+          <figcaption class="caption">Linear flow — <code>hot</code> marks the step the prose is currently discussing.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 540" xmlns="http://www.w3.org/2000/svg">
+            <style>
+              .txt        { font: 14px "Literata", serif; fill: var(--ink); }
+              .small      { font: 12px "Literata", serif; fill: var(--ink-soft); }
+              .note       { font: italic 12px "Literata", serif; fill: var(--faint); }
+              .step       { font: 500 11px "JetBrains Mono", monospace; fill: var(--red);    letter-spacing: 0.12em; }
+              .alert-txt  { font: 600 11px "JetBrains Mono", monospace; fill: var(--orange); letter-spacing: 0.14em; }
+              .default  { fill: var(--bg-card); stroke: var(--border); }
+              .hot      { fill: #DDE7F2;        stroke: var(--blue); }
+              .external { fill: #F3D9D5;        stroke: var(--red); }
+              .box   { stroke-width: 1.5; }
+              .arrow       { stroke: var(--blue);        stroke-width: 2;   fill: none; marker-end: url(#fp-arrow3); }
+              .arrow-muted { stroke: var(--rule-strong); stroke-width: 1.5; fill: none; marker-end: url(#fp-arrow-muted3); }
+              .arrow-warn  { stroke: var(--orange);      stroke-width: 2;   fill: none; marker-end: url(#fp-arrow-warn3); }
+              .arrow-async { stroke: var(--blue);        stroke-width: 2;   fill: none; stroke-dasharray: 6 3; marker-end: url(#fp-arrow3); }
+            </style>
+            <defs>
+              <marker id="fp-arrow3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--blue)"/>
+              </marker>
+              <marker id="fp-arrow-muted3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--rule-strong)"/>
+              </marker>
+              <marker id="fp-arrow-warn3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path d="M0,0 L8,4 L0,8 Z" fill="var(--orange)"/>
+              </marker>
+            </defs>
+
+            <rect class="box default"  x="60"  y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="120" y="52" text-anchor="middle">Client</text>
+
+            <rect class="box default"  x="260" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="320" y="52" text-anchor="middle">API</text>
+
+            <rect class="box hot"      x="440" y="20" width="120" height="50" rx="12"/>
+            <text class="txt" x="500" y="52" text-anchor="middle">Worker</text>
+
+            <rect class="box external" x="620" y="20" width="200" height="50" rx="12"/>
+            <text class="txt" x="720" y="52" text-anchor="middle">Provider API</text>
+
+            <line x1="120" y1="70" x2="120" y2="525" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="320" y1="70" x2="320" y2="525" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="500" y1="70" x2="500" y2="525" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+            <line x1="720" y1="70" x2="720" y2="525" stroke="var(--border)" stroke-width="1" stroke-dasharray="5 4"/>
+
+            <text class="step" x="15" y="128">01</text>
+            <path class="arrow" d="M120 125 H320"/>
+            <text class="small" x="220" y="120" text-anchor="middle">POST /jobs</text>
+            <text class="note"  x="220" y="146" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 170 H120"/>
+            <text class="small" x="220" y="165" text-anchor="middle">201 + job_id</text>
+
+            <text class="step" x="15" y="218">02</text>
+            <text class="note"  x="410" y="200" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 215 H500"/>
+            <text class="small" x="410" y="234" text-anchor="middle">enqueue(job)</text>
+
+            <text class="step" x="15" y="278">03</text>
+            <path class="arrow" d="M500 275 H720"/>
+            <text class="small" x="610" y="270" text-anchor="middle">POST /provision</text>
+
+            <rect x="340" y="295" width="480" height="90" rx="12"
+                  fill="rgba(188, 82, 21, 0.06)" stroke="var(--orange)" stroke-width="1" stroke-dasharray="4 3"/>
+
+            <path class="arrow-warn" d="M720 320 H500"/>
+            <text class="alert-txt" x="610" y="315" text-anchor="middle">503 SERVICE UNAVAILABLE</text>
+
+            <rect x="360" y="345" width="440" height="32" rx="8"
+                  fill="var(--warn-soft)" stroke="var(--orange)" stroke-width="1"/>
+            <circle cx="378" cy="361" r="3" fill="var(--orange)"/>
+            <text class="alert-txt" x="390" y="365">RETRY POLICY ENGAGED</text>
+            <text class="note"      x="560" y="365">backoff +2s, max 3 attempts</text>
+
+            <text class="step" x="15" y="413">04</text>
+            <path class="arrow" d="M500 410 H720"/>
+            <text class="small" x="610" y="405" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 455 H500"/>
+            <text class="small" x="610" y="450" text-anchor="middle">201 Created</text>
+
+            <text class="step" x="15" y="498">05</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 495 H120"/>
+            <text class="small" x="310" y="513" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption">Annotated sequence — italic Literata commentary between messages, dashed arrows for async dispatch, and an orange-tinted alert region with an inline <code>RETRY POLICY ENGAGED</code> callout on the failure path.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <pre><span class="kw">.txt</span>   { font: <span class="n">14</span>px <span class="str">"Literata"</span>, serif; fill: var(<span class="kw">--ink</span>); }
+<span class="kw">.small</span> { font: <span class="n">12</span>px <span class="str">"Literata"</span>, serif; fill: var(<span class="kw">--ink-soft</span>); }
+<span class="kw">.note</span>      { font: italic <span class="n">12</span>px <span class="str">"Literata"</span>, serif; fill: var(<span class="kw">--faint</span>); }
+<span class="kw">.step</span>      { font: <span class="n">500</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--red</span>);    letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">600</span> <span class="n">11</span>px <span class="str">"JetBrains Mono"</span>, monospace; fill: var(<span class="kw">--orange</span>); letter-spacing: <span class="n">0.14</span>em; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>SVG body text is Literata (matches body prose). Inline annotations are Literata italic in <code>--faint</code>. Step numbers and alert text use JetBrains Mono with letter-spacing — red for steps, orange for alerts.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Whether to use step numbers at all (small diagrams omit them), exact letter-spacing (0.10–0.16em), annotation placement (above arrow vs. below).</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>When a diagram has a failure path or exceptional region, wrap the affected messages in an orange-tinted dashed rectangle and place an inline alert pill (<code>warn-soft</code> fill + <code>orange</code> border + orange-colored mono caps text) explaining the consequence. The pattern is visible in the sequence diagram above between messages 03 and 04.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Region background uses <code>rgba(188, 82, 21, 0.06)</code> + dashed orange border. The inline alert pill stacks a colored dot, a mono-caps label, and a Literata italic detail.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact alert pill copy, whether to include the colored dot.</span></div>
+        </aside>
+
+        <h3>Arrow color</h3>
+        <p>Default arrows: <code>var(--blue)</code> at 2px. Return paths use <code>arrow-muted</code> (<code>var(--rule-strong)</code>) so direction is legible at a glance. Async/fire-and-forget paths use <code>stroke-dasharray: 6 3</code>.</p>
+
+        <h3>Caption</h3>
+        <p>Italic Literata, <code>var(--faint)</code>, 14px, centered under the diagram with <code>margin-top: 12px</code>.</p>
+      </section>
+
+      <section id="exemplars" class="section">
+        <span class="num">08</span>
+        <h2>Exemplar reports</h2>
+        <p>Read at least one before writing a fresh report in this language. Exemplars are evidence of vocabulary deployed in real content — not templates to clone.</p>
+        <ul>
+          <li><em>Pending</em> — a long-form ramp-up tour rendered in Flexoki Paper at full scale. Reference for "everything this language can do."</li>
+          <li><em>Pending</em> — a mid-length operator reference. Same vocabulary at smaller scale.</li>
+        </ul>
+        <p>Two reports in this language should be visibly the same voice but visibly not xeroxed. If they feel identical, one of them is over-templated. If they feel like different brands, one of them broke the locked stack.</p>
+        <div class="quote">Lock the stack, free the composition — that is the only rule that matters.</div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

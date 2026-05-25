@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>cyber-matrix :: design language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:         #000000;
+      --bg-card:    #050505;
+      --bg-soft:    #0a0a0a;
+      --bg-code:    #050505;
+
+      --text:       #00FF41;
+      --text-dim:   #007020;
+      --text-faint: #003B00;
+      --text-ghost: #002000;
+
+      --cyan:       #00FFFF;
+      --red:        #FF0000;
+      --amber:      #FFB000;  /* used only in <pre> token mapping, no other place */
+
+      --rule:        #003B00;
+      --rule-soft:   #002000;
+      --rule-strong: #00FF41;
+
+      /* role aliases */
+      --accent:         var(--text);
+      --accent-soft:    rgba(0, 255, 65, 0.10);
+      --secondary:      var(--cyan);
+      --secondary-soft: rgba(0, 255, 255, 0.08);
+      --warn:           var(--red);
+      --warn-soft:      rgba(255, 0, 0, 0.08);
+      --ink:        var(--text);
+      --ink-soft:   var(--text-dim);
+      --ink-ghost:  var(--text-faint);
+
+      --mono: "IBM Plex Mono", "JetBrains Mono", "SF Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--mono);
+      font-weight: 400;
+      font-size: 14px;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    /* scanlines + faint phosphor glow */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(0, 255, 65, 0.035) 0 1px, transparent 1px 3px);
+      pointer-events: none;
+      z-index: 0;
+      mix-blend-mode: screen;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: ""; display: block; height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--text);
+      box-shadow: 0 0 6px rgba(0, 255, 65, 0.7);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute; left: -9999px; top: auto;
+      width: 1px; height: 1px; overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static; width: auto; height: auto; overflow: visible;
+      padding: 6px 12px; background: var(--text); color: var(--bg);
+    }
+
+    .layout {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text);
+      margin: 0 0 14px;
+    }
+    aside.toc h2::before { content: ">>> "; color: var(--text-dim); }
+
+    aside.toc ol {
+      list-style: none; padding: 0; margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li { counter-increment: toc; }
+
+    aside.toc a {
+      display: block;
+      padding: 4px 0;
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-dim);
+      text-decoration: none;
+      transition: color 0.1s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      color: var(--text-faint);
+      margin-right: 12px;
+    }
+
+    aside.toc a:hover { color: var(--text); }
+    aside.toc a.active {
+      color: var(--text);
+      font-weight: 700;
+    }
+    aside.toc a.active::before { content: ">"; color: var(--text); margin-right: 12px; }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--bg);
+      margin: 0 -48px 64px;
+      padding: 80px 48px 48px;
+      border-bottom: 1px solid var(--text);
+      position: relative;
+    }
+    header.hero::before {
+      content: "[BEGIN_TRANSMISSION]";
+      position: absolute;
+      top: 16px; left: 48px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+    header.hero::after {
+      content: "// FREQUENCY: 1337.MHz · OPERATOR: ANON · STATUS: ONLINE";
+      position: absolute;
+      top: 16px; right: 48px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 64px 24px 40px; }
+      header.hero::after { display: none; }
+    }
+
+    .hero-inner { max-width: 880px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 400;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 24px;
+    }
+    .eyebrow::before { content: ">>> "; color: var(--text); }
+    .eyebrow .dot {
+      display: inline-block;
+      width: 8px; height: 14px;
+      background: var(--text);
+      box-shadow: 0 0 6px rgba(0, 255, 65, 0.8);
+      margin-left: 8px;
+      vertical-align: -2px;
+      animation: blink 1.2s steps(2, end) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    h1.title {
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: clamp(34px, 5vw, 56px);
+      line-height: 1.05;
+      letter-spacing: -0.01em;
+      margin: 0 0 24px;
+      color: var(--text);
+    }
+    h1.title em {
+      font-style: normal;
+      font-weight: 400;
+      color: var(--text-dim);
+    }
+    h1.title em::before { content: "// "; color: var(--text-faint); }
+
+    .lede {
+      font-family: var(--mono);
+      font-weight: 400;
+      font-size: 16px;
+      line-height: 1.55;
+      color: var(--text-dim);
+      max-width: 70ch;
+      margin: 0 0 32px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .meta-row {
+      display: flex; flex-wrap: wrap; gap: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+    }
+    .meta-row > div { display: flex; flex-direction: column; gap: 2px; }
+    .meta-row .k {
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--text-faint);
+    }
+    .meta-row .v {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 88px;
+      scroll-margin-top: 32px;
+    }
+
+    /* terminal block markers via ::before/::after on each section */
+    section.section::before {
+      content: "[BEGIN]";
+      display: block;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    section.section::after {
+      content: "[END]";
+      display: block;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+      margin-top: 32px;
+      text-align: right;
+    }
+
+    .num {
+      position: absolute;
+      left: -68px;
+      top: 23px;
+      font-family: var(--mono);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text);
+      letter-spacing: 0.06em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 4px; }
+    }
+
+    h2 {
+      font-family: var(--mono);
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.005em;
+      margin: 0 0 24px;
+      color: var(--text);
+    }
+    h2::before {
+      content: ">>> ";
+      color: var(--text-dim);
+      font-weight: 400;
+    }
+
+    h3 {
+      font-family: var(--mono);
+      font-size: 17px;
+      font-weight: 600;
+      line-height: 1.25;
+      margin: 36px 0 12px;
+      color: var(--text);
+    }
+    h3::before { content: ">> "; color: var(--text-dim); font-weight: 400; }
+
+    h4 {
+      font-family: var(--mono);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+      color: var(--text);
+    }
+    h4::before { content: "# "; color: var(--text-dim); font-weight: 400; }
+
+    p { margin: 0 0 14px; max-width: 78ch; }
+
+    a {
+      color: var(--cyan);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+    a:hover { color: var(--text); }
+
+    .card {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+      padding: 18px 20px;
+      margin: 20px 0;
+      position: relative;
+    }
+    .card::before {
+      content: "[BEGIN]";
+      position: absolute;
+      top: -1px; left: 12px;
+      transform: translateY(-50%);
+      background: var(--bg);
+      padding: 0 8px;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+    }
+    .card::after {
+      content: "[END]";
+      position: absolute;
+      bottom: -1px; right: 12px;
+      transform: translateY(50%);
+      background: var(--bg);
+      padding: 0 8px;
+      font-size: 10px;
+      color: var(--text-faint);
+      letter-spacing: 0.1em;
+    }
+    .card.mini { padding: 16px 18px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 22px 0;
+    }
+    .grid > .card { margin: 0; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .callout {
+      border-left: 3px solid var(--text);
+      background: rgba(0, 255, 65, 0.04);
+      padding: 14px 18px;
+      margin: 20px 0;
+      font-family: var(--mono);
+      font-size: 14px;
+    }
+    .callout::before {
+      content: ">>> ";
+      color: var(--text-dim);
+    }
+    .callout strong {
+      font-weight: 700;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .callout.warn {
+      border-left-color: var(--red);
+      background: rgba(255, 0, 0, 0.05);
+      color: var(--text);
+    }
+    .callout.warn strong { color: var(--red); }
+    .callout.warn::before { content: "!!! "; color: var(--red); }
+
+    .callout.success {
+      border-left-color: var(--cyan);
+      background: rgba(0, 255, 255, 0.04);
+    }
+    .callout.success strong { color: var(--cyan); }
+    .callout.success::before { content: "[OK] "; color: var(--cyan); }
+
+    .quote {
+      font-family: var(--mono);
+      font-weight: 500;
+      font-size: 18px;
+      line-height: 1.45;
+      color: var(--text);
+      border-left: 1px solid var(--text);
+      padding: 4px 0 4px 18px;
+      margin: 28px 0;
+      max-width: 70ch;
+    }
+    .quote::before { content: "// "; color: var(--text-dim); }
+
+    details {
+      border-top: 1px solid var(--rule);
+      padding: 14px 0;
+    }
+    details:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::before {
+      content: "[+]";
+      color: var(--text-dim);
+      margin-right: 10px;
+      font-weight: 400;
+    }
+    details[open] > summary::before { content: "[-]"; color: var(--text); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 1px solid var(--rule);
+      margin: 20px 0;
+    }
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--rule-soft);
+      vertical-align: top;
+      font-family: var(--mono);
+      font-size: 13px;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    th {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--text);
+      background: var(--bg-soft);
+      border-bottom: 1px solid var(--text);
+    }
+    th::before { content: "# "; color: var(--text-dim); font-weight: 400; }
+    td { color: var(--text-dim); }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule);
+      padding: 14px 16px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.6;
+      margin: 14px 0;
+      color: var(--text);
+      position: relative;
+    }
+    pre::before {
+      content: "$";
+      color: var(--text-dim);
+      position: absolute;
+      top: 14px; left: -16px;
+      font-size: 12px;
+    }
+
+    pre .kw   { color: var(--text); font-weight: 700; }
+    pre .str  { color: var(--cyan); }
+    pre .com  { color: var(--text-faint); }
+    pre .n    { color: var(--amber); }
+    pre .fn   { color: var(--text); }
+    pre .type { color: var(--cyan); }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.95em;
+      background: rgba(0, 255, 65, 0.08);
+      color: var(--text);
+      padding: 1px 5px;
+      border: 1px solid var(--rule);
+    }
+
+    .pill {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      padding: 2px 8px;
+      border: 1px solid var(--text);
+      color: var(--text);
+      display: inline-block;
+      line-height: 1.5;
+    }
+    .pill::before { content: "["; color: var(--text-dim); }
+    .pill::after { content: "]"; color: var(--text-dim); }
+
+    figure.card.diagram { padding: 28px 20px 18px; margin: 26px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-dim);
+      text-align: center;
+      margin-top: 14px;
+    }
+    .caption::before { content: "// "; color: var(--text-faint); }
+
+    .contract {
+      margin: 12px 0 30px;
+      padding: 12px 16px;
+      border-left: 2px solid var(--rule);
+      background: var(--bg-soft);
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--text-dim);
+    }
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+    .contract .label {
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 700;
+      font-size: 10px;
+    }
+    .contract .label.free { color: var(--text-faint); font-weight: 400; }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px;
+      margin: 22px 0;
+    }
+    .swatch {
+      border: 1px solid var(--rule);
+      background: var(--bg-card);
+    }
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label {
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 11px;
+      line-height: 1.5;
+      color: var(--text-dim);
+    }
+    .swatch .label strong { display: block; color: var(--text); font-weight: 600; }
+    .swatch .label span { color: var(--text-faint); }
+
+    .gallery-item { margin: 0 0 40px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 2px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>contents</h2>
+      <ol>
+        <li><a href="#personality">personality</a></li>
+        <li><a href="#fit">deployment</a></li>
+        <li><a href="#stack">brand stack</a></li>
+        <li><a href="#palette">palette</a></li>
+        <li><a href="#anti">anti-patterns</a></li>
+        <li><a href="#components">components</a></li>
+        <li><a href="#diagrams">diagrams</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="eyebrow">design language :: cyber-matrix<span class="dot"></span></div>
+          <h1 class="title">cyber-matrix <em>terminal-only register</em></h1>
+          <p class="lede">A monolithic, uncompromising design language for hacker-manifesto reports, protocol disclosures, and any document that should look like the operator never left the shell. One typeface. Black background. Phosphor green prose. Hierarchy from weight and size only — never from font family.</p>
+          <div class="meta">
+            <span class="pill">build/01</span>
+            <span class="pill">classified/anon</span>
+            <span class="pill">tty/ok</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 880px; margin: 32px auto 0;">
+          <div class="row"><span class="label">LOCKED</span><span>IBM Plex Mono for every glyph in the document. Pure black background. Matrix green primary. Hero block bracketed with <code>[BEGIN_TRANSMISSION]</code> top-left and frequency string top-right. Blinking phosphor cursor in eyebrow.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Padding, lede max-width, meta as pills or key/values, whether frequency string is visible on narrow viewports.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>personality</h2>
+        <p>cyber-matrix is a terminal emulator pretending to be a publishing system. There is one typeface — IBM Plex Mono. Hierarchy comes from <strong>weight</strong> (400/500/600/700) and <strong>size</strong>. The accent colors are matrix green for primary, cyan for secondary, and pure red for alarm. The background is pure black <code>#000000</code> and the prose is matrix green <code>#00FF41</code>. The result reads like a terminal that decided to typeset itself.</p>
+        <div class="quote">When the document and the shell use the same vocabulary, the operator never context-switches.</div>
+        <p>Every section is wrapped in <code>[BEGIN] / [END]</code> markers. Headings prefix with <code>&gt;&gt;&gt;</code>. Subheadings prefix with <code>&gt;&gt;</code>. Inline labels prefix with <code>#</code>. The slash-slash <code>//</code> is reserved for inline annotations and quoted material. The arrow chain is the brand's syntactic spine — replace it with chevrons or arrows and the language stops feeling like itself.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>when to deploy</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>deploy when</h4>
+            <p>Protocol disclosures, exploit writeups, hacker-manifesto-style essays, terminal-tool documentation where the tool itself is a CLI. Anywhere the audience already lives in a terminal and would resent a more decorated register.</p>
+          </div>
+          <div class="card mini">
+            <h4>do not deploy when</h4>
+            <p>Audience expects prose readability over visual identity. Long sequential reading where a serif/sans split would reduce fatigue — pick <code>editorial-parchment</code>. Anywhere the content is celebratory, illustrative, or sales-adjacent.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>locked brand stack</h2>
+        <p>One Google Fonts URL. One typeface. Four weights.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>font stack variable</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--mono</span>: <span class="str">"IBM Plex Mono"</span>, <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>role assignments by weight</h3>
+        <table>
+          <thead>
+            <tr><th>role</th><th>weight</th><th>size</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td>400</td><td>14px</td></tr>
+            <tr><td>Pull quote</td><td>500</td><td>18px</td></tr>
+            <tr><td>Card h4 / table th / pill</td><td>600 / 700</td><td>11–13px</td></tr>
+            <tr><td>Section h3</td><td>600</td><td>17px</td></tr>
+            <tr><td>Section h2</td><td>700</td><td>26px</td></tr>
+            <tr><td>Hero h1</td><td>700</td><td>34–56px</td></tr>
+            <tr><td>Code, mono, captions, eyebrows</td><td>400–500</td><td>11–14px</td></tr>
+          </tbody>
+        </table>
+
+        <h3>voice rules</h3>
+        <ul>
+          <li>One typeface. No exceptions. Even pull quotes are mono.</li>
+          <li>Sentence-case for headings (heading prefix <code>&gt;&gt;&gt;</code> does the work that ALL CAPS would do elsewhere).</li>
+          <li>Section blocks wrap with <code>[BEGIN] / [END]</code> markers above and below.</li>
+          <li>Cards wrap with <code>[BEGIN] / [END]</code> labels inset into the border, like a fenced terminal output region.</li>
+          <li>Pre blocks carry a <code>$</code> prompt glyph in the left margin — they look like shell history, not snippets.</li>
+          <li>No italic. No serif. No alternate font. The whole document is one face.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>anchor palette</h2>
+        <p>Pure black, matrix green, cyan, red. The whole palette fits in seven values plus a single amber token reserved for numeric literals in code blocks.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #000000"></div><div class="label"><strong>--bg</strong><span>#000000</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #050505"></div><div class="label"><strong>--bg-card</strong><span>#050505</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #0a0a0a"></div><div class="label"><strong>--bg-soft</strong><span>#0a0a0a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #00FF41"></div><div class="label"><strong>--text</strong><span>#00FF41</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #007020"></div><div class="label"><strong>--text-dim</strong><span>#007020</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #003B00"></div><div class="label"><strong>--text-faint</strong><span>#003B00</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #002000"></div><div class="label"><strong>--text-ghost</strong><span>#002000</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #00FFFF"></div><div class="label"><strong>--cyan</strong><span>#00FFFF</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FF0000"></div><div class="label"><strong>--red</strong><span>#FF0000</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FFB000"></div><div class="label"><strong>--amber</strong><span>#FFB000</span></div></div>
+        </div>
+
+        <h3>diagram-kit aliases</h3>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--text</span>);
+<span class="kw">--accent-soft</span>:    rgba(<span class="n">0, 255, 65, 0.10</span>);
+<span class="kw">--secondary</span>:      var(<span class="kw">--cyan</span>);
+<span class="kw">--secondary-soft</span>: rgba(<span class="n">0, 255, 255, 0.08</span>);
+<span class="kw">--warn</span>:           var(<span class="kw">--red</span>);
+<span class="kw">--warn-soft</span>:      rgba(<span class="n">255, 0, 0, 0.08</span>);</pre>
+
+        <div class="callout warn">
+          <strong>halt:</strong> No additional accent colors. No yellow. No magenta. No purple. The matrix-green / cyan / red triad is the language's contract. Amber appears only inside <code>pre</code> for numeric literals; nowhere else.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>anti-patterns</h2>
+        <ul>
+          <li>No serif. No proportional sans. No second typeface for any role.</li>
+          <li>No italic. Use <code>--text-dim</code> for de-emphasis instead.</li>
+          <li>No rounded corners. Borders are sharp 0px.</li>
+          <li>No gradients. No drop shadows except phosphor glow on the progress bar and blinking cursor.</li>
+          <li>No light theme. The black is load-bearing.</li>
+          <li>No emoji ever — substitute ASCII glyphs (<code>&gt;</code>, <code>$</code>, <code>#</code>, <code>!!!</code>, <code>[OK]</code>).</li>
+          <li>No additional accent colors. No additional brand-warm tones.</li>
+          <li>No photographic imagery. SVG only.</li>
+          <li>No ALL CAPS for body prose — the prefix glyphs (<code>&gt;&gt;&gt;</code>, <code>#</code>, <code>//</code>) carry the visual signal already.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>component gallery</h2>
+        <p>Every component a report uses, rendered in cyber-matrix with its locked/free contract. Selectors are stable; values shown here are this language's interpretation.</p>
+
+        <div class="gallery-item">
+          <h3>1. hero <span class="pill">.hero</span></h3>
+          <p>Top of every report. See the document hero above — IBM Plex Mono 700 title at 34–56px, <code>em</code> phrase is dimmed and prefixed <code>//</code>, eyebrow ends in a blinking phosphor cursor block, top corners carry <code>[BEGIN_TRANSMISSION]</code> and a frequency string.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono 700 title, dimmed <code>em</code> with <code>//</code> prefix, eyebrow with blinking cursor block, <code>[BEGIN_TRANSMISSION]</code> top-left, frequency string top-right, single matrix-green bottom border.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, lede max-width, whether to include the frequency string, blink cadence (1.0s–1.4s).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. section <span class="pill">.section</span></h3>
+          <p>Every top-level section. Mono <code>NN</code> in the left gutter. Heading prefixed <code>&gt;&gt;&gt;</code>. Block wrapped in <code>[BEGIN] / [END]</code> markers.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono numeral in left gutter (absolute, <code>left: -68px</code>), <code>&gt;&gt;&gt;</code> prefix on h2, <code>[BEGIN] / [END]</code> markers above and below the section content.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact left offset (±8px), whether <code>[END]</code> is right-aligned or centered, marker color (faint vs dim).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>output block</h4>
+            <p>Cards are fenced terminal output blocks. <code>[BEGIN]</code> sits inset on the top border at left; <code>[END]</code> sits inset on the bottom border at right. The labels are background-color cutouts so they read as labels on the border itself.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>1px <code>--rule</code> border, <code>[BEGIN] / [END]</code> inset markers cutting the top-left and bottom-right of the border. Zero corner radius.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, whether <code>[END]</code> mirrors at bottom-right or sits at bottom-left, exact marker font-size (9–11px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>note:</strong> Default callouts use a matrix-green left border with a 4% green fill. Prefix the body with <code>&gt;&gt;&gt;</code>.
+          </div>
+          <div class="callout warn">
+            <strong>halt:</strong> Warn callouts use pure red with <code>!!!</code> prefix. Red appears nowhere else in the language — when you see red, something is wrong.
+          </div>
+          <div class="callout success">
+            <strong>ok:</strong> Success callouts use cyan with <code>[OK]</code> prefix. Reserve for verifiable success states; not a generic info channel.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>3px left border, ~4–5% tinted background, ASCII prefix glyph per variant (<code>&gt;&gt;&gt;</code> / <code>!!!</code> / <code>[OK]</code>), uppercase <code>strong</code> label.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact tint opacity (3–6%), whether the label ends in a colon.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">A single declarative sentence the operator absorbs even on skim. One per section. Mono weight 500 — slightly heavier than body, never a different face.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono weight 500, matrix-green color, 1px left rule, <code>//</code> mono prefix. Same typeface as body.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact font-size (17–20px), max-width, padding-left.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>step 1. handshake</summary>
+            <p>First in a series carries <code>open</code> by convention. Summary uses weight 600, <code>[+] / [-]</code> toggle in mono.</p>
+          </details>
+          <details>
+            <summary>step 2. authenticate</summary>
+            <p>Subsequent steps collapse. Toggle stays mono ASCII — never a chevron, never a triangle glyph.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono summary at weight 600, <code>[+] / [-]</code> ASCII toggle, 1px <code>--rule</code> border top between items.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Exact summary size (14–17px), padding, whether toggle is bracket form or pipe form.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>endpoint</th><th>status</th><th>latency</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>auth.local</td><td>ONLINE</td><td><code>34 ms</code></td></tr>
+              <tr><td>job.queue</td><td>ONLINE</td><td><code>67 ms</code></td></tr>
+              <tr><td>provider.api</td><td>DEGRADED</td><td><code>410 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono uppercase <code>th</code> with <code># </code> prefix on each header, matrix-green color, 1px <code>--rule</code> border, 1px green bottom border under <code>thead</code>.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Column widths, row striping (default: none), whether <code>td</code> values use mono dim or full text.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">handshake</span>(host): <span class="com"># initiate</span>
+  <span class="kw">return</span> <span class="str">"AUTH_OK"</span>, <span class="n">200</span></pre>
+          <p>Spans are classified manually: <code>kw</code> (bold green), <code>str</code> (cyan), <code>com</code> (faint green), <code>n</code> (amber), <code>fn</code> (green), <code>type</code> (cyan). Amber appears <strong>only</strong> for numeric literals — never elsewhere in the language.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>bg-code</code> fill, 1px <code>--rule</code> border, IBM Plex Mono 12.5px, <code>$</code> prompt glyph hanging in the left margin.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, whether to include the <code>$</code> glyph on inline-flow snippets, line-height (1.5–1.7).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. inline code <span class="pill">code</span></h3>
+          <p>The flag <code>--strict</code> raises when the <code>HANDSHAKE</code> phase fails. Use for type names, flag names, field names, and short literals.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Mono at <code>0.95em</code>, matrix-green ink on 8% matrix-green fill, 1px <code>--rule</code> border. Sharp corners.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding (1–2px vert), tint opacity (6–10%).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked under <span class="pill">SEC-0xff</span> in branch <span class="pill">rel/01</span>. Grouped pills appear in the hero <code>.meta</code> row.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>1px matrix-green border, matrix-green ink, mono 11px weight 500, bracketed by <code>[...]</code> (rendered via pseudo-elements). Sharp corners.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding, exact font-size (10–12px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07 — each diagram is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and a mono caption prefixed <code>//</code>. The card inherits the <code>[BEGIN] / [END]</code> chrome.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span>Inherits <code>.card</code> chrome (border + <code>[BEGIN]/[END]</code> markers). Caption is mono with <code>//</code> prefix, centered.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Padding-bottom for caption rhythm, caption font-size (11–13px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>left module</h4>
+              <p>2-up grid is the default — used for deploy/don't-deploy and adversarial pairs.</p>
+            </div>
+            <div class="card mini">
+              <h4>right module</h4>
+              <p>For 4-up, add two more <code>.card.mini</code> siblings.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">LOCKED</span><span><code>display: grid</code>, 14px gap, single-column collapse at 720px.</span></div>
+            <div class="row"><span class="label free">FREE</span><span>Column count (2–4), gap (12–18px).</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>diagram philosophy</h2>
+        <p>Diagrams are literal ASCII — boxes drawn from Unicode box-drawing characters in SVG <code>&lt;text&gt;</code> blocks, not <code>&lt;rect&gt;</code> shapes. The vocabulary is typographic: <code>┌─┐ │ └─┘</code> for default, <code>╔═╗ ║ ╚═╝</code> for emphasis, <code>──&gt;</code> and <code>═══&gt;</code> for arrows. Role shows through ink color and weight, never fill. The aesthetic is "terminal output piped into the page."</p>
+
+        <h3>role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>role</th><th>glyphs</th><th>ink</th><th>notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td><code>┌─┐ │ └─┘</code></td><td><code>var(--text-dim)</code></td><td>Single-line box, regular weight</td></tr>
+            <tr><td><code>hot</code></td><td><code>╔═╗ ║ ╚═╝</code></td><td><code>var(--text)</code> bold</td><td>Double-line box, bold weight — brightest matrix green</td></tr>
+            <tr><td><code>store</code></td><td><code>┌─┐ │ └─┘</code></td><td><code>var(--text)</code></td><td>Single-line box, full-bright green</td></tr>
+            <tr><td><code>external</code></td><td><code>┌─┐ │ └─┘</code></td><td><code>var(--cyan)</code></td><td>Cyan ink — third-party boundary</td></tr>
+            <tr><td><code>warn</code></td><td><code>╔═╗ ║ ╚═╝</code></td><td><code>var(--red)</code></td><td>Double-line, red — used inside <code>╔═ ALERT ═╗</code> regions</td></tr>
+            <tr><td><code>future</code></td><td><code>┌╌┐ ╎ └╌┘</code></td><td><code>var(--text-faint)</code></td><td>Dashed box-drawing variants</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 700 130" xmlns="http://www.w3.org/2000/svg" xml:space="preserve">
+            <style>
+              .ascii      { font: 500 14px "IBM Plex Mono", monospace; fill: #00FF41; white-space: pre; }
+              .ascii .dim { fill: #007020; }
+              .ascii .hot { font-weight: 700; }
+              .ascii .ext { fill: #00FFFF; }
+              .ascii .arr { fill: #00FF41; }
+              .ascii .hot-arr { fill: #00FF41; font-weight: 700; }
+            </style>
+            <text class="ascii" x="10" y="22">
+              <tspan x="10" dy="0">      <tspan class="dim">┌──────────────┐</tspan>      <tspan class="hot">╔══════════════╗</tspan>      ┌──────────────┐      <tspan class="ext">┌──────────────┐</tspan></tspan>
+              <tspan x="10" dy="1.2em">      <tspan class="dim">│  [trigger]   │</tspan> <tspan class="arr">───&gt;</tspan> <tspan class="hot">║  [process]   ║</tspan> <tspan class="hot-arr">═══&gt;</tspan> │   [store]    │ <tspan class="arr">───&gt;</tspan> <tspan class="ext">│  [provider]  │</tspan></tspan>
+              <tspan x="10" dy="1.2em">      <tspan class="dim">│   user req   │</tspan>      <tspan class="hot">║   &gt;&gt;&gt; focus  ║</tspan>      │   persist    │      <tspan class="ext">│   external   │</tspan></tspan>
+              <tspan x="10" dy="1.2em">      <tspan class="dim">└──────────────┘</tspan>      <tspan class="hot">╚══════════════╝</tspan>      └──────────────┘      <tspan class="ext">└──────────────┘</tspan></tspan>
+            </text>
+          </svg>
+          <figcaption class="caption">linear flow :: double-line ╔═╗ marks the hot step, heavy ═══&gt; for the focused transition, cyan ink marks the external boundary</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 720 460" xmlns="http://www.w3.org/2000/svg" xml:space="preserve">
+            <style>
+              .ascii       { font: 500 14px "IBM Plex Mono", monospace; fill: #00FF41; white-space: pre; }
+              .ascii .dim  { fill: #007020; }
+              .ascii .step { fill: #00FFFF; letter-spacing: 0.06em; }
+              .ascii .hot  { font-weight: 700; }
+              .ascii .ext  { fill: #00FFFF; }
+              .ascii .red  { fill: #FF0000; font-weight: 700; letter-spacing: 0.12em; }
+              .ascii .red-soft { fill: #FF4040; }
+              .ascii .note { fill: #007020; }
+            </style>
+            <text class="ascii" x="10" y="22">
+              <tspan x="10" dy="0">       <tspan class="dim">[client]</tspan>           <tspan class="dim">[api]</tspan>          <tspan class="hot">[worker]</tspan>        <tspan class="ext">[provider.api]</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em"><tspan class="step">[01]</tspan>     <tspan class="dim">│</tspan>──── POST /jobs ──&gt;<tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>  <tspan class="note">// sync create</tspan>  <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│&lt;- - 201 + job_id</tspan> <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em"><tspan class="step">[02]</tspan>     <tspan class="dim">│</tspan>                <tspan class="dim">│── enqueue(job) ──&gt;</tspan><tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>          <tspan class="note">// bg dispatch — fire &amp; forget</tspan>     <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em"><tspan class="step">[03]</tspan>     <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║═══ POST /provision ═══&gt;</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">   <tspan class="red">╔════════════════ ALERT ═══════════════════════════════════╗</tspan></tspan>
+              <tspan x="10" dy="1.3em">   <tspan class="red">║</tspan>     <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>&lt;══ <tspan class="red">503 UNAVAILABLE</tspan>  <tspan class="red">║</tspan></tspan>
+              <tspan x="10" dy="1.3em">   <tspan class="red">║</tspan>     <tspan class="dim">│</tspan>  <tspan class="red">▮ RETRY_POLICY_ENGAGED</tspan>   <tspan class="note">backoff +2s · max 3 tries</tspan> <tspan class="red">║</tspan></tspan>
+              <tspan x="10" dy="1.3em">   <tspan class="red">╚══════════════════════════════════════════════════════════╝</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em"><tspan class="step">[04]</tspan>     <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║═══ POST /provision (retry) ══&gt;</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║&lt;─── 201 Created</tspan> <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>                <tspan class="dim">│</tspan>                <tspan class="hot">║</tspan>                <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em"><tspan class="step">[05]</tspan>     <tspan class="dim">│&lt;─ ─ ─ ─ webhook: job.completed ─ ─ ─ ─</tspan>          <tspan class="ext">│</tspan></tspan>
+              <tspan x="10" dy="1.3em">         <tspan class="dim">│</tspan>      <tspan class="note">// async fan-out — terminal step</tspan>             <tspan class="ext">│</tspan></tspan>
+            </text>
+          </svg>
+          <figcaption class="caption">annotated sequence :: lifelines as │ glyphs, hot lifeline as double-line ║, alert region wrapped in ╔═══ ALERT ═══╗ with the red retry-policy callout</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Every diagram is a single <code>&lt;text&gt;</code> block with <code>xml:space="preserve"</code> and stacked <code>&lt;tspan x="10" dy="1.2em"&gt;</code> lines. Color and weight come from nested <code>&lt;tspan class="..."&gt;</code> spans inside each line. No <code>&lt;rect&gt;</code> ever.</p>
+        <pre><span class="kw">.ascii</span>      { font: <span class="n">500</span> <span class="n">14</span>px <span class="str">"IBM Plex Mono"</span>, monospace; fill: var(<span class="kw">--text</span>); white-space: pre; }
+<span class="kw">.ascii .dim</span>  { fill: var(<span class="kw">--text-dim</span>); }
+<span class="kw">.ascii .hot</span>  { font-weight: <span class="n">700</span>; }
+<span class="kw">.ascii .ext</span>  { fill: var(<span class="kw">--cyan</span>); }
+<span class="kw">.ascii .step</span> { fill: var(<span class="kw">--cyan</span>); letter-spacing: <span class="n">0.06</span>em; }
+<span class="kw">.ascii .red</span>  { fill: var(<span class="kw">--red</span>); font-weight: <span class="n">700</span>; letter-spacing: <span class="n">0.12</span>em; }
+<span class="kw">.ascii .note</span> { fill: var(<span class="kw">--text-dim</span>); }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">LOCKED</span><span>Box-drawing glyphs only — <code>┌─┐ │ └─┘</code> for default, <code>╔═╗ ║ ╚═╝</code> for hot &amp; alert regions. Arrows are <code>──&gt;</code> (default) and <code>═══&gt;</code> (heavy, from hot). Step counters as <code>[NN]</code> in cyan. Notes prefixed <code>//</code> in dim green.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Lifeline column widths, presence of step numbers on simple diagrams, exact line spacing (<code>1.15–1.30em</code>).</span></div>
+        </aside>
+
+        <h4>alert region pattern</h4>
+        <p>When a sequence has a failure leg, wrap the affected lines in a literal <code>╔════ ALERT ════╗ … ╚═════════╝</code> frame in red. The lines inside keep their dim-green lifelines but the frame and inline labels (<code>503 UNAVAILABLE</code>, <code>RETRY_POLICY_ENGAGED</code>) render in saturated <code>#FF0000</code>. A leading <code>▮</code> block-glyph stands in for the old red tick rectangle. Red is the loudest thing in the language; when it appears it lands hard.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">LOCKED</span><span>Region opens with <code>╔════ ALERT ════╗</code>, closes with <code>╚════════════╝</code>. All ALERT-frame glyphs render in <code>var(--red)</code> bold. The <code>▮</code> glyph precedes the snake_case retry label.</span></div>
+          <div class="row"><span class="label free">FREE</span><span>Width of the ALERT frame, exact label copy, presence of the inline <code>backoff …</code> annotation.</span></div>
+        </aside>
+
+        <h3>arrow vocabulary</h3>
+        <p>Single-line <code>──&gt;</code> for default transitions, double-line <code>═══&gt;</code> for the focused/hot transition. Return paths shorten to <code>&lt;─ ─</code> (dashed with spaces) in dim green. Async fan-outs use the same <code>─ ─ ─</code> spaced form. Warn arrows live entirely inside the ALERT frame and inherit its red.</p>
+
+        <h3>caption</h3>
+        <p>Mono, <code>var(--text-dim)</code>, 12px, centered, prefix <code>//</code>. Caption describes the ASCII rendering — the glyphs themselves are part of the content.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>

@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Newsprint Broadsheet — Design Language</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&family=Oswald:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --paper-newsprint: #F5F2E8;
+      --paper-warm:      #F2EDD7;
+      --paper-aged:      #E0C9A6;
+      --bg:        #F5F2E8;
+      --bg-soft:   #F2EDD7;
+      --bg-card:   #FBF9F1;
+      --bg-code:   #ECE6D2;
+
+      --ink:         #111111;
+      --ink-primary: #111111;
+      --ink-soft:    #2a2a2a;
+      --ink-faint:   #444444;
+      --ink-ghost:   #8a8275;
+
+      --rule-line:   #DAD0BC;
+      --rule:        #DAD0BC;
+      --rule-soft:   #E8E0CB;
+      --rule-strong: #B8AC8E;
+      --column-rule: #888888;
+
+      --red-flag-nyt: #C8102E;
+      --red-dark:     #9B1C1C;
+
+      --warn:      #9a6300;
+      --warn-soft: #f8ecd5;
+
+      --accent:         var(--red-flag-nyt);
+      --accent-soft:    #fadfe4;
+      --secondary:      var(--ink-primary);
+      --secondary-soft: #e2dccb;
+
+      --serif:         "Playfair Display", "Times New Roman", Times, serif;
+      --body-serif:    Georgia, "Times New Roman", Times, serif;
+      --sans:          "Oswald", "Helvetica Neue", Arial, sans-serif;
+      --mono:          "JetBrains Mono", "SF Mono", "IBM Plex Mono", Menlo, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--body-serif);
+      font-size: 16px;
+      line-height: 1.6;
+      position: relative;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(circle at 17% 23%, rgba(140, 110, 60, 0.03) 0, transparent 38%),
+        radial-gradient(circle at 82% 77%, rgba(120, 95, 50, 0.025) 0, transparent 35%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .progress { position: fixed; top: 0; left: 0; right: 0; height: 3px; z-index: 100; background: transparent; }
+    .progress::after {
+      content: "";
+      display: block;
+      height: 100%;
+      width: var(--scroll, 0%);
+      background: var(--red-flag-nyt);
+      transition: width 0.05s linear;
+    }
+
+    .skip-link {
+      position: absolute;
+      left: -9999px;
+      top: auto;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    .skip-link:focus {
+      position: static;
+      width: auto;
+      height: auto;
+      overflow: visible;
+      padding: 6px 12px;
+      background: var(--red-flag-nyt);
+      color: var(--bg);
+    }
+
+    .layout {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 48px 120px;
+      display: grid;
+      grid-template-columns: var(--grid-template, 240px minmax(0, 1fr));
+      gap: 64px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 980px) {
+      .layout { grid-template-columns: 1fr; gap: 40px; padding: 0 24px 80px; }
+    }
+
+    aside.toc {
+      position: sticky;
+      top: 32px;
+      align-self: start;
+      max-height: calc(100vh - 32px);
+      overflow-y: auto;
+      padding-top: 32px;
+      border-right: 1px solid var(--column-rule);
+      padding-right: 24px;
+    }
+
+    aside.toc h2 {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-primary);
+      margin: 0 0 16px;
+      border-bottom: 2px solid var(--ink-primary);
+      padding-bottom: 8px;
+    }
+
+    aside.toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+
+    aside.toc li {
+      counter-increment: toc;
+      margin: 0;
+      border-bottom: 1px solid var(--rule-soft);
+    }
+
+    aside.toc a {
+      display: block;
+      padding: 8px 0;
+      font-family: var(--sans);
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    aside.toc a::before {
+      content: counter(toc, decimal-leading-zero);
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--ink-ghost);
+      margin-right: 10px;
+      letter-spacing: 0.12em;
+    }
+
+    aside.toc a:hover { color: var(--red-flag-nyt); }
+    aside.toc a.active { color: var(--red-flag-nyt); font-weight: 600; }
+    aside.toc a.active::before { color: var(--red-flag-nyt); }
+
+    @media (max-width: 980px) {
+      aside.toc { position: static; max-height: none; padding-top: 0; border-right: none; padding-right: 0; }
+    }
+
+    header.hero {
+      grid-column: 1 / -1;
+      background: var(--bg);
+      margin: 0 -48px 80px;
+      padding: 56px 48px 48px;
+      border-top: 6px double var(--ink-primary);
+      border-bottom: 1px solid var(--ink-primary);
+    }
+
+    @media (max-width: 980px) {
+      header.hero { margin: 0 -24px 56px; padding: 40px 24px 32px; }
+    }
+
+    .hero-inner { max-width: 920px; margin: 0 auto; }
+
+    .eyebrow {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-primary);
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 4px 10px;
+      background: var(--red-flag-nyt);
+      color: #fff;
+    }
+
+    .eyebrow .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #fff;
+      display: inline-block;
+    }
+
+    h1.title {
+      font-family: var(--serif);
+      font-weight: 900;
+      font-size: clamp(46px, 6.5vw, 84px);
+      line-height: 1.0;
+      letter-spacing: -0.025em;
+      margin: 0 0 24px;
+      color: var(--ink-primary);
+    }
+
+    h1.title em {
+      font-style: italic;
+      font-weight: 500;
+      color: var(--red-flag-nyt);
+    }
+
+    .lede {
+      font-family: var(--body-serif);
+      font-style: italic;
+      font-size: clamp(19px, 2vw, 23px);
+      line-height: 1.45;
+      color: var(--ink-soft);
+      max-width: 640px;
+      margin: 0 0 28px;
+    }
+
+    .byline {
+      font-family: var(--sans);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 20px;
+    }
+
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--rule);
+    }
+
+    .meta-row > div { display: flex; flex-direction: column; gap: 4px; }
+
+    .meta-row .k {
+      font-family: var(--sans);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--ink-faint);
+      font-weight: 600;
+    }
+
+    .meta-row .v {
+      font-family: var(--body-serif);
+      font-size: 14px;
+      color: var(--ink);
+    }
+
+    main { min-width: 0; padding-top: 0; }
+
+    section.section {
+      position: relative;
+      margin: 0 0 96px;
+      scroll-margin-top: 32px;
+    }
+
+    section.section::before {
+      content: "";
+      position: absolute;
+      top: 12px;
+      left: -32px;
+      width: 1px;
+      height: 60px;
+      background: var(--column-rule);
+    }
+
+    @media (max-width: 980px) {
+      section.section::before { display: none; }
+    }
+
+    .num {
+      position: absolute;
+      left: -64px;
+      top: 7px;
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--red-flag-nyt);
+      letter-spacing: 0.16em;
+    }
+
+    @media (max-width: 980px) {
+      .num { position: static; display: block; margin-bottom: 8px; }
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 1.05;
+      letter-spacing: -0.02em;
+      margin: 0 0 8px;
+      color: var(--ink-primary);
+      padding-bottom: 12px;
+      border-bottom: 3px solid var(--ink-primary);
+    }
+
+    h3 {
+      font-family: var(--serif);
+      font-size: 24px;
+      font-weight: 700;
+      line-height: 1.2;
+      margin: 36px 0 12px;
+      color: var(--ink-primary);
+    }
+
+    h4 {
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin: 0 0 8px;
+      color: var(--ink-primary);
+    }
+
+    p { margin: 0 0 16px; max-width: 68ch; }
+
+    /* Optional broadsheet two-column body inside .columns */
+    .columns p { column-count: 2; column-gap: 32px; column-rule: 1px solid var(--rule); max-width: none; }
+
+    a { color: var(--red-flag-nyt); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    a:hover { color: var(--red-dark); }
+
+    .card {
+      border: 1px solid var(--ink-primary);
+      background: var(--bg-card);
+      border-radius: 0;
+      padding: 22px 24px;
+      margin: 22px 0;
+      box-shadow: none;
+    }
+
+    .card.mini { padding: 18px 20px; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      margin: 22px 0;
+      border: 1px solid var(--ink-primary);
+    }
+
+    .grid > .card { margin: 0; border: none; border-right: 1px solid var(--rule); }
+    .grid > .card:last-child { border-right: none; }
+
+    @media (max-width: 720px) {
+      .grid { grid-template-columns: 1fr; }
+      .grid > .card { border-right: none; border-bottom: 1px solid var(--rule); }
+      .grid > .card:last-child { border-bottom: none; }
+    }
+
+    .callout {
+      border-left: 4px solid var(--red-flag-nyt);
+      background: var(--accent-soft);
+      padding: 16px 20px;
+      border-radius: 0;
+      margin: 22px 0;
+    }
+
+    .callout.warn {
+      border-left-color: var(--warn);
+      background: var(--warn-soft);
+    }
+
+    .callout strong { font-weight: 700; font-family: var(--sans); text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; }
+
+    .quote {
+      font-family: var(--serif);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 28px;
+      line-height: 1.3;
+      color: var(--ink-primary);
+      border-top: 1px solid var(--ink-primary);
+      border-bottom: 1px solid var(--ink-primary);
+      padding: 24px 0;
+      margin: 32px 0;
+      max-width: 60ch;
+      text-align: center;
+    }
+
+    .quote::before { content: "“"; display: block; font-size: 48px; color: var(--red-flag-nyt); line-height: 0.6; font-family: var(--serif); }
+
+    details {
+      border-top: 1px solid var(--rule);
+      padding: 14px 0;
+    }
+
+    details:last-of-type { border-bottom: 1px solid var(--rule); }
+
+    summary {
+      cursor: pointer;
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink-primary);
+      list-style: none;
+    }
+
+    summary::-webkit-details-marker { display: none; }
+    summary::before { content: "+ "; font-family: var(--mono); color: var(--red-flag-nyt); margin-right: 6px; }
+    details[open] > summary::before { content: "− "; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--bg-card);
+      border: 2px solid var(--ink-primary);
+      margin: 22px 0;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    th {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: var(--ink-primary);
+      background: var(--bg-soft);
+      border-bottom: 2px solid var(--ink-primary);
+    }
+
+    pre {
+      background: var(--bg-code);
+      border: 1px solid var(--rule-strong);
+      border-radius: 0;
+      padding: 16px 18px;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.55;
+      margin: 16px 0;
+      color: var(--ink);
+    }
+
+    pre .kw   { color: var(--red-flag-nyt); font-weight: 600; }
+    pre .str  { color: #6b4520; }
+    pre .com  { color: var(--ink-ghost); font-style: italic; }
+    pre .n    { color: var(--red-dark); }
+    pre .fn   { color: var(--ink-primary); font-weight: 600; }
+    pre .type { color: #5a3a8a; }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.92em;
+      background: var(--bg-code);
+      color: var(--red-dark);
+      padding: 1px 6px;
+      border-radius: 0;
+    }
+
+    .pill {
+      font-family: var(--sans);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border: 1px solid var(--red-flag-nyt);
+      border-radius: 0;
+      color: var(--red-flag-nyt);
+      background: transparent;
+      display: inline-block;
+      line-height: 1.4;
+    }
+
+    figure.card.diagram { padding: 22px 20px 16px; margin: 28px 0; }
+    figure.card.diagram svg { width: 100%; height: auto; display: block; }
+
+    .caption {
+      font-family: var(--body-serif);
+      font-style: italic;
+      color: var(--ink-faint);
+      font-size: 14px;
+      text-align: center;
+      margin-top: 12px;
+    }
+    .caption .fig-prefix {
+      font-family: var(--sans);
+      font-style: normal;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-primary);
+      font-size: 12px;
+    }
+
+    .contract {
+      margin: 14px 0 32px;
+      padding: 14px 18px;
+      border-left: 3px solid var(--ink-primary);
+      background: var(--bg-card);
+      border-radius: 0;
+      font-family: var(--mono);
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--ink-soft);
+    }
+
+    .contract .row { display: grid; grid-template-columns: 80px 1fr; gap: 14px; align-items: baseline; }
+    .contract .row + .row { margin-top: 4px; }
+
+    .contract .label {
+      color: var(--red-flag-nyt);
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      font-weight: 600;
+      font-size: 10px;
+      font-family: var(--sans);
+    }
+
+    .contract .label.free { color: var(--ink-faint); }
+
+    .swatches {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 22px 0;
+    }
+
+    .swatch {
+      border: 1px solid var(--ink-primary);
+      border-radius: 0;
+      overflow: hidden;
+      background: var(--bg-card);
+    }
+
+    .swatch .chip { height: 56px; border-bottom: 1px solid var(--rule); }
+    .swatch .label { padding: 8px 12px; font-family: var(--mono); font-size: 11px; line-height: 1.4; color: var(--ink-soft); }
+    .swatch .label strong { display: block; color: var(--ink); font-weight: 600; font-family: var(--sans); letter-spacing: 0.04em; }
+    .swatch .label span { color: var(--ink-faint); }
+
+    .gallery-item { margin: 0 0 44px; }
+    .gallery-item > h3 { margin-top: 0; }
+    .gallery-item > h3 .pill { margin-left: 10px; vertical-align: 4px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <div class="progress"></div>
+
+  <div class="layout">
+
+    <aside class="toc">
+      <h2>Sections</h2>
+      <ol>
+        <li><a href="#personality">Personality</a></li>
+        <li><a href="#fit">When to pick</a></li>
+        <li><a href="#stack">Locked brand stack</a></li>
+        <li><a href="#palette">Anchor palette</a></li>
+        <li><a href="#anti">Anti-patterns</a></li>
+        <li><a href="#components">Component gallery</a></li>
+        <li><a href="#diagrams">Diagram philosophy</a></li>
+      </ol>
+    </aside>
+
+    <main id="main">
+
+      <header class="hero">
+        <div class="hero-inner">
+          <div class="byline">Vol. I · No. 1 · Section A · Design Languages Desk</div>
+          <div class="eyebrow"><span class="dot"></span> Design Language</div>
+          <h1 class="title">Newsprint Broadsheet, <em>set in column rules</em></h1>
+          <p class="lede">A typographic register for annual reports, long-form journalism, financial disclosures, and any document that wants the authority of a printed newspaper.</p>
+          <div class="meta">
+            <span class="pill">Status: draft</span>
+            <span class="pill">Audience: executive-readers</span>
+            <span class="pill">v1</span>
+          </div>
+        </div>
+        <aside class="contract" style="max-width: 920px; margin: 28px auto 0;">
+          <div class="row"><span class="label">Locked</span><span>Playfair Display h1 at 900 weight, red italic <code>&lt;em&gt;</code>, Georgia italic lede, Oswald caps eyebrow on red flag background, 6px double top rule + 1px solid bottom rule, byline above eyebrow.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, hero footer as key/value <code>.meta-row</code> or pill <code>.meta</code>, exact byline copy.</span></div>
+        </aside>
+      </header>
+
+      <section id="personality" class="section">
+        <span class="num">01</span>
+        <h2>Personality</h2>
+        <p>Newsprint Broadsheet is the contemporary broadsheet register — a Sunday paper read at the kitchen table, or the back-page essay in <em>The New York Times Magazine</em>. The document feels like it was typeset by someone who has done this for a hundred years. Authority is conveyed through restraint: one accent color, generous heavy display type, thin column rules, and a body face built for endurance reading.</p>
+        <div class="quote">A newspaper is a document that has earned the right to use one red flag and nothing else.</div>
+        <p>The Playfair/Georgia split is load-bearing. Headlines are Playfair Display at heavy weights — a high-contrast didone-style serif that gives the page its broadsheet bone structure. Body is Georgia, the canonical web newspaper serif, because nothing carries 1,500 words of investigative prose like Georgia. Section labels, datelines, and meta keys lean on Oswald, the condensed sans that newspapers reach for when they want a label to feel like it was set in lead. Code and column numbering use JetBrains Mono.</p>
+      </section>
+
+      <section id="fit" class="section">
+        <span class="num">02</span>
+        <h2>When to pick this</h2>
+        <div class="grid">
+          <div class="card mini">
+            <h4>Pick this when</h4>
+            <p>Annual reports and yearly retrospectives. Long-form journalism mockups. Financial disclosures, S-1 narratives, decade-in-review pieces. Documents that want the authority of a printed newspaper, where the reader will sit and absorb sequentially.</p>
+          </div>
+          <div class="card mini">
+            <h4>Don't pick this when</h4>
+            <p>The content is short or operational (use a lighter register). The content needs warmth and conversation (try <code>editorial-parchment</code>). The content is dense classified data — use the <code>newsprint-classified</code> sibling. The audience expects modernity over tradition.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="stack" class="section">
+        <span class="num">03</span>
+        <h2>Locked brand stack</h2>
+        <p>Load exactly this Google Fonts URL. Georgia is a system font and does not need loading.</p>
+        <pre>&lt;link href=<span class="str">"https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,500;1,600&amp;family=Oswald:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap"</span> rel=<span class="str">"stylesheet"</span>&gt;</pre>
+
+        <h3>Font stack variables</h3>
+        <pre><span class="com">/* exact values — verbatim */</span>
+<span class="kw">--serif</span>:      <span class="str">"Playfair Display"</span>, <span class="str">"Times New Roman"</span>, Times, serif;
+<span class="kw">--body-serif</span>: Georgia, <span class="str">"Times New Roman"</span>, Times, serif;
+<span class="kw">--sans</span>:       <span class="str">"Oswald"</span>, <span class="str">"Helvetica Neue"</span>, Arial, sans-serif;
+<span class="kw">--mono</span>:       <span class="str">"JetBrains Mono"</span>, <span class="str">"SF Mono"</span>, <span class="str">"IBM Plex Mono"</span>, Menlo, monospace;</pre>
+
+        <h3>Font role assignments</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Font</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Body prose</td><td><code>var(--body-serif)</code> — Georgia</td><td>16px, line-height 1.6</td></tr>
+            <tr><td>Display / headings</td><td><code>var(--serif)</code> — Playfair Display</td><td>800–900 weights for h1/h2</td></tr>
+            <tr><td>Eyebrows, datelines, labels, h4, section pills</td><td><code>var(--sans)</code> — Oswald</td><td>Always uppercase, letter-spaced</td></tr>
+            <tr><td>Code, marginalia numbers</td><td><code>var(--mono)</code> — JetBrains Mono</td><td></td></tr>
+          </tbody>
+        </table>
+
+        <h3>Voice rules</h3>
+        <ul>
+          <li>Headlines are Playfair Display at 800–900. Tight letter-spacing (<code>-0.02em</code> to <code>-0.025em</code>). The didone-style high-contrast strokes are the brand.</li>
+          <li>One red flag and nothing else. The accent is <code>--red-flag-nyt</code> <code>#C8102E</code> — used on the eyebrow flag, italic emphasis in h1, the progress bar, pills, and section numbers. Do not introduce a second hue.</li>
+          <li>Mono caps with letter-spacing for Oswald labels (eyebrow, byline, h4, table headers).</li>
+          <li>Pull quotes are large, italic Playfair, framed top/bottom with thin black rules, opened with a red curly quote.</li>
+          <li><strong>Never</strong> bold body Georgia for emphasis — use italic.</li>
+          <li>Body is HIGH CONTRAST <code>#111111</code> on cream. Ink on newsprint.</li>
+        </ul>
+      </section>
+
+      <section id="palette" class="section">
+        <span class="num">04</span>
+        <h2>Anchor palette</h2>
+        <p>These hex values are the brand. Paste verbatim.</p>
+
+        <div class="swatches">
+          <div class="swatch"><div class="chip" style="background: #F5F2E8"></div><div class="label"><strong>--paper-newsprint</strong><span>#F5F2E8</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #F2EDD7"></div><div class="label"><strong>--paper-warm</strong><span>#F2EDD7</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E0C9A6"></div><div class="label"><strong>--paper-aged</strong><span>#E0C9A6</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #FBF9F1"></div><div class="label"><strong>--bg-card</strong><span>#FBF9F1</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #ECE6D2"></div><div class="label"><strong>--bg-code</strong><span>#ECE6D2</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #111111"></div><div class="label"><strong>--ink-primary</strong><span>#111111</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #2a2a2a"></div><div class="label"><strong>--ink-soft</strong><span>#2a2a2a</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #444444"></div><div class="label"><strong>--ink-faint</strong><span>#444444</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #8a8275"></div><div class="label"><strong>--ink-ghost</strong><span>#8a8275</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #DAD0BC"></div><div class="label"><strong>--rule-line</strong><span>#DAD0BC</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #E8E0CB"></div><div class="label"><strong>--rule-soft</strong><span>#E8E0CB</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #B8AC8E"></div><div class="label"><strong>--rule-strong</strong><span>#B8AC8E</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #888888"></div><div class="label"><strong>--column-rule</strong><span>#888888</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #C8102E"></div><div class="label"><strong>--red-flag-nyt</strong><span>#C8102E</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #fadfe4"></div><div class="label"><strong>--accent-soft</strong><span>#fadfe4</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #9B1C1C"></div><div class="label"><strong>--red-dark</strong><span>#9B1C1C</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #9a6300"></div><div class="label"><strong>--warn</strong><span>#9a6300</span></div></div>
+          <div class="swatch"><div class="chip" style="background: #f8ecd5"></div><div class="label"><strong>--warn-soft</strong><span>#f8ecd5</span></div></div>
+        </div>
+
+        <h3>Diagram-kit aliases</h3>
+        <p>Newsprint is monochromatic plus one flag color. The diagram-kit's secondary slot maps to ink — not a second hue.</p>
+        <pre><span class="kw">--accent</span>:         var(<span class="kw">--red-flag-nyt</span>);
+<span class="kw">--accent-soft</span>:    #fadfe4;
+<span class="kw">--secondary</span>:      var(<span class="kw">--ink-primary</span>);
+<span class="kw">--secondary-soft</span>: #e2dccb;</pre>
+
+        <div class="callout warn">
+          <strong>Warning:</strong> Do not introduce a second saturated accent. Newsprint authority comes from one red flag against high-contrast ink. Add blue or green and the document stops feeling like a newspaper.
+        </div>
+      </section>
+
+      <section id="anti" class="section">
+        <span class="num">05</span>
+        <h2>Anti-patterns</h2>
+        <ul>
+          <li>No Inter, Roboto, system-ui defaults.</li>
+          <li>No dark themes — broadsheet is light-only.</li>
+          <li>No box-shadows. Newspapers don't cast shadows. Borders are thin black rules, not soft shadows.</li>
+          <li>No second saturated accent. One red flag and nothing else.</li>
+          <li>No rounded card corners over 0px on cards — broadsheets don't have rounded corners. Diagram boxes inside SVGs may have small radii (12–14px) but card chrome is square.</li>
+          <li>No emoji in headings, no gradient buttons.</li>
+          <li>No sans-serif body. Georgia or nothing.</li>
+          <li>No light-weight display type. Playfair below 700 weight on headings reads as the wrong language.</li>
+        </ul>
+      </section>
+
+      <section id="components" class="section">
+        <span class="num">06</span>
+        <h2>Component gallery</h2>
+        <p>Every component a report uses, rendered in this language with its locked/free contract.</p>
+
+        <div class="gallery-item">
+          <h3>1. Hero <span class="pill">.hero</span></h3>
+          <p>The masthead of every report. See above — 6px double top rule + 1px bottom rule frame it like the front page of a broadsheet. Oswald byline, red Oswald eyebrow flag, Playfair h1 at 900 with red italic em.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>6px double top rule + 1px bottom rule, Playfair Display h1 (900 weight), red italic <code>&lt;em&gt;</code>, Georgia italic lede, Oswald caps eyebrow on red flag bg, Oswald byline.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, lede max-width, footer style (<code>.meta-row</code> vs <code>.meta</code>), byline copy.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>2. Section <span class="pill">.section</span></h3>
+          <p>Each section in this document is a live example. Red mono <code>.num</code> in the left gutter, Playfair h2 underlined with a 3px black rule (the section-divider rule that runs through broadsheet typography), a thin column rule descending from the gutter.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Playfair h2 at 800, 3px black bottom rule on h2, red mono number, optional 1px column-rule descending in gutter (60px tall).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact h2 size (36–44px), gutter offset (±8px), presence of descending column rule.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>3. Card <span class="pill">.card</span></h3>
+          <div class="card">
+            <h4>A bordered card</h4>
+            <p>Use a card to enclose a concept, statistic, or sidebar — anything broadsheet pages set off with a thin rule frame.</p>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Square corners (<code>border-radius: 0</code>), 1px solid <code>--ink-primary</code> border, no shadow, <code>--bg-card</code> fill.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, content layout inside.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>4. Callout <span class="pill">.callout</span></h3>
+          <div class="callout">
+            <strong>Note:</strong> Default callouts use the red-soft background with a 4px red left border. Place directly after the paragraph they annotate.
+          </div>
+          <div class="callout warn">
+            <strong>Warning:</strong> Warn variant swaps to <code>--warn</code> and its soft fill. Reserve for deprecation and failure paths.
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>4px red-flag left border + accent-soft fill (default). <code>&lt;strong&gt;</code> label is Oswald caps. Warn swaps colors only.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, presence of bold label, exact left-border width (3–5px).</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>5. Pull quote <span class="pill">.quote</span></h3>
+          <div class="quote">The stickiest sentence in a section — framed top and bottom in ink, opened with a red curly quote.</div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Playfair italic at 500 weight, centered, framed by 1px black top + bottom rules, red opening curly quote.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (24–32px), max-width, presence of opening quotation glyph.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>6. Details block <span class="pill">details</span></h3>
+          <details open>
+            <summary>Step 1. Initial step (open by default)</summary>
+            <p>Summary uses Playfair 20px 700 in ink-primary — feels like an article sub-heading. Red mono <code>+/−</code> marker.</p>
+          </details>
+          <details>
+            <summary>Step 2. Subsequent step</summary>
+            <p>Subsequent items collapse so the reader can skip well-understood steps.</p>
+          </details>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Playfair summary at 20px 700 in ink-primary, red <code>+/−</code> marker, thin top rules on each.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact font-size (18–22px), padding.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>7. Table <span class="pill">table</span></h3>
+          <table>
+            <thead>
+              <tr><th>Column A</th><th>Column B</th><th>Column C</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Lifecycle row 1</td><td>Predicted</td><td><code>120 ms</code></td></tr>
+              <tr><td>Lifecycle row 2</td><td>Actual</td><td><code>118 ms</code></td></tr>
+              <tr><td>Lifecycle row 3</td><td>Delta</td><td><code>−2 ms</code></td></tr>
+            </tbody>
+          </table>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>2px black outer border, Oswald caps <code>th</code> on warm-bg, 2px black rule under header row, square corners.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column widths, row striping (default: none), td font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>8. Code block <span class="pill">pre</span></h3>
+          <pre><span class="kw">def</span> <span class="fn">snapshot</span>(host): <span class="com"># take it</span>
+  <span class="kw">return</span> <span class="n">42</span></pre>
+          <p>Spans are classified manually. Keywords pick up the red flag.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span><code>--bg-code</code> fill, 1px <code>--rule-strong</code> border, JetBrains Mono 13px, square corners.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, exact syntax token colors within the warm palette.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>9. Inline code <span class="pill">code</span></h3>
+          <p>The status moves from <code>PENDING</code> to <code>ACTIVE</code> after the provider step completes.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Mono 0.92em, <code>--bg-code</code> wash, red-dark ink, square corners.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Exact padding, opacity.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>10. Ticket / identifier pill <span class="pill">.pill</span></h3>
+          <p>Inline reference: tracked in <span class="pill">SAN-15</span> and shipped under <span class="pill">PROGRAM-173</span>. The pill is the red section flag in miniature — Oswald caps, square corners, red border + red ink.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Oswald 11px 600 uppercase, 1px red border, red ink, transparent bg, square corners (<code>border-radius: 0</code>).</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding, exact letter-spacing, optional solid-red filled variant for emphasis.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>11. Diagram card <span class="pill">.card.diagram</span></h3>
+          <p>See section 07. Each diagram is a <code>&lt;figure class="card diagram"&gt;</code> with inline SVG and Georgia italic caption.</p>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Inherits <code>.card</code> chrome (square, 1px black). Caption is Georgia italic in <code>--ink-faint</code>, centered.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Padding-bottom for caption rhythm, exact caption font-size.</span></div>
+          </aside>
+        </div>
+
+        <div class="gallery-item">
+          <h3>12. Grid <span class="pill">.grid</span></h3>
+          <div class="grid">
+            <div class="card mini">
+              <h4>Left card</h4>
+              <p>2-up grid for "X vs Y" framing. In broadsheet, the grid is one rectangle divided by a thin internal rule — not two free-floating cards.</p>
+            </div>
+            <div class="card mini">
+              <h4>Right card</h4>
+              <p>The shared outer border + internal column rule makes it read as two columns of the same article.</p>
+            </div>
+          </div>
+          <aside class="contract">
+            <div class="row"><span class="label">Locked</span><span>Single outer 1px black border around all cards, 1px <code>--rule</code> internal dividers between cells (vertical when wide, horizontal when stacked), zero gap.</span></div>
+            <div class="row"><span class="label free">Free</span><span>Column count (2–4), child card variants.</span></div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="diagrams" class="section">
+        <span class="num">07</span>
+        <h2>Diagram philosophy</h2>
+        <p>Broadsheet diagrams are quiet newspaper infographics — the kind drawn in ink by a staff illustrator and printed at 85 dpi on rag paper. Fills are not paint; they are <em>hatchings</em> — diagonal rules, cross-hatch, vertical lines — defined as inline SVG <code>&lt;pattern&gt;</code>s inside each diagram's <code>&lt;defs&gt;</code>. The only color in any diagram is a single red flag (<code>#C8102E</code>) on the <code>hot</code> role; everything else is black ink. Labels sit outside the boxes, connected by thin guide-lines, and captions begin with an Oswald-caps <q>FIG. 1 —</q> prefix.</p>
+
+        <h3>Role-to-palette map</h3>
+        <table>
+          <thead>
+            <tr><th>Role</th><th>Fill</th><th>Stroke</th><th>Notes</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>default</code></td><td>diagonal hatch <code>url(#hatch-default)</code></td><td><code>--ink-primary</code></td><td>1px lines @ ~6px spacing — the standard newsprint ground tone.</td></tr>
+            <tr><td><code>hot</code></td><td>solid <code>--red-flag-nyt</code></td><td><code>--ink-primary</code></td><td>The single red flag; ink-on-paper reads as a stop sign.</td></tr>
+            <tr><td><code>store</code></td><td>cross-hatch <code>url(#hatch-store)</code></td><td><code>--ink-primary</code></td><td>Perpendicular diagonals — denser ink, signals "persists."</td></tr>
+            <tr><td><code>external</code></td><td>vertical hatch <code>url(#hatch-external)</code></td><td><code>--ink-primary</code></td><td>Strict vertical rules — third-party / outside the system.</td></tr>
+            <tr><td><code>warn</code></td><td>dense cross-hatch <code>url(#hatch-warn)</code></td><td><code>--ink-primary</code></td><td>4px-spaced cross-hatch — the alert region's ground.</td></tr>
+            <tr><td><code>future</code></td><td>none</td><td><code>--ink-ghost</code>, dashed</td><td>Ghosted outline, no hatch — speculative.</td></tr>
+          </tbody>
+        </table>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 860 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Four labelled panels, left to right, filled with newsprint hatch patterns: diagonal default, solid red hot, cross-hatch store, vertical-rule external.">
+            <defs>
+              <!-- Inline pattern definitions: hatch fills as the language requires -->
+              <pattern id="hatch-default" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink-primary)" stroke-width="0.5"/>
+              </pattern>
+              <pattern id="hatch-store" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink-primary)" stroke-width="0.6"/>
+                <line x1="0" y1="0" x2="6" y2="0" stroke="var(--ink-primary)" stroke-width="0.6"/>
+              </pattern>
+              <pattern id="hatch-external" patternUnits="userSpaceOnUse" width="5" height="5">
+                <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink-primary)" stroke-width="0.6"/>
+              </pattern>
+              <marker id="nb-arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 Z" fill="var(--ink-primary)"/>
+              </marker>
+            </defs>
+            <style>
+              .panel-lbl  { font: 14px Georgia, serif; fill: var(--ink-primary); }
+              .sub-lbl    { font: 600 12px "Oswald", sans-serif; fill: var(--ink-primary); letter-spacing: 0.14em; text-transform: uppercase; }
+              .note       { font: italic 11px Georgia, serif; fill: var(--ink-faint); }
+              .leader     { stroke: var(--ink-soft); stroke-width: 0.6; fill: none; }
+              .box        { stroke: var(--ink-primary); stroke-width: 1; }
+              .arrow      { stroke: var(--ink-primary); stroke-width: 1.25; fill: none; marker-end: url(#nb-arrow); }
+            </style>
+
+            <!-- Boxes filled with hatch patterns -->
+            <rect class="box" x="40"  y="100" width="140" height="64" fill="url(#hatch-default)"/>
+            <rect class="box" x="220" y="100" width="140" height="64" fill="var(--red-flag-nyt)"/>
+            <rect class="box" x="400" y="100" width="140" height="64" fill="url(#hatch-store)"/>
+            <rect class="box" x="580" y="100" width="160" height="64" fill="url(#hatch-external)"/>
+
+            <!-- Sub-letters inside each box on a small clear paper square so they remain legible above hatch -->
+            <rect x="92"  y="124" width="36" height="20" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.5"/>
+            <text class="sub-lbl" x="110" y="139" text-anchor="middle">(a)</text>
+            <rect x="272" y="124" width="36" height="20" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.5"/>
+            <text class="sub-lbl" x="290" y="139" text-anchor="middle">(b)</text>
+            <rect x="452" y="124" width="36" height="20" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.5"/>
+            <text class="sub-lbl" x="470" y="139" text-anchor="middle">(c)</text>
+            <rect x="642" y="124" width="36" height="20" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.5"/>
+            <text class="sub-lbl" x="660" y="139" text-anchor="middle">(d)</text>
+
+            <!-- Leader lines up to labels -->
+            <path class="leader" d="M110 100 V80 H40"/>
+            <path class="leader" d="M290 100 V80 H220"/>
+            <path class="leader" d="M470 100 V80 H400"/>
+            <path class="leader" d="M660 100 V80 H580"/>
+
+            <text class="panel-lbl" x="40"  y="74">Trigger / request</text>
+            <text class="panel-lbl" x="220" y="74">Process under inquiry</text>
+            <text class="panel-lbl" x="400" y="74">Store / record</text>
+            <text class="panel-lbl" x="580" y="74">External notice</text>
+
+            <!-- Connectors -->
+            <path class="arrow" d="M180 132 H220"/>
+            <path class="arrow" d="M360 132 H400"/>
+            <path class="arrow" d="M540 132 H580"/>
+
+            <!-- Footer legend -->
+            <line x1="40" y1="190" x2="740" y2="190" stroke="var(--ink-primary)" stroke-width="0.4"/>
+            <text class="note" x="40" y="208">(a) DIAGONAL HATCH — standard process. (b) RED FLAG — the panel under discussion.</text>
+            <text class="note" x="40" y="224">(c) CROSS-HATCH — persistent store. (d) VERTICAL RULES — third-party / outside the system.</text>
+          </svg>
+          <figcaption class="caption"><span class="fig-prefix">Fig. 1 —</span> Four panels in linear order; hatch patterns encode role, the lone red flag marks the panel the prose is discussing.</figcaption>
+        </figure>
+
+        <figure class="card diagram">
+          <svg viewBox="0 0 880 560" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram with four hatched actor panels and a cross-hatched alert region between messages 3 and 4.">
+            <defs>
+              <!-- Pattern defs are inline in each diagram per the language -->
+              <pattern id="seq-hatch-default" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="6" stroke="var(--ink-primary)" stroke-width="0.5"/>
+              </pattern>
+              <pattern id="seq-hatch-external" patternUnits="userSpaceOnUse" width="5" height="5">
+                <line x1="0" y1="0" x2="0" y2="5" stroke="var(--ink-primary)" stroke-width="0.6"/>
+              </pattern>
+              <pattern id="seq-hatch-warn" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)">
+                <line x1="0" y1="0" x2="0" y2="4" stroke="var(--ink-primary)" stroke-width="0.6"/>
+                <line x1="0" y1="0" x2="4" y2="0" stroke="var(--ink-primary)" stroke-width="0.6"/>
+              </pattern>
+              <marker id="nb-arrow3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 Z" fill="var(--ink-primary)"/>
+              </marker>
+              <marker id="nb-arrow-muted3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 Z" fill="var(--ink-faint)"/>
+              </marker>
+            </defs>
+            <style>
+              .actor       { font: 700 12px "Oswald", sans-serif; fill: var(--ink-primary); letter-spacing: 0.14em; text-transform: uppercase; }
+              .msg         { font: 13px Georgia, serif; fill: var(--ink-primary); }
+              .note        { font: italic 11px Georgia, serif; fill: var(--ink-faint); }
+              .ord         { font: 600 12px "Oswald", sans-serif; fill: var(--ink-primary); letter-spacing: 0.14em; }
+              .alert-txt   { font: 700 12px "Oswald", sans-serif; fill: var(--ink-primary); letter-spacing: 0.18em; text-transform: uppercase; }
+              .actor-box   { stroke: var(--ink-primary); stroke-width: 1; }
+              .lifeline    { stroke: var(--ink-primary); stroke-width: 0.5; stroke-dasharray: 1 4; }
+              .arrow       { stroke: var(--ink-primary); stroke-width: 1.25; fill: none; marker-end: url(#nb-arrow3); }
+              .arrow-muted { stroke: var(--ink-faint);   stroke-width: 1;    fill: none; marker-end: url(#nb-arrow-muted3); }
+              .arrow-async { stroke: var(--ink-primary); stroke-width: 1.25; fill: none; stroke-dasharray: 5 3; marker-end: url(#nb-arrow3); }
+              .arrow-warn  { stroke: var(--red-flag-nyt); stroke-width: 1.5; fill: none; marker-end: url(#nb-arrow-warn3); }
+            </style>
+            <defs>
+              <marker id="nb-arrow-warn3" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto">
+                <path d="M0,0 L9,4.5 L0,9 Z" fill="var(--red-flag-nyt)"/>
+              </marker>
+            </defs>
+
+            <!-- Actor panels — each filled with its role's hatch -->
+            <rect class="actor-box" x="60"  y="20" width="120" height="44" fill="url(#seq-hatch-default)"/>
+            <rect x="62"  y="24" width="116" height="36" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.4"/>
+            <text class="actor" x="120" y="46" text-anchor="middle">Client</text>
+
+            <rect class="actor-box" x="260" y="20" width="120" height="44" fill="url(#seq-hatch-default)"/>
+            <rect x="262" y="24" width="116" height="36" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.4"/>
+            <text class="actor" x="320" y="46" text-anchor="middle">API</text>
+
+            <!-- Hot actor: solid red flag -->
+            <rect class="actor-box" x="440" y="20" width="120" height="44" fill="var(--red-flag-nyt)"/>
+            <text class="actor" x="500" y="46" text-anchor="middle" fill="var(--bg-card)">Worker</text>
+
+            <rect class="actor-box" x="620" y="20" width="200" height="44" fill="url(#seq-hatch-external)"/>
+            <rect x="622" y="24" width="196" height="36" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.4"/>
+            <text class="actor" x="720" y="46" text-anchor="middle">Provider API</text>
+
+            <!-- Dotted lifelines -->
+            <line class="lifeline" x1="120" y1="64" x2="120" y2="540"/>
+            <line class="lifeline" x1="320" y1="64" x2="320" y2="540"/>
+            <line class="lifeline" x1="500" y1="64" x2="500" y2="540"/>
+            <line class="lifeline" x1="720" y1="64" x2="720" y2="540"/>
+
+            <text class="ord" x="20" y="118">1.</text>
+            <path class="arrow" d="M120 115 H320"/>
+            <text class="msg"  x="220" y="108" text-anchor="middle">POST /jobs</text>
+            <text class="note" x="220" y="132" text-anchor="middle">synchronous create</text>
+
+            <path class="arrow-muted" d="M320 160 H120"/>
+            <text class="msg" x="220" y="154" text-anchor="middle">201, job_id</text>
+
+            <text class="ord" x="20" y="208">2.</text>
+            <text class="note"  x="410" y="190" text-anchor="middle">background dispatch — fire-and-forget</text>
+            <path class="arrow-async" d="M320 205 H500"/>
+            <text class="msg" x="410" y="224" text-anchor="middle">enqueue(job)</text>
+
+            <text class="ord" x="20" y="268">3.</text>
+            <path class="arrow" d="M500 265 H720"/>
+            <text class="msg" x="610" y="259" text-anchor="middle">POST /provision</text>
+
+            <!-- Alert region: dense cross-hatch fill, black border -->
+            <rect x="340" y="285" width="480" height="100" fill="url(#seq-hatch-warn)" stroke="var(--ink-primary)" stroke-width="1"/>
+            <!-- Banner with paper background so alert text reads through hatch -->
+            <rect x="350" y="292" width="200" height="20" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.5"/>
+            <text class="alert-txt" x="360" y="307">FAILURE — alert region</text>
+
+            <path class="arrow-warn" d="M720 332 H500"/>
+            <rect x="540" y="318" width="170" height="18" fill="var(--bg-card)" stroke="var(--red-flag-nyt)" stroke-width="0.5"/>
+            <text class="alert-txt" x="625" y="332" text-anchor="middle" fill="var(--red-flag-nyt)">503 unavailable</text>
+
+            <!-- Inner banner with hatch interior -->
+            <rect x="360" y="348" width="440" height="28" fill="url(#seq-hatch-warn)" stroke="var(--ink-primary)" stroke-width="0.75"/>
+            <rect x="368" y="354" width="200" height="16" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.4"/>
+            <text class="alert-txt" x="378" y="367">RETRY POLICY ENGAGED</text>
+            <rect x="580" y="354" width="212" height="16" fill="var(--bg-card)" stroke="var(--ink-primary)" stroke-width="0.4"/>
+            <text class="note" x="588" y="366">backoff +2s, max 3 attempts</text>
+
+            <text class="ord" x="20" y="413">4.</text>
+            <path class="arrow" d="M500 410 H720"/>
+            <text class="msg" x="610" y="404" text-anchor="middle">POST /provision (retry)</text>
+
+            <path class="arrow-muted" d="M720 455 H500"/>
+            <text class="msg" x="610" y="449" text-anchor="middle">201 Created</text>
+
+            <text class="ord" x="20" y="498">5.</text>
+            <text class="note"  x="310" y="478" text-anchor="middle">async fan-out — terminal step</text>
+            <path class="arrow-async" d="M500 495 H120"/>
+            <text class="msg" x="310" y="513" text-anchor="middle">webhook: job.completed</text>
+          </svg>
+          <figcaption class="caption"><span class="fig-prefix">Fig. 2 —</span> Sequence with an alert region. Actor panels use hatch fills; the worker panel is solid red flag. The alert region uses dense cross-hatch interrupted by paper-white banner inserts that carry the alarm copy in Oswald caps.</figcaption>
+        </figure>
+
+        <h3>SVG typography</h3>
+        <p>Body copy in diagrams is Georgia; everything that names a thing — actor labels, step numbers, alert banners — is Oswald caps. There is no monospace register in these diagrams; the typewriter voice belongs to a different language.</p>
+        <pre><span class="kw">.actor</span>     { font: <span class="n">700</span> <span class="n">12</span>px <span class="str">"Oswald"</span>, sans-serif; fill: var(<span class="kw">--ink-primary</span>); letter-spacing: <span class="n">0.14</span>em; text-transform: uppercase; }
+<span class="kw">.msg</span>       { font: <span class="n">13</span>px Georgia, serif; fill: var(<span class="kw">--ink-primary</span>); }
+<span class="kw">.note</span>      { font: italic <span class="n">11</span>px Georgia, serif; fill: var(<span class="kw">--ink-faint</span>); }
+<span class="kw">.ord</span>       { font: <span class="n">600</span> <span class="n">12</span>px <span class="str">"Oswald"</span>, sans-serif; fill: var(<span class="kw">--ink-primary</span>); letter-spacing: <span class="n">0.14</span>em; }
+<span class="kw">.alert-txt</span> { font: <span class="n">700</span> <span class="n">12</span>px <span class="str">"Oswald"</span>, sans-serif; letter-spacing: <span class="n">0.18</span>em; text-transform: uppercase; }</pre>
+
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Hatch <code>&lt;pattern&gt;</code> definitions inline in each diagram's <code>&lt;defs&gt;</code>. Black ink for everything except <code>hot</code> (solid red flag) and the alert-region's arrow accent. Captions begin with Oswald-caps <q>FIG. N —</q> prefix.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Hatch spacing (4–8px), rotation, whether to overlay paper-white inset boxes for legibility of labels above hatch.</span></div>
+        </aside>
+
+        <h4>Alert region pattern</h4>
+        <p>The alert region is a dense cross-hatched rectangle (<code>#seq-hatch-warn</code> — 4px-spaced perpendicular diagonals) with a 1px black border. Banner copy sits on paper-white inserts cut out of the hatch so the Oswald caps stay legible. The pattern is visible in <q>Fig. 2 —</q> between steps 3 and 4.</p>
+        <aside class="contract">
+          <div class="row"><span class="label">Locked</span><span>Dense cross-hatch ground; black border; paper-white banner inserts for labels. Alert-arrow accent uses <code>--red-flag-nyt</code> — the same red flag as the <code>hot</code> role.</span></div>
+          <div class="row"><span class="label free">Free</span><span>Region size, exact banner copy, number of nested banners.</span></div>
+        </aside>
+
+        <h3>Arrow stroke</h3>
+        <p>Default arrows: black <code>--ink-primary</code> at 1.25px — ink on paper. Return paths use <code>arrow-muted</code> at 1px <code>--ink-faint</code> so direction is legible. Async dispatch is dashed black. The red flag appears only on the alert-region arrow.</p>
+
+        <h3>Caption convention</h3>
+        <p>Captions begin with an Oswald-caps <q>FIG. N —</q> prefix in <code>--ink-primary</code>, followed by Georgia italic sentence-case description. The em dash after the figure number is the period of the newspaper register — never replace it with a colon.</p>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    const root = document.documentElement;
+    const tocLinks = document.querySelectorAll('aside.toc a[href^="#"]');
+    const sections = Array.from(tocLinks).map(a => document.querySelector(a.getAttribute('href'))).filter(Boolean);
+
+    function updateProgress() {
+      const h = document.body.scrollHeight - innerHeight;
+      root.style.setProperty('--scroll', h > 0 ? (scrollY / h * 100) + '%' : '0%');
+    }
+
+    function updateActive() {
+      const mid = scrollY + innerHeight / 2;
+      let current = sections[0];
+      for (const s of sections) {
+        if (s.offsetTop <= mid) current = s;
+      }
+      if (current) tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current.id));
+    }
+
+    addEventListener('scroll', () => { updateProgress(); updateActive(); }, { passive: true });
+    updateProgress(); updateActive();
+  </script>
+</body>
+</html>
