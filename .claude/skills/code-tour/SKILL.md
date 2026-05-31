@@ -1,6 +1,7 @@
 ---
 name: code-tour
 description: Use when you need to deeply understand a PR, branch, or system/feature end-to-end. Triggers on "explain this PR", "walk me through", "how does X work", "tour of this change", "help me understand this system", "ramp me up on".
+disable-model-invocation: true
 ---
 
 # Code Tour

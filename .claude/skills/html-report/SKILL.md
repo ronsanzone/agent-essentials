@@ -1,6 +1,6 @@
 ---
 name: html-report
-description: Use when a caller has compiled content (sections, prose, code, diagrams) and needs to render it as a self-contained HTML technical report. Owns structural UX (TOC, scroll-spy, progress bar, marginalia, collapsible sections, SVG diagram cards) and visual design languages. Used by code-tour; intended for future report-producing skills.
+description: Use when phrases like 'give me an html report' are used in prompts or skills. Use when a caller has compiled content (sections, prose, code, diagrams) and wants to render it as a self-contained HTML technical report. Owns structural UX (TOC, scroll-spy, progress bar, marginalia, collapsible sections, SVG diagram cards) and visual design languages. Used by code-tour; intended for future report-producing skills.
 ---
 
 # html-report

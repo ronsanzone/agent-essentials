@@ -1,6 +1,7 @@
 ---
 name: local-code-review
 description: Use when reviewing local branch changes before creating a PR. Triggers on requests to review current work, check branch quality, or get feedback on uncommitted or committed changes against the parent branch.
+disable-model-invocation: true
 ---
 
 # Local Code Review

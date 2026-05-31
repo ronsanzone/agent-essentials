@@ -11,8 +11,6 @@
 
 * **CRITICAL: Use dedicated tools over Bash for file operations** — all of these trigger permission prompts unnecessarily when done via Bash:
   - Read (not `cat`/`head`/`tail`/`sed`) — including partial reads via `offset`/`limit` instead of `sed -n 'X,Yp'`
-  - Grep (not `grep`/`rg`)
-  - Glob (not `find`/`ls`)
   - Edit (not `sed`/`awk` for modifications)
   - Write (not `echo >`/`cat <<EOF`)
 

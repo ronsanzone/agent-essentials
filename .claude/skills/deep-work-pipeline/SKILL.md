@@ -1,6 +1,7 @@
 ---
 name: deep-work-pipeline
 description: "Use when running the full deep-work pipeline end-to-end in a single session. Orchestrates all 6 phases sequentially using agent teams, with configurable review gates between each phase."
+disable-model-invocation: true
 ---
 
 # Deep Work Pipeline Orchestrator
