@@ -19,6 +19,7 @@ Runs the full deep-work pipeline (Phases 1-6) in a single session using agent te
 | **quick-review** | `/quick-review` | Single-pass expert review with severity-ranked findings (critical → minor) |
 | **local-code-review** | `/local-code-review` | Local code review of changes in the working tree |
 | **submit-pr** | `/submit-pr` | Full PR submission workflow — creates draft PRs or pushes updates to existing ones |
+| **yeet** | `/yeet [ticket-key\|ticket-title]` | One-shot shipping workflow — creates/uses Jira ticket, commits relevant local changes, pushes, and opens/updates a draft PR |
 
 ---
 
@@ -92,7 +93,8 @@ claude-essentials/
 │   │   ├── quick-review/                # Fast severity-ranked review
 │   │   ├── refine-ticket/               # Pre-pipeline ticket refinement
 │   │   ├── session-retrospective/       # Session efficiency analysis
-│   │   └── submit-pr/                   # PR creation/update workflow
+│   │   ├── submit-pr/                   # PR creation/update workflow
+│   │   └── yeet/                        # One-shot Jira + commit + draft PR workflow
 │   └── agents/
 └── scripts/
     ├── log_analysis_lib.py
