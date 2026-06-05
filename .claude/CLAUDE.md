@@ -14,6 +14,12 @@
   - Edit (not `sed`/`awk` for modifications)
   - Write (not `echo >`/`cat <<EOF`)
 
+## Investigation discipline
+
+* **Validate = investigate, not confirm:** When asked to validate/confirm/check a doc, plan, or proposed solution, investigate the underlying problem independently and actively seek disconfirming evidence — verifying citations is not research.
+
+* **Prove reachability before calling code live:** Before labeling code live/used/active, trace it to a production entry point (handler, scheduler, cron, startup wiring). One caller ≠ live. Default to "dead/unproven" until the chain to an entry point is shown; apply equal tracing depth to code you expect to be live and code you expect to be dead.
+
 ## Context Engineering
 Context is our most important commodity. Maintaining a small context is a top priority. You MUST adhere to the following:
 

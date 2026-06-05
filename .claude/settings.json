@@ -119,7 +119,9 @@
     "context7@claude-plugins-official": false,
     "evergreen-stack-ci@mongodb-internal": true,
     "graphite-pr-stack@mongodb-internal": true,
-    "evergreen-cicd@mongodb-internal": true
+    "evergreen-cicd@mongodb-internal": true,
+    "plannotator@plannotator": true,
+    "rpi@context-engineering-workflows": true
   },
   "extraKnownMarketplaces": {
     "mongodb-internal": {
@@ -132,6 +134,12 @@
       "source": {
         "source": "github",
         "repo": "ronsanzone/context-engineering-workflows"
+      }
+    },
+    "plannotator": {
+      "source": {
+        "source": "github",
+        "repo": "backnotprop/plannotator"
       }
     }
   },
