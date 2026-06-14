@@ -26,9 +26,7 @@
       "Write(~/notes/context-engineering/**)"
     ],
     "defaultMode": "acceptEdits",
-    "additionalDirectories": [
-      "~/notes/context-engineering"
-    ]
+    "additionalDirectories": ["~/notes/context-engineering"]
   },
   "hooks": {
     "UserPromptSubmit": [
@@ -145,13 +143,9 @@
   },
   "sandbox": {
     "filesystem": {
-      "allowRead": [
-        "~/.gnupg"
-      ]
+      "allowRead": ["~/.gnupg"]
     },
-    "excludedCommands": [
-      "bazel run fern"
-    ]
+    "excludedCommands": ["bazel run fern"]
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
