@@ -23,7 +23,9 @@
       "mcp__devprod-mcp-gateway__jira_get_issue",
       "Read(~/notes/context-engineering/**)",
       "Edit(~/notes/context-engineering/**)",
-      "Write(~/notes/context-engineering/**)"
+      "Write(~/notes/context-engineering/**)",
+      "mcp__executor__execute",
+      "mcp__executor__resume"
     ],
     "defaultMode": "acceptEdits",
     "additionalDirectories": ["~/notes/context-engineering"]
@@ -113,13 +115,13 @@
     "context-efficient-tools@xdg-claude": false,
     "frontend-design@claude-plugins-official": true,
     "jira-cli@xdg-claude": false,
-    "superpowers@claude-plugins-official": true,
     "context7@claude-plugins-official": false,
     "evergreen-stack-ci@mongodb-internal": true,
     "graphite-pr-stack@mongodb-internal": true,
     "evergreen-cicd@mongodb-internal": true,
     "plannotator@plannotator": true,
-    "rpi@context-engineering-workflows": true
+    "rpi@context-engineering-workflows": true,
+    "dw@context-engineering-workflows": true
   },
   "extraKnownMarketplaces": {
     "mongodb-internal": {

@@ -39,6 +39,14 @@ Context is our most important commodity. Maintaining a small context is a top pr
 
 * **One tool call, not three**: Prefer a single well-constructed command over multiple incremental checks. Use the programatic tool calling features when possible to combine tool chains.
 
+## Executor MCP (code mode)
+The `executor` MCP is a sandboxed TypeScript runtime that fronts our integrations (Jira/Confluence/GitHub via `devprod-gateway`, `evergreen`, `glean-data`, `linear`, etc.) as one searchable `tools.*` catalog. The only model-facing tools are `mcp__executor__execute` + `mcp__executor__resume` — the downstream tools are NOT preloaded as individual MCP tools.
+
+* **Route any "use the X MCP/tool" through executor:** When a skill, doc, or prompt says to use a named integration ("use the evergreen MCP", "use the devprod MCP", Jira/Confluence/GitHub/Glean/Linear, etc.), do NOT expect a standalone tool to exist. Treat it as a connection inside executor: in an `execute`, run `tools.search({query})` to locate it, `tools.describe.tool({path})` for the schema on demand, then call it as `tools["<source>.<conn>.<tool>"](…)`. Discover, don't assume the tool is loaded.
+* **Describe before calling:** Always call `tools.describe.tool({path})` FIRST to get the exact input schema and response shape before writing the batch call — never guess parameter names or response envelope structure.
+* **Fetch once, extract in-sandbox:** Fetch each source/document ONCE, then paginate/filter/extract in code over the variable you already hold — never re-call a fetch tool to get the next slice of the same resource. Return only the distilled result (slice/transform large payloads in code before returning); never dump raw payloads back into model context.
+* **Batch over a loop, not N gated calls:** For bulk/repeated operations (creates, updates, links) prefer one `execute` with a loop over N separate tool calls — each downstream call may pause for approval, so looping in-sandbox collapses the round-trips.
+
 ## Communication Style
 
 **Core directive:** Maximize signal-to-noise ratio. Communicate like a senior colleague in a high-trust, radical candor environment—help me be effective, not comfortable.
