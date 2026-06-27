@@ -1,176 +1,199 @@
 # Installation Guide
 
-This guide covers installing Claude Essentials as your global Claude Code configuration.
+Claude Essentials is installed as Agent Skills plus an optional safe Claude Code config overlay.
+
+Do **not** symlink this repository's `.claude` directory into `~/.claude`. This repo intentionally does not use a package-owned `.claude` directory anymore because `~/.claude` also contains local secrets and runtime state.
 
 ## Prerequisites
 
-- **Claude Code CLI** - The official Anthropic CLI for Claude
-- **Python 3.8+** - For log analysis scripts
-- **tmux** (optional) - For tmux-stalker skills
-- **gh CLI** (optional) - For GitHub-related commands
+- Node/npm for `npx skills`
+- Claude Code CLI if installing for Claude Code
+- `gh` CLI for PR-related skills
+- `plannotator` CLI for Plannotator skills
 
-## Installation Steps
+## Install Skills Only
 
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/yourusername/claude-essentials.git ~/code/claude-essentials
-```
-
-Or if you already have it elsewhere, adjust paths accordingly.
-
-### 2. Backup Existing Configuration
-
-If you have an existing `~/.claude` directory:
+Install all skills globally for Claude Code:
 
 ```bash
-# Check if it exists
-ls -la ~/.claude
-
-# Backup if present
-[ -d ~/.claude ] && mv ~/.claude ~/.claude.backup.$(date +%Y%m%d)
+npx skills add ronsanzone/claude-essentials -g -a claude-code --skill '*' -y
 ```
 
-### 3. Create Symlink
-
-Link the `.claude` directory from this repo to your home directory:
+Install a specific skill:
 
 ```bash
-ln -s ~/code/claude-essentials/.claude ~/.claude
+npx skills add ronsanzone/claude-essentials -g -a claude-code --skill quick-review -y
 ```
 
-### 4. Configure Local Settings
-
-The `settings.local.json` file contains permissions and should be customized:
+List available skills:
 
 ```bash
-# Copy the example file
-cp ~/.claude/settings.local.json.example ~/.claude/settings.local.json
-
-# Edit to customize permissions
-# Add domains you want to allow for WebFetch
-# Add bash commands you want to pre-approve
+npx skills add ronsanzone/claude-essentials --list
 ```
 
-Example permissions you might add:
-```json
-{
-  "permissions": {
-    "allow": [
-      "Bash(go test:*)",
-      "Bash(npm:*)",
-      "WebFetch(domain:docs.example.com)",
-      "mcp__gopls__go_workspace"
-    ],
-    "deny": []
-  }
-}
-```
-
-### 5. Verify Installation
-
-Start Claude Code and verify:
+Install for multiple agents:
 
 ```bash
-claude
-
-# Inside Claude Code, check:
-# 1. Model should match settings.json
-# 2. Run /skills to see available skills
-# 3. Run /crux to test command loading
+npx skills add ronsanzone/claude-essentials -g -a claude-code -a pi --skill '*' -y
 ```
 
-## Verification Checklist
+## Install From a Local Checkout
 
-- [ ] `~/.claude` symlink points to `~/code/claude-essentials/.claude`
-- [ ] `ls -la ~/.claude` shows the correct symlink target
-- [ ] Claude Code starts without errors
-- [ ] Skills appear in `/skills` output
-- [ ] Commands work (try `/crux` with a file argument)
-- [ ] Log analysis scripts work: `python3 ~/code/claude-essentials/scripts/log_analysis_lib.py --help`
+```bash
+git clone git@github.com:ronsanzone/claude-essentials.git ~/code/claude-essentials
+cd ~/code/claude-essentials
+scripts/install-claude.sh
+```
+
+The installer:
+
+1. Migrates old repo-owned symlinks in `~/.claude`.
+2. Materializes local-only files as real files if needed:
+   - `~/.claude/.mcp.json`
+   - `~/.claude/settings.local.json`
+3. Removes the old `~/.claude/skills` symlink if it points to this repo.
+4. Links safe config:
+   - `config/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`
+   - `config/claude/settings.json` → `~/.claude/settings.json`
+   - `config/claude/docs` → `~/.claude/docs`
+5. Copies examples if absent:
+   - `~/.claude/settings.local.json.example`
+   - `~/.claude/.mcp.json.example`
+6. Installs skills via `npx skills`.
+
+Useful flags:
+
+```bash
+scripts/install-claude.sh --dry-run
+scripts/install-claude.sh --skills-only
+scripts/install-claude.sh --config-only
+scripts/install-claude.sh --force-config
+scripts/install-claude.sh --copy-skills
+scripts/install-claude.sh --agent claude-code --agent pi
+```
+
+## Migrating From the Old Symlink Install
+
+Old installs often had symlinks like:
+
+```text
+~/.claude/.mcp.json -> ~/code/claude-essentials/.claude/.mcp.json
+~/.claude/settings.local.json -> ~/code/claude-essentials/.claude/settings.local.json
+~/.claude/skills -> ~/code/claude-essentials/.claude/skills
+```
+
+Run:
+
+```bash
+cd ~/code/claude-essentials
+scripts/install-claude.sh --dry-run
+scripts/install-claude.sh
+```
+
+After migration, verify local secret/runtime files are real files, not symlinks:
+
+```bash
+test ! -L ~/.claude/.mcp.json
+test ! -L ~/.claude/settings.local.json
+test -d ~/.claude/skills
+```
+
+If the old `.mcp.json` token was accidentally committed or shared, rotate it.
+
+## Dot Integration
+
+In `~/code/dot/profiles/personal.env`, use:
+
+```bash
+DOT_ITEM_claude_essentials_APPLY="./scripts/install-claude.sh"
+```
+
+Then:
+
+```bash
+dot down --apply-only
+dot doctor --deep
+```
+
+`dot down` will keep the repo updated, run the safe installer, and avoid symlinking the whole Claude config directory.
 
 ## Updating
 
-Since this is a git repository, updates are simple:
+For a checkout managed directly:
 
 ```bash
 cd ~/code/claude-essentials
 git pull
+scripts/install-claude.sh
 ```
 
-Your local `settings.local.json` won't be affected as it's gitignored.
-
-## Uninstallation
-
-To remove Claude Essentials:
+For skills installed directly from GitHub:
 
 ```bash
-# Remove the symlink
-rm ~/.claude
-
-# Restore backup if you had one
-[ -d ~/.claude.backup.* ] && mv ~/.claude.backup.* ~/.claude
+npx skills update -g
 ```
+
+## Uninstalling Skills
+
+Remove installed skills from Claude Code:
+
+```bash
+npx skills remove --global --agent claude-code --skill '*' -y
+```
+
+Or remove specific skills:
+
+```bash
+npx skills remove --global --agent claude-code quick-review
+```
+
+Remove safe config links manually if desired:
+
+```bash
+rm ~/.claude/CLAUDE.md ~/.claude/settings.json ~/.claude/docs
+```
+
+Do not remove local files such as `~/.claude/.mcp.json` or `~/.claude/settings.local.json` unless you intentionally want to delete your local configuration.
+
+## Verification Checklist
+
+- [ ] `npx skills add . --list` finds the expected skills.
+- [ ] `~/.claude/.mcp.json` is a real file if present, not a symlink.
+- [ ] `~/.claude/settings.local.json` is a real file if present, not a symlink.
+- [ ] `~/.claude/skills` is a real directory managed by `npx skills`.
+- [ ] `~/.claude/CLAUDE.md` points to `config/claude/CLAUDE.md` or another intentional local config.
+- [ ] Claude Code starts and `/skills` shows installed skills.
 
 ## Troubleshooting
 
-### Symlink Not Working
+### `npx skills` installs to an unexpected agent
 
-If Claude Code isn't picking up the configuration:
-
-```bash
-# Verify symlink is correct
-ls -la ~/.claude
-
-# Should show something like:
-# .claude -> /Users/yourname/code/claude-essentials/.claude
-
-# If it's a regular directory instead, remove and recreate
-rm -rf ~/.claude  # Be careful!
-ln -s ~/code/claude-essentials/.claude ~/.claude
-```
-
-### Permissions Issues
-
-If scripts aren't executable:
+Specify the agent explicitly:
 
 ```bash
-chmod +x ~/code/claude-essentials/scripts/*.py
+npx skills add . -g -a claude-code --skill '*' -y
 ```
 
-### Python Dependencies
+### Existing real config was not replaced
 
-The log analysis scripts use only standard library modules. No additional packages needed.
+The installer skips real local files by default. Use:
 
-### Skills Not Appearing
-
-Skills require specific frontmatter format. Verify files have:
-```yaml
----
-name: skill-name
-description: Description here
----
+```bash
+scripts/install-claude.sh --force-config
 ```
 
-## File Locations Summary
+This backs up the existing path before replacing it.
 
-| Purpose | Location |
-|---------|----------|
-| Global config | `~/.claude` (symlink) |
-| Actual files | `~/code/claude-essentials/.claude` |
-| Scripts | `~/code/claude-essentials/scripts` |
-| Local permissions | `~/.claude/settings.local.json` |
+### Broken old symlink remains
 
-## Multiple Configurations
+Run:
 
-If you need different configurations for different contexts, you can:
+```bash
+find ~/.claude -maxdepth 1 -type l -exec sh -c 'for p; do test -e "$p" || echo "$p -> $(readlink "$p")"; done' sh {} +
+```
 
-1. Create branches in this repo for different setups
-2. Use environment-specific `settings.local.json` files
-3. Swap symlinks between different config directories
+Then rerun:
 
-## Support
-
-For issues with:
-- **Claude Code itself**: https://github.com/anthropics/claude-code/issues
-- **This configuration**: Open an issue in this repository
+```bash
+scripts/install-claude.sh
+```

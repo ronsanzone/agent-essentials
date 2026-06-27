@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "executor": {
+      "type": "http",
+      "url": "http://localhost:4789/mcp",
+      "headers": {
+        "Authorization": "Bearer <local-token>"
+      }
+    }
+  }
+}
