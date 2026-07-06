@@ -1,0 +1,82 @@
+{
+  "skills": {
+    "domain-modeling": {
+      "contentSha256": "46989b335ff9819edb83e1628a947aeb43b657d6bc0141ed8da6f1334ff65801",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/engineering/domain-modeling",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "46989b335ff9819edb83e1628a947aeb43b657d6bc0141ed8da6f1334ff65801",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/domain-modeling"
+    },
+    "grill-me": {
+      "contentSha256": "c5c00436401f0c71846f7ef80d419c093cd28e8834da5227dacfb5e10b0e3aeb",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/productivity/grill-me",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "c5c00436401f0c71846f7ef80d419c093cd28e8834da5227dacfb5e10b0e3aeb",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/grill-me"
+    },
+    "grill-with-docs": {
+      "contentSha256": "39b09b7a4c8614d3ea3462c0ced99b530eba1d5ca89a06792426f176612b3671",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/engineering/grill-with-docs",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "39b09b7a4c8614d3ea3462c0ced99b530eba1d5ca89a06792426f176612b3671",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/grill-with-docs"
+    },
+    "grilling": {
+      "contentSha256": "6ccd47d11ff4c60eb25200aa227046abf2d132e578ca752c71e5fbe69fdb8b93",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/productivity/grilling",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "6ccd47d11ff4c60eb25200aa227046abf2d132e578ca752c71e5fbe69fdb8b93",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/grilling"
+    },
+    "handoff": {
+      "contentSha256": "2daa0e5876ba7f404f8fa9273fbdfead4b0b43265ce1bfe591b0a909233b11ab",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/productivity/handoff",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "2daa0e5876ba7f404f8fa9273fbdfead4b0b43265ce1bfe591b0a909233b11ab",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/handoff"
+    },
+    "teach": {
+      "contentSha256": "bfc24e13a21b1edca2ebfbd0781a7cda6237d70cad1bb0ffc2b7e771ff06616a",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/productivity/teach",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "bfc24e13a21b1edca2ebfbd0781a7cda6237d70cad1bb0ffc2b7e771ff06616a",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/teach"
+    },
+    "writing-great-skills": {
+      "contentSha256": "c4377e70e1aa66e59f07d11872e66546520f0cab3986a44c6f23435542e6ed2e",
+      "sourceCommit": "66f92b61f5b1434a1c7422f6fbd8efc5ee0c0214",
+      "sourcePath": "skills/productivity/writing-great-skills",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/mattpocock/skills.git",
+      "updatedAt": "2026-07-06T05:30:37Z",
+      "upstreamContentSha256": "c4377e70e1aa66e59f07d11872e66546520f0cab3986a44c6f23435542e6ed2e",
+      "vendoredAt": "2026-07-06T05:30:37Z",
+      "vendoredPath": "skills/writing-great-skills"
+    }
+  },
+  "version": 1
+}

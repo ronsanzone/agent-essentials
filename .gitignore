@@ -31,4 +31,6 @@ Thumbs.db
 .vscode/
 
 # Pi local task state
-.pi/
+.pi/*
+!.pi/skills/
+!.pi/skills/**

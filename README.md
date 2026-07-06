@@ -2,14 +2,14 @@
 
 Reusable agent skills and a small, safe Claude Code config overlay.
 
-The package no longer symlinks its whole `.claude` directory into `~/.claude`. Skills are installed with the standard `npx skills` CLI, while local/runtime Claude files such as `.mcp.json` and `settings.local.json` remain real files in `~/.claude`.
+The package installs from its central `skills/` folder with the standard `npx skills` CLI, while local/runtime Claude files such as `.mcp.json` and `settings.local.json` remain real files in `~/.claude`.
 
 ## Quick Start
 
 Install all skills globally for Claude Code:
 
 ```bash
-npx skills add ronsanzone/agent-essentials -g -a claude-code --skill '*' -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill '*' -y
 ```
 
 Or from a local checkout:
@@ -22,7 +22,7 @@ scripts/install-claude.sh
 
 `install-claude.sh` does two things:
 
-1. Installs skills with `npx skills`.
+1. Installs skills from `skills/` with `npx skills`.
 2. Links only safe Claude config from `config/claude/` into `~/.claude`.
 
 It intentionally does **not** manage real secrets/runtime files:
@@ -78,19 +78,19 @@ Runs the full deep-work pipeline in a single session using agent teams with conf
 List available skills without installing:
 
 ```bash
-npx skills add ronsanzone/agent-essentials --list
+npx skills add ronsanzone/agent-essentials/skills --list
 ```
 
 Install one skill:
 
 ```bash
-npx skills add ronsanzone/agent-essentials -g -a claude-code --skill quick-review -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill quick-review -y
 ```
 
 Install for multiple agents:
 
 ```bash
-npx skills add ronsanzone/agent-essentials -g -a claude-code -a pi --skill '*' -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code -a pi --skill '*' -y
 ```
 
 Install safe Claude config plus skills from a checkout:
@@ -164,7 +164,7 @@ description: Use when ...
 Validate discovery:
 
 ```bash
-npx skills add . --list
+npx skills add ./skills --list
 ```
 
 ## Requirements

@@ -1,8 +1,8 @@
 # Installation Guide
 
-Agent Essentials is installed as Agent Skills plus an optional safe Claude Code config overlay.
+Agent Essentials is installed from the repo's central `skills/` folder with `npx skills`, plus an optional safe Claude Code config overlay.
 
-Do **not** symlink this repository's `.claude` directory into `~/.claude`. This repo intentionally does not use a package-owned `.claude` directory anymore because `~/.claude` also contains local secrets and runtime state.
+Do **not** symlink this repository's `.claude` directory into `~/.claude`. This repo intentionally does not use a package-owned `.claude` directory because `~/.claude` also contains local secrets and runtime state.
 
 ## Prerequisites
 
@@ -16,25 +16,25 @@ Do **not** symlink this repository's `.claude` directory into `~/.claude`. This 
 Install all skills globally for Claude Code:
 
 ```bash
-npx skills add ronsanzone/agent-essentials -g -a claude-code --skill '*' -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill '*' -y
 ```
 
 Install a specific skill:
 
 ```bash
-npx skills add ronsanzone/agent-essentials -g -a claude-code --skill quick-review -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill quick-review -y
 ```
 
 List available skills:
 
 ```bash
-npx skills add ronsanzone/agent-essentials --list
+npx skills add ronsanzone/agent-essentials/skills --list
 ```
 
 Install for multiple agents:
 
 ```bash
-npx skills add ronsanzone/agent-essentials -g -a claude-code -a pi --skill '*' -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code -a pi --skill '*' -y
 ```
 
 ## Install From a Local Checkout
@@ -59,7 +59,7 @@ The installer:
 5. Copies examples if absent:
    - `~/.claude/settings.local.json.example`
    - `~/.claude/.mcp.json.example`
-6. Installs skills via `npx skills`.
+6. Installs skills from `skills/` via `npx skills`.
 
 Useful flags:
 
@@ -157,7 +157,7 @@ Do not remove local files such as `~/.claude/.mcp.json` or `~/.claude/settings.l
 
 ## Verification Checklist
 
-- [ ] `npx skills add . --list` finds the expected skills.
+- [ ] `npx skills add ./skills --list` finds the expected skills.
 - [ ] `~/.claude/.mcp.json` is a real file if present, not a symlink.
 - [ ] `~/.claude/settings.local.json` is a real file if present, not a symlink.
 - [ ] `~/.claude/skills` is a real directory managed by `npx skills`.
@@ -171,7 +171,7 @@ Do not remove local files such as `~/.claude/.mcp.json` or `~/.claude/settings.l
 Specify the agent explicitly:
 
 ```bash
-npx skills add . -g -a claude-code --skill '*' -y
+npx skills add ./skills -g -a claude-code --skill '*' -y
 ```
 
 ### Existing real config was not replaced

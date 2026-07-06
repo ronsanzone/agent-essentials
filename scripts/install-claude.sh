@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Install agent-essentials safely.
 #
-# Skills are installed with `npx skills`; only non-secret Claude config is
-# package-managed. Runtime/local files such as ~/.claude/.mcp.json and
-# ~/.claude/settings.local.json are materialized as real local files if they were
-# previously symlinked to this repo.
+# Skills are installed from the repo's central skills/ folder with `npx skills`.
+# Only non-secret Claude config is package-managed. Runtime/local files such as
+# ~/.claude/.mcp.json and ~/.claude/settings.local.json are materialized as real
+# local files if they were previously symlinked to this repo.
 
 set -euo pipefail
 
@@ -42,6 +42,7 @@ DRY_RUN=0
 FORCE_CONFIG=0
 COPY_SKILLS=0
 AGENTS=(claude-code)
+CUSTOM_AGENTS=0
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -67,8 +68,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --agent|-a)
       [[ $# -ge 2 && -n "${2:-}" ]] || { echo "missing value after $1" >&2; exit 1; }
-      if [[ "${#AGENTS[@]}" -eq 1 && "${AGENTS[0]}" == "claude-code" ]]; then
+      if [[ "$CUSTOM_AGENTS" -eq 0 ]]; then
         AGENTS=()
+        CUSTOM_AGENTS=1
       fi
       AGENTS+=("$2")
       shift 2
@@ -300,7 +302,7 @@ install_config() {
 
 install_skills() {
   note "== install skills via npx skills =="
-  local cmd=(npx skills add "$ROOT" -g --skill '*' -y)
+  local cmd=(npx skills add "$ROOT/skills" -g --skill '*' -y)
   local agent
   for agent in "${AGENTS[@]}"; do
     cmd+=(-a "$agent")
