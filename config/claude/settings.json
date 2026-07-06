@@ -1,17 +1,145 @@
 {
-  "cleanupPeriodDays": 210,
-  "env": {
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "ENABLE_TOOL_SEARCH": "true",
-    "CLAUDE_CODE_NO_FLICKER": "1",
-    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
-    "ANTHROPIC_MODEL": "claude-opus-4-6[1m]"
-  },
+  "alwaysThinkingEnabled": true,
   "attribution": {
     "commit": "",
     "pr": ""
   },
+  "autoDreamEnabled": true,
+  "cleanupPeriodDays": 210,
+  "editorMode": "vim",
+  "effortLevel": "high",
+  "enabledPlugins": {
+    "code-review@claude-plugins-official": false,
+    "context-efficient-tools@xdg-claude": false,
+    "context7@claude-plugins-official": false,
+    "dw@context-engineering-workflows": true,
+    "evergreen-cicd@mongodb-internal": true,
+    "evergreen-stack-ci@mongodb-internal": true,
+    "frontend-design@claude-plugins-official": true,
+    "graphite-pr-stack@mongodb-internal": true,
+    "jira-cli@xdg-claude": false,
+    "plannotator@plannotator": true,
+    "rpi@context-engineering-workflows": true
+  },
+  "env": {
+    "ANTHROPIC_MODEL": "claude-opus-4-6[1m]",
+    "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "CLAUDE_CODE_NO_FLICKER": "1",
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "extraKnownMarketplaces": {
+    "context-engineering-workflows": {
+      "source": {
+        "repo": "ronsanzone/context-engineering-workflows",
+        "source": "github"
+      }
+    },
+    "mongodb-internal": {
+      "source": {
+        "repo": "10gen/agent-skills",
+        "source": "github"
+      }
+    },
+    "plannotator": {
+      "source": {
+        "repo": "backnotprop/plannotator",
+        "source": "github"
+      }
+    }
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "command": "~/.claude/hooks/kitty-notify.sh",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true",
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "command": "~/.claude/hooks/kitty-notify.sh",
+            "type": "command"
+          }
+        ],
+        "matcher": "AskUserQuestion"
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "bash '/Users/sanzoner/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10,
+            "type": "command"
+          }
+        ],
+        "matcher": "*"
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true",
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true",
+            "type": "command"
+          }
+        ]
+      }
+    ]
+  },
   "permissions": {
+    "additionalDirectories": [
+      "~/notes/context-engineering"
+    ],
     "allow": [
       "Bash(sed -n)",
       "Bash(bazel run fern:*)",
@@ -26,140 +154,24 @@
       "mcp__executor__execute",
       "mcp__executor__resume"
     ],
-    "defaultMode": "acceptEdits",
-    "additionalDirectories": [
-      "~/notes/context-engineering"
-    ]
-  },
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
-          }
-        ]
-      }
-    ],
-    "PostToolUseFailure": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/kitty-notify.sh"
-          }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "AskUserQuestion",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/kitty-notify.sh"
-          }
-        ]
-      }
-    ],
-    "PermissionRequest": [
-      {
-        "matcher": "*",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "[ -n \"$SUPERSET_HOME_DIR\" ] && [ -x \"$SUPERSET_HOME_DIR/hooks/notify.sh\" ] && \"$SUPERSET_HOME_DIR/hooks/notify.sh\" || true"
-          }
-        ]
-      }
-    ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline-command.sh"
-  },
-  "enabledPlugins": {
-    "code-review@claude-plugins-official": false,
-    "context-efficient-tools@xdg-claude": false,
-    "frontend-design@claude-plugins-official": true,
-    "jira-cli@xdg-claude": false,
-    "context7@claude-plugins-official": false,
-    "evergreen-stack-ci@mongodb-internal": true,
-    "graphite-pr-stack@mongodb-internal": true,
-    "evergreen-cicd@mongodb-internal": true,
-    "plannotator@plannotator": true,
-    "rpi@context-engineering-workflows": true,
-    "dw@context-engineering-workflows": true
-  },
-  "extraKnownMarketplaces": {
-    "mongodb-internal": {
-      "source": {
-        "source": "github",
-        "repo": "10gen/agent-skills"
-      }
-    },
-    "context-engineering-workflows": {
-      "source": {
-        "source": "github",
-        "repo": "ronsanzone/context-engineering-workflows"
-      }
-    },
-    "plannotator": {
-      "source": {
-        "source": "github",
-        "repo": "backnotprop/plannotator"
-      }
-    }
+    "defaultMode": "acceptEdits"
   },
   "sandbox": {
+    "excludedCommands": [
+      "bazel run fern"
+    ],
     "filesystem": {
       "allowRead": [
         "~/.gnupg"
       ]
-    },
-    "excludedCommands": [
-      "bazel run fern"
-    ]
+    }
   },
-  "alwaysThinkingEnabled": true,
-  "effortLevel": "high",
-  "autoDreamEnabled": true,
   "showThinkingSummaries": true,
+  "skipAutoPermissionPrompt": true,
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-daltonized",
-  "editorMode": "vim",
-  "skipAutoPermissionPrompt": true
+  "statusLine": {
+    "command": "~/.claude/statusline-command.sh",
+    "type": "command"
+  },
+  "theme": "dark-daltonized"
 }
