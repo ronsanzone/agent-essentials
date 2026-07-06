@@ -1,4 +1,4 @@
-# Claude Essentials
+# Agent Essentials
 
 Reusable agent skills and a small, safe Claude Code config overlay.
 
@@ -9,14 +9,14 @@ The package no longer symlinks its whole `.claude` directory into `~/.claude`. S
 Install all skills globally for Claude Code:
 
 ```bash
-npx skills add ronsanzone/claude-essentials -g -a claude-code --skill '*' -y
+npx skills add ronsanzone/agent-essentials -g -a claude-code --skill '*' -y
 ```
 
 Or from a local checkout:
 
 ```bash
-git clone git@github.com:ronsanzone/claude-essentials.git ~/code/claude-essentials
-cd ~/code/claude-essentials
+git clone git@github.com:ronsanzone/agent-essentials.git ~/code/agent-essentials
+cd ~/code/agent-essentials
 scripts/install-claude.sh
 ```
 
@@ -78,19 +78,19 @@ Runs the full deep-work pipeline in a single session using agent teams with conf
 List available skills without installing:
 
 ```bash
-npx skills add ronsanzone/claude-essentials --list
+npx skills add ronsanzone/agent-essentials --list
 ```
 
 Install one skill:
 
 ```bash
-npx skills add ronsanzone/claude-essentials -g -a claude-code --skill quick-review -y
+npx skills add ronsanzone/agent-essentials -g -a claude-code --skill quick-review -y
 ```
 
 Install for multiple agents:
 
 ```bash
-npx skills add ronsanzone/claude-essentials -g -a claude-code -a pi --skill '*' -y
+npx skills add ronsanzone/agent-essentials -g -a claude-code -a pi --skill '*' -y
 ```
 
 Install safe Claude config plus skills from a checkout:
@@ -112,7 +112,7 @@ scripts/install-claude.sh --agent claude-code --agent pi
 ## Directory Structure
 
 ```text
-claude-essentials/
+agent-essentials/
 ├── skills/                         # canonical Agent Skills package source
 │   ├── code-tour/
 │   ├── deep-work-pipeline/

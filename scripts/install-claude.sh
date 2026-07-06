@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install claude-essentials safely.
+# Install agent-essentials safely.
 #
 # Skills are installed with `npx skills`; only non-secret Claude config is
 # package-managed. Runtime/local files such as ~/.claude/.mcp.json and
@@ -34,7 +34,7 @@ CONFIG_DIR="$ROOT/config/claude"
 TARGET_DIR="$HOME/.claude"
 BACKUP_ROOT="$HOME/.claude/backups"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP_DIR="$BACKUP_ROOT/claude-essentials-migration-$STAMP"
+BACKUP_DIR="$BACKUP_ROOT/agent-essentials-migration-$STAMP"
 
 INSTALL_SKILLS=1
 INSTALL_CONFIG=1
@@ -127,7 +127,7 @@ symlink_target_is_this_repo() {
   local target
   target="$(readlink "$path")"
   case "$target" in
-    "$ROOT"|"$ROOT"/*|"$HOME/code/claude-essentials"|"$HOME/code/claude-essentials"/*|~/code/claude-essentials|~/code/claude-essentials/*)
+    "$ROOT"|"$ROOT"/*|"$HOME/code/agent-essentials"|"$HOME/code/agent-essentials"/*|~/code/agent-essentials|~/code/agent-essentials/*)
       return 0
       ;;
     *)
@@ -272,7 +272,7 @@ install_example_copy() {
 }
 
 migrate_old_layout() {
-  note "== migrate old claude-essentials symlinks =="
+  note "== migrate old agent-essentials symlinks =="
   run mkdir -p "$TARGET_DIR"
 
   # Local/runtime files must survive package removal as real, non-symlink files.
@@ -320,7 +320,7 @@ if [[ "$INSTALL_SKILLS" -eq 1 ]]; then
   install_skills
 fi
 
-note "claude-essentials install complete"
+note "agent-essentials install complete"
 if [[ "$DRY_RUN" -eq 0 && -d "$BACKUP_DIR" ]]; then
   note "backups: $BACKUP_DIR"
 fi

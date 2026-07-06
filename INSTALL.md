@@ -1,6 +1,6 @@
 # Installation Guide
 
-Claude Essentials is installed as Agent Skills plus an optional safe Claude Code config overlay.
+Agent Essentials is installed as Agent Skills plus an optional safe Claude Code config overlay.
 
 Do **not** symlink this repository's `.claude` directory into `~/.claude`. This repo intentionally does not use a package-owned `.claude` directory anymore because `~/.claude` also contains local secrets and runtime state.
 
@@ -16,32 +16,32 @@ Do **not** symlink this repository's `.claude` directory into `~/.claude`. This 
 Install all skills globally for Claude Code:
 
 ```bash
-npx skills add ronsanzone/claude-essentials -g -a claude-code --skill '*' -y
+npx skills add ronsanzone/agent-essentials -g -a claude-code --skill '*' -y
 ```
 
 Install a specific skill:
 
 ```bash
-npx skills add ronsanzone/claude-essentials -g -a claude-code --skill quick-review -y
+npx skills add ronsanzone/agent-essentials -g -a claude-code --skill quick-review -y
 ```
 
 List available skills:
 
 ```bash
-npx skills add ronsanzone/claude-essentials --list
+npx skills add ronsanzone/agent-essentials --list
 ```
 
 Install for multiple agents:
 
 ```bash
-npx skills add ronsanzone/claude-essentials -g -a claude-code -a pi --skill '*' -y
+npx skills add ronsanzone/agent-essentials -g -a claude-code -a pi --skill '*' -y
 ```
 
 ## Install From a Local Checkout
 
 ```bash
-git clone git@github.com:ronsanzone/claude-essentials.git ~/code/claude-essentials
-cd ~/code/claude-essentials
+git clone git@github.com:ronsanzone/agent-essentials.git ~/code/agent-essentials
+cd ~/code/agent-essentials
 scripts/install-claude.sh
 ```
 
@@ -77,15 +77,15 @@ scripts/install-claude.sh --agent claude-code --agent pi
 Old installs often had symlinks like:
 
 ```text
-~/.claude/.mcp.json -> ~/code/claude-essentials/.claude/.mcp.json
-~/.claude/settings.local.json -> ~/code/claude-essentials/.claude/settings.local.json
-~/.claude/skills -> ~/code/claude-essentials/.claude/skills
+~/.claude/.mcp.json -> ~/code/agent-essentials/.claude/.mcp.json
+~/.claude/settings.local.json -> ~/code/agent-essentials/.claude/settings.local.json
+~/.claude/skills -> ~/code/agent-essentials/.claude/skills
 ```
 
 Run:
 
 ```bash
-cd ~/code/claude-essentials
+cd ~/code/agent-essentials
 scripts/install-claude.sh --dry-run
 scripts/install-claude.sh
 ```
@@ -122,7 +122,7 @@ dot doctor --deep
 For a checkout managed directly:
 
 ```bash
-cd ~/code/claude-essentials
+cd ~/code/agent-essentials
 git pull
 scripts/install-claude.sh
 ```
