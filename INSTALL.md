@@ -31,11 +31,13 @@ List available skills:
 npx skills add ronsanzone/agent-essentials/skills --list
 ```
 
-Install for multiple agents:
+Install for multiple non-Pi agents:
 
 ```bash
-npx skills add ronsanzone/agent-essentials/skills -g -a claude-code -a pi --skill '*' -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code -a codex -a opencode --skill '*' -y
 ```
+
+Pi discovers the shared global store at `~/.agents/skills` automatically; do not target the old `~/.pi/agent/skills` path.
 
 ## Install From a Local Checkout
 
@@ -59,7 +61,8 @@ The installer:
 5. Copies examples if absent:
    - `~/.claude/settings.local.json.example`
    - `~/.claude/.mcp.json.example`
-6. Installs skills from `skills/` via `npx skills`.
+6. Installs skills from `skills/` via `npx skills` into `~/.agents/skills`.
+7. Canonicalizes `~/.claude/skills/<name>` as links into the shared store so Claude has no second editable copy.
 
 Useful flags:
 
@@ -69,7 +72,9 @@ scripts/install-claude.sh --skills-only
 scripts/install-claude.sh --config-only
 scripts/install-claude.sh --force-config
 scripts/install-claude.sh --copy-skills
-scripts/install-claude.sh --agent claude-code --agent pi
+scripts/install-claude.sh --agent claude-code --agent codex --agent opencode
+
+# Pi reads ~/.agents/skills automatically; do not target Pi's old ~/.pi/agent/skills path.
 ```
 
 ## Migrating From the Old Symlink Install

@@ -25,7 +25,9 @@ Options:
 Examples:
   scripts/install-claude.sh
   scripts/install-claude.sh --dry-run
-  scripts/install-claude.sh --skills-only --agent claude-code --agent pi
+  scripts/install-claude.sh --skills-only --agent claude-code --agent codex --agent opencode
+
+Pi discovers the shared ~/.agents/skills store automatically; do not pass --agent pi.
 EOF
 }
 
@@ -68,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --agent|-a)
       [[ $# -ge 2 && -n "${2:-}" ]] || { echo "missing value after $1" >&2; exit 1; }
+      if [[ "$2" == "pi" ]]; then
+        echo "Pi discovers the shared ~/.agents/skills store automatically; do not install a Pi target." >&2
+        exit 1
+      fi
       if [[ "$CUSTOM_AGENTS" -eq 0 ]]; then
         AGENTS=()
         CUSTOM_AGENTS=1
@@ -313,6 +319,38 @@ install_skills() {
   run "${cmd[@]}"
 }
 
+# Keep Claude's per-agent directory as a stable link view of the shared npx
+# store. The skills CLI may materialize real copies for a local source; those
+# copies are generated and must not become a second editable source of truth.
+canonicalize_shared_claude_skills() {
+  local shared_root="$HOME/.agents/skills"
+  local claude_root="$TARGET_DIR/skills"
+  [[ -d "$shared_root" ]] || return 0
+  mkdir -p "$claude_root"
+
+  local source name dest backup
+  for source in "$shared_root"/*; do
+    [[ -d "$source" ]] || continue
+    name="$(basename "$source")"
+    dest="$claude_root/$name"
+    if [[ -L "$dest" && "$(readlink "$dest")" == "../../.agents/skills/$name" ]]; then
+      continue
+    fi
+    if [[ -e "$dest" || -L "$dest" ]]; then
+      if [[ -d "$dest" ]] && diff -qr "$dest" "$source" >/dev/null 2>&1; then
+        rm -r "$dest"
+      else
+        backup="${name//\//-}"
+        ensure_backup_dir
+        note "backup divergent Claude skill $dest -> $BACKUP_DIR/skills-$backup"
+        run mv "$dest" "$BACKUP_DIR/skills-$backup"
+      fi
+    fi
+    run ln -s "../../.agents/skills/$name" "$dest"
+    note "link Claude shared skill $dest -> ~/.agents/skills/$name"
+  done
+}
+
 if [[ "$INSTALL_CONFIG" -eq 1 ]]; then
   migrate_old_layout
   install_config
@@ -320,6 +358,7 @@ fi
 
 if [[ "$INSTALL_SKILLS" -eq 1 ]]; then
   install_skills
+  canonicalize_shared_claude_skills
 fi
 
 note "agent-essentials install complete"
