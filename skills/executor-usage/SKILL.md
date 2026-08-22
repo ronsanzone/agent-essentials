@@ -2,7 +2,7 @@
 name: executor-usage
 description: >-
   Load this skill before calling Executor's `execute` function, either as a direct
-  tool or through an MCP gateway. Teaches the sandbox calling model: discover with
+  tool, through an MCP gateway, or nested in OpenCode v2 code mode. Teaches the sandbox calling model: discover with
   `tools.search({ query, limit })`, inspect with `tools.describe.tool({ path })`,
   then call real tools by full address. Covers direct calls and composed, bounded
   read workflows for SaaS APIs, remote systems, MCP/OpenAPI/GraphQL integrations,
@@ -15,13 +15,15 @@ metadata:
 
 Use this skill before any `execute` call.
 
+> **Which `execute` do you have?** `mcp__executor__execute` (Claude Code) or `executor_execute` (Pi gateway, OpenCode v2 with code mode off): use the snippets as written. If the only tool is OpenCode's plain `execute` whose description says MCP tools are reachable as `tools.<server>.<tool>`, you are inside **OpenCode v2 code mode** and Executor is one level deeper — see [OpenCode v2](#opencode-v2); `tools.search` does **not** exist at your level.
+
 It exists because Executor's sandbox is a **lazy proxy over real tools**, not a normal JS object. Naive probing (`Object.keys(tools)`, `globalThis`, `tools()`, random namespace guesses) is misleading and wastes turns.
 
 ## Invoke Executor
 
 Use the tool surface exposed by the current host:
 
-- **Direct MCP tools** (for example Claude Code): call `mcp__executor__execute` and, only for a paused run, `mcp__executor__resume`.
+- **Direct MCP tools** (Claude Code: `mcp__executor__execute`; OpenCode v2 with `codemode: false`: `executor_execute`): call it and, only for a paused run, the matching `resume` tool.
 - **Pi with `pi-mcp` proxy mode:** describe `executor_execute` through `mcp`, then call it through the gateway. The gateway's `args` field is a JSON object string.
 
 ```js
@@ -30,6 +32,23 @@ mcp({ tool: "executor_execute", args: '{"code":"return 2 + 2"}' })
 ```
 
 Tool names can differ if the MCP server name changes. Search for `execute` instead of guessing when `executor_execute` is absent.
+
+### OpenCode v2
+
+OpenCode v2 wraps MCP servers in its own JS "code mode" sandbox by default. **Turn it off for Executor**: set `"codemode": false` on the executor entry under `mcp.servers` in `opencode.json`. (OpenCode does this automatically only for a *local* `executor mcp` command, not for a remote URL.) Executor's tools then appear directly as `executor_execute` / `executor_resume` and every snippet here works as written. Verified with Sonnet and Haiku.
+
+Fallback when you cannot change the config and only see OpenCode's plain `execute`: Executor's `execute` is `tools.executor.execute({ code })`, and the whole snippet goes **inside** that `code` string (use a template literal):
+
+```js
+return await tools.executor.execute({ code: `
+  const { items } = await tools.search({ query: "glean", limit: 2 });
+  return items.map((i) => i.path);
+` });
+```
+
+- Never call `tools.search` / `tools.describe.tool` at OpenCode's level, not even "to check" — `Unknown tool 'search'` means you did.
+- Resume: `tools.executor.resume({ executionId, action: "accept", content: "{}" })`.
+- Either way: after adding or removing Executor integrations, restart the OpenCode server (`systemctl --user restart opencode2` on the controller) — its MCP client caches the catalog.
 
 ## Source of truth
 
@@ -120,7 +139,7 @@ return unwrap(await tools[path](args));
 
 - Do not call `tools()` as a function.
 - Do not probe with `Object.keys(tools)`, `for...in tools`, or rely on `globalThis`.
-- Do not guess namespaces from property names like `tools.linear` or `tools.mcp`.
+- Do not guess namespaces from property names like `tools.linear` or `tools.mcp` inside Executor's sandbox. (In the OpenCode code-mode fallback, the outer `tools.executor.*` is OpenCode's name for the Executor server — that one is correct.)
 - Do not pass a string to `tools.search`; pass an object.
 - Do not use `includeSchemas` on `tools.describe.tool`; that parameter is no longer accepted.
 - Do not assume tool results are already plain JSON — always unwrap.
@@ -155,3 +174,4 @@ If an `execute` snippet behaves strangely:
 5. Did you call the real tool via the full `path` (not a guessed namespace)?
 6. Did you unwrap the `{ ok, data }` envelope, then `structuredContent` / JSON text?
 7. If this was multi-step, did you prefer an aggregate tool and bound the fan-out?
+8. `Unknown tool 'search'` on OpenCode v2: set `codemode: false` for the executor server, or nest the snippet in `tools.executor.execute({ code })`.
