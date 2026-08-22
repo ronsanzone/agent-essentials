@@ -369,3 +369,5 @@ Yeeted.
 - Testing: <what ran / not run>
 - Notes: <only if something was skipped or needs attention>
 ```
+
+After the report, suggest babysitting the PR to green: `/loop 20m /babysit-pr <pr-url>`.

@@ -7,12 +7,22 @@
 
 * ALWAYS use `AskUserQuestion` to ask questions. Never ask directly in response
 
-* ALWAYS go for the simplest and most maintainable solution that meets the requirements instead of over-engineering. KISS, Occam's razor principles, SOLID, YAGNI principles.  
+* ALWAYS go for the simplest and most maintainable solution that meets the requirements instead of over-engineering. KISS, Occam's razor principles, SOLID, YAGNI principles. Concretely: no new scripts/wrappers when a parameter suffices; no migrations or back-compat paths for single-user/internal tools; no defensive code for edge cases nobody asked about.
 
 * **CRITICAL: Use dedicated tools over Bash for file operations** — all of these trigger permission prompts unnecessarily when done via Bash:
   - Read (not `cat`/`head`/`tail`/`sed`) — including partial reads via `offset`/`limit` instead of `sed -n 'X,Yp'`
   - Edit (not `sed`/`awk` for modifications)
   - Write (not `echo >`/`cat <<EOF`)
+
+## Execution discipline
+
+* **Prove it works before reporting done:** Never report a change as working without observing its effect — a passing test, the expected log line, a screenshot, an API response. "Should work" / "is now installed" without observation is not done.
+
+* **Tests are transformative, not additive:** When changing behavior, modify or remove the existing tests that covered the old behavior. Don't accumulate parallel near-duplicate tests across iterations; end each change with the minimal test set.
+
+* **Docs and artifacts go to `~/notes/<project>/`**, never into work monorepos (mms, mongohouse, etc.). Don't pollute repos with plans, research, or handoff docs.
+
+* **No AI attribution in commits or PRs:** no `Co-Authored-By` trailers, no "generated with" footers.
 
 ## Investigation discipline
 

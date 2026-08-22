@@ -1,9 +1,7 @@
 {
   "cleanupPeriodDays": 210,
   "env": {
-    "ANTHROPIC_MODEL": "claude-opus-4-6[1m]",
     "CLAUDE_CODE_DISABLE_ADAPTIVE_THINKING": "1",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_CODE_NO_FLICKER": "1",
     "ENABLE_TOOL_SEARCH": "true"
   },
@@ -22,7 +20,6 @@
       "mcp__devprod-mcp-gateway__jira_get_issue",
       "Read(~/notes/context-engineering/**)",
       "Edit(~/notes/context-engineering/**)",
-      "Write(~/notes/context-engineering/**)",
       "mcp__executor__execute",
       "mcp__executor__resume"
     ],
@@ -31,7 +28,7 @@
       "~/notes/context-engineering"
     ]
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus",
   "hooks": {
     "Notification": [
       {
@@ -97,6 +94,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash '/Users/ron.sanzone/.claude/hooks/herdr-agent-state.sh' session",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "Stop": [
@@ -118,6 +125,17 @@
           }
         ]
       }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": "tldraw-offline",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "sh '/Users/ron.sanzone/skills/tldraw-offline/inject-server-context.sh' SubagentStart"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
@@ -125,16 +143,8 @@
     "command": "~/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "context-efficient-tools@xdg-claude": false,
-    "context7@claude-plugins-official": false,
-    "jira-cli@xdg-claude": false,
-    "plannotator@plannotator": true,
-    "run-mms@mms-tools": true,
-    "frontend-design@claude-plugins-official": false,
-    "obsidian@obsidian-skills": false,
-    "systematic-debugging@mongodb-internal": false,
-    "evergreen-stack-ci@mongodb-internal": false,
-    "graphite-pr-stack@mongodb-internal": false
+    "alexandria-ftdc-analysis@mms-tools": true,
+    "plannotator@plannotator": true
   },
   "extraKnownMarketplaces": {
     "mongodb-internal": {
@@ -161,12 +171,12 @@
     ]
   },
   "alwaysThinkingEnabled": true,
-  "effortLevel": "medium",
+  "effortLevel": "high",
   "advisorModel": "fable",
   "autoDreamEnabled": true,
   "showThinkingSummaries": true,
   "skipDangerousModePermissionPrompt": true,
-  "theme": "dark-daltonized",
+  "theme": "light-daltonized",
   "editorMode": "vim",
   "skipAutoPermissionPrompt": true
 }
