@@ -42,7 +42,7 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **pr-report** | model + `/pr-report` | Report every open PR you own — verdict, blocker, and who holds the ball — then hand the ones needing work to babysit-pr |
 | **review** | user (`/review`) | Fast single-pass code review of a PR, branch, ref range, or working tree |
 | **show-me-your-work** | user (`/show-me-your-work`) | Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result) |
-| **session-mine** | model + `/why` | Mine Claude Code + pi transcripts: per-skill usage by month (`usage` mode, the 2-week check for new skills) or a cited friction / boilerplate / skill-candidate report (`full` mode) |
+| **session-mine** | model + `/session-mine` | Mine Claude Code + pi transcripts: per-skill usage by month (`usage` mode, the 2-week check for new skills) or a cited friction / boilerplate / skill-candidate report (`full` mode) |
 | **show-me** | model + `/show-me` | Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts |
 | **submit-pr** | model + `/submit-pr` | Create or update a draft PR |
 | **why** | model + `/why` | Design rationale from the historical record — "why does X work this way", "why did we pick Y", regressions, postmortems, where a threshold came from |
