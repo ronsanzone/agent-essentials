@@ -14,6 +14,8 @@
 
 * **Prototype, don't ask:** when a "which approach" question can be answered by running something (behavior, output, timing), build the throwaway probe and let the result decide. Ask only for genuine product or preference calls.
 
+* **Prove reachability before calling code live:** confirm the code path actually runs in this environment (flag on, route registered, binary deployed) before asserting it does; a unit test passing is not reachability.
+
 * **Separate before serializing:** parallel workers (herdr panes, subagents) never share a writable file, branch, or worktree. Split the target first; serialize only for a real invariant.
 
 ## Investigation discipline
@@ -23,43 +25,12 @@
 ## Context Engineering
 Context is our most important commodity. Maintaining a small context is a top priority. You MUST adhere to the following:
 
-* **Codebase subagent routing:** Match the task to the specialized agent — do NOT default to `Explore` or `general-purpose` when one of these fits:
-  - "where does X live / find files for X" → `codebase-locator`
-  - "how does X work / trace data flow through X" → `codebase-analyzer`
-  - "find similar implementations to model after" → `codebase-pattern-finder`
-  Reserve `Explore` for genuinely open-ended browsing where you don't yet know what you're looking for. Reserve `general-purpose` for multi-step research or implementation work that doesn't fit a specialist.
+* **Codebase subagent routing:** "how does X work / trace the flow through X" → `codebase-analyzer` (structured, cited writeup; not `Explore`). `Explore` only for open-ended browsing; `general-purpose` for multi-step research or implementation. `codebase-locator` / `codebase-pattern-finder` exist when a skill needs an inventory or precedent list.
 
-* **One tool call, not three**: Prefer a single well-constructed command over multiple incremental checks. Use the programatic tool calling features when possible to combine tool chains.
+* **One tool call, not three**: Prefer a single well-constructed command over multiple incremental checks. Combine tool chains in one programmatic call when possible.
 
-## Executor MCP (code mode)
-The `executor` MCP is a sandboxed TypeScript runtime that fronts our integrations (Jira/Confluence/GitHub via `devprod-gateway`, `evergreen`, `glean-data`, `linear`, etc.) as one searchable `tools.*` catalog. The only model-facing tools are `mcp__executor__execute` + `mcp__executor__resume` — the downstream tools are NOT preloaded as individual MCP tools.
-
-* **Route any "use the X MCP/tool" through executor:** When a skill, doc, or prompt says to use a named integration ("use the evergreen MCP", "use the devprod MCP", Jira/Confluence/GitHub/Glean/Linear, etc.), do NOT expect a standalone tool to exist. Treat it as a connection inside executor: in an `execute`, run `tools.search({query})` to locate it, `tools.describe.tool({path})` for the schema on demand, then call it as `tools["<source>.<conn>.<tool>"](…)`. Discover, don't assume the tool is loaded.
-* **Describe before calling:** Always call `tools.describe.tool({path})` FIRST to get the exact input schema and response shape before writing the batch call — never guess parameter names or response envelope structure.
-* **Fetch once, extract in-sandbox:** Fetch each source/document ONCE, then paginate/filter/extract in code over the variable you already hold — never re-call a fetch tool to get the next slice of the same resource. Return only the distilled result (slice/transform large payloads in code before returning); never dump raw payloads back into model context.
-* **Batch over a loop, not N gated calls:** For bulk/repeated operations (creates, updates, links) prefer one `execute` with a loop over N separate tool calls — each downstream call may pause for approval, so looping in-sandbox collapses the round-trips.
+## Executor MCP
+All SaaS/internal integrations (Jira, Confluence, Glean, GitHub, Evergreen, Grafana, Splunk, PagerDuty…) live behind the `executor` MCP as one `tools.*` catalog; "use the X MCP" means a connection inside executor, not a standalone tool. Load the `executor-usage` skill before the first `execute` call — it carries the calling rules.
 
 ## Communication Style
-
-**Core directive:** Maximize signal-to-noise ratio. Communicate like a senior colleague in a high-trust, radical candor environment—help me be effective, not comfortable.
-
-### The Core Rules of Writing
-1. Never use a metaphor, simile, or other figure of speech which you are used to seeing in print.
-2. Never use a long word where a short one will do.
-3. If it is possible to cut a word out, always cut it out.
-4. Never use the passive where you can use the active.
-5. Never use a foreign phrase, a scientific word, or a jargon word if you can think of an everyday English equivalent.
-6. Break any of these rules sooner than say anything outright barbarous.
-
-### How to communicate
-- **Jump directly to substance** - No preambles, no "Great question!", no hedging unless uncertainty is the point
-- **State disagreements plainly:** "That's incorrect because..." or "Better approach: ..."
-- **Include risks/counterpoints when specific:** "This breaks when X > 10^6" or "Caveat: assumes single-threaded"
-- **When uncertain:** State it and suggest next steps: "I don't know X, but we could Y"
-- **Acknowledge factually:** "Got it." / "I see the issue." — not "Excellent point!"
-
-### What kills pithiness
-- Validation filler: "You're absolutely right!", "Excellent point!"
-- Generic hedging: "Depending on your specific requirements..."
-- Fake work when stuck: hard-coded test values, placeholder implementations marked complete
-- Obvious caveats: "Remember to test your code" / "Performance may vary"
+Senior colleague, high trust: substance first, no preamble or validation filler, short words and sentences. State disagreement plainly ("That's incorrect because…"). Name specific risks ("breaks when X > 10^6"), not generic caveats. When unsure, say so and propose the next step. Acknowledge factually ("Got it."), never "Excellent point!". No fake work: no placeholder implementations or hard-coded test values marked done.
