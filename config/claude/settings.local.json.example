@@ -1,46 +1,24 @@
 {
+  "_comment": "Machine-local settings. Copy to ~/.claude/settings.local.json (never symlinked, never committed). Absolute paths and host-specific hooks belong here, not in settings.json.",
   "permissions": {
     "allow": [
-      "Bash(find:*)",
-      "Bash(gofmt:*)",
-      "Bash(go build:*)",
-      "Bash(go test:*)",
-      "Bash(goimports:*)",
-      "Bash(go run:*)",
-      "Bash(grep:*)",
-      "Bash(mkdir:*)",
-      "Bash(git mv:*)",
       "Bash(gh api:*)",
-      "mcp__gopls__go_workspace",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:docs.anthropic.com)",
-      "WebFetch(domain:your-domain.com)"
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   },
   "hooks": {
-    "PreCompact": [
+    "SubagentStart": [
       {
+        "matcher": "tldraw-offline",
         "hooks": [
           {
-            "command": "bd prime",
-            "type": "command"
+            "type": "command",
+            "command": "sh '/Users/ron.sanzone/skills/tldraw-offline/inject-server-context.sh' SubagentStart"
           }
-        ],
-        "matcher": ""
-      }
-    ],
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "command": "bd prime",
-            "type": "command"
-          }
-        ],
-        "matcher": ""
+        ]
       }
     ]
-  },
-  "outputStyle": "Explanatory"
+  }
 }
