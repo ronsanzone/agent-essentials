@@ -9,61 +9,13 @@ From `gh pr checks`, separate:
 
 ## Fetching Evergreen failure details
 
-Load the `executor-usage` skill first, then follow this exact tool chain inside `execute` snippets. Each step builds on the previous — do not skip steps or guess tool paths.
+Load the `executor-usage` skill, then work inside `execute` snippets. Tool paths move between Executor connections; **discover them with `tools.search` each session and `tools.describe.tool` before calling — the live catalog wins over anything written here.** The chain has three levels; do not stop early.
 
-### Step 1: Get failed tasks for the patch
+1. **Failed tasks for the patch/version.** Version id = the path segment after `/version/` in the Evergreen check URL. Search `evergreen patch failed jobs`; the result lists `failed_tasks[]` with `task_id`, `task_name`, `build_variant`, `failure_details`, `test_info.failed_test_count`.
+2. **Per-test results for each failed task.** Search `evergreen test results summary`. `failure_details` and auto-triage summaries usually describe the artifact-collection cascade ("no XML files matched"), not the assertion; the per-test summary carries a `logs.urlRaw` per failing test.
+3. **The actual test log** from that `urlRaw` (search `evergreen test results detailed`; `tail_limit: 0` for the full log). Assertion errors, stack traces, `ComparisonFailure` live here. This is the only reliable root cause.
 
-Extract the version/patch ID from the Evergreen check URL (the path segment after `/version/`). Then:
-
-```
-tools["evergreen.user.default.get_patch_failed_jobs_evergreen"]({
-  patch_id: "<version_id>"
-})
-```
-
-Returns `failed_tasks[]` with `task_id`, `task_name`, `build_variant`, `failure_details`, and `test_info` (including `failed_test_count`).
-
-### Step 2: Get individual test results
-
-**Do not stop at step 1.** The `failure_details` and auto-triage summaries often only describe artifact-collection cascades ("no XML files matched"), not the actual test assertion failures. Always proceed to test results.
-
-```
-tools["mongodb_devprod_mcp.org.localmongodbdevprodmcp.evg_get_test_results_summary"]({
-  task_id: "<task_id>"
-})
-```
-
-Returns each failing test's name, status, duration, and — critically — a `logs.urlRaw` field for each test. This is where the actual assertion errors live.
-
-### Step 3: Get the actual test failure log
-
-For each failing test, fetch its log using the `urlRaw` from step 2:
-
-```
-tools["mongodb_devprod_mcp.org.localmongodbdevprodmcp.evg_get_test_results_detailed"]({
-  test_log_url: "<urlRaw value from step 2>",
-  tail_limit: 0   // 0 = full log; omit for last 500 lines
-})
-```
-
-This returns the actual test output including assertion errors, stack traces, and `ComparisonFailure` messages. **This is the only reliable way to get root cause for test failures.**
-
-### Supplementary tools (use when test results are absent)
-
-If a task has no test results (e.g., compile failure, infra kill), fall back to raw task logs:
-
-```
-// Full raw task log
-tools["mongodb_devprod_mcp.org.localmongodbdevprodmcp.evg_get_raw_task_logs"]({
-  task_id: "<task_id>",
-  tail_lines: 200  // optional, omit for full log
-})
-
-// Structured log entries with severity levels
-tools["mongodb_devprod_mcp.org.localmongodbdevprodmcp.evg_get_task_log_summary"]({
-  task_id: "<task_id>"
-})
-```
+Fallbacks when a task has no test results (compile failure, infra kill): raw task logs (`evergreen raw task logs`, `tail_lines`) and the structured log summary (`evergreen task log summary`). Task history (`evergreen task history`) is how you tell flake from regression.
 
 ### Common pitfalls
 

@@ -153,5 +153,4 @@ Rules:
 
 ## Escalate by reference
 
-- Structural and maintainability audit of the whole branch: `/thermo-nuclear-code-quality-review`.
 - Multi-agent review with adversarial verification of each finding: Claude Code's built-in `/code-review`.

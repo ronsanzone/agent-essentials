@@ -1,177 +1,62 @@
 ---
 name: executor-usage
-description: >-
-  Load this skill before calling Executor's `execute` function, either as a direct
-  tool, through an MCP gateway, or nested in OpenCode v2 code mode. Teaches the sandbox calling model: discover with
-  `tools.search({ query, limit })`, inspect with `tools.describe.tool({ path })`,
-  then call real tools by full address. Covers direct calls and composed, bounded
-  read workflows for SaaS APIs, remote systems, MCP/OpenAPI/GraphQL integrations,
-  and auth/approval-managed actions.
+description: Load before any Executor `execute` call (Claude `mcp__executor__execute`, pi/OpenCode `executor_execute`). Discover with tools.search, describe, then call by full path.
 metadata:
   short-description: Required calling pattern for Executor execute
 ---
 
 # Executor Usage
 
-Use this skill before any `execute` call.
+Executor's sandbox exposes `tools` as a **lazy proxy over real integrations** (Jira, Confluence, Glean, GitHub, Evergreen, Grafana, Splunk, PagerDuty…). It is not enumerable: `Object.keys(tools)`, `tools()`, `globalThis`, or guessed namespaces (`tools.jira`) waste turns. Discover, describe, then call by the full address.
 
-> **Which `execute` do you have?** `mcp__executor__execute` (Claude Code) or `executor_execute` (Pi gateway, OpenCode v2 with code mode off): use the snippets as written. If the only tool is OpenCode's plain `execute` whose description says MCP tools are reachable as `tools.<server>.<tool>`, you are inside **OpenCode v2 code mode** and Executor is one level deeper — see [OpenCode v2](#opencode-v2); `tools.search` does **not** exist at your level.
+## Which `execute` do you have?
 
-It exists because Executor's sandbox is a **lazy proxy over real tools**, not a normal JS object. Naive probing (`Object.keys(tools)`, `globalThis`, `tools()`, random namespace guesses) is misleading and wastes turns.
+- **Claude Code:** `mcp__executor__execute`, plus `mcp__executor__resume` only for a paused run.
+- **pi (pi-mcp proxy) / OpenCode v2 with `codemode: false`:** `executor_execute` / `executor_resume`. In pi: `mcp({ describe: "executor_execute" })` then `mcp({ tool: "executor_execute", args: '{"code":"…"}' })` — `args` is a JSON string.
+- **OpenCode v2 code mode** (only a plain `execute` whose description says MCP tools are `tools.<server>.<tool>`): Executor is one level deeper. Set `"codemode": false` on the executor server in `opencode.json` and restart (`systemctl --user restart opencode2`). Fallback: nest the whole snippet — `return await tools.executor.execute({ code: \`…\` })`; `tools.search` does not exist at the outer level (`Unknown tool 'search'` means you called it there).
 
-## Invoke Executor
+Read the live tool description before the first call; it is the session's source of truth, this skill is the stable summary.
 
-Use the tool surface exposed by the current host:
-
-- **Direct MCP tools** (Claude Code: `mcp__executor__execute`; OpenCode v2 with `codemode: false`: `executor_execute`): call it and, only for a paused run, the matching `resume` tool.
-- **Pi with `pi-mcp` proxy mode:** describe `executor_execute` through `mcp`, then call it through the gateway. The gateway's `args` field is a JSON object string.
-
-```js
-mcp({ describe: "executor_execute" })
-mcp({ tool: "executor_execute", args: '{"code":"return 2 + 2"}' })
-```
-
-Tool names can differ if the MCP server name changes. Search for `execute` instead of guessing when `executor_execute` is absent.
-
-### OpenCode v2
-
-OpenCode v2 wraps MCP servers in its own JS "code mode" sandbox by default. **Turn it off for Executor**: set `"codemode": false` on the executor entry under `mcp.servers` in `opencode.json`. (OpenCode does this automatically only for a *local* `executor mcp` command, not for a remote URL.) Executor's tools then appear directly as `executor_execute` / `executor_resume` and every snippet here works as written. Verified with Sonnet and Haiku.
-
-Fallback when you cannot change the config and only see OpenCode's plain `execute`: Executor's `execute` is `tools.executor.execute({ code })`, and the whole snippet goes **inside** that `code` string (use a template literal):
-
-```js
-return await tools.executor.execute({ code: `
-  const { items } = await tools.search({ query: "glean", limit: 2 });
-  return items.map((i) => i.path);
-` });
-```
-
-- Never call `tools.search` / `tools.describe.tool` at OpenCode's level, not even "to check" — `Unknown tool 'search'` means you did.
-- Resume: `tools.executor.resume({ executionId, action: "accept", content: "{}" })`.
-- Either way: after adding or removing Executor integrations, restart the OpenCode server (`systemctl --user restart opencode2` on the controller) — its MCP client caches the catalog.
-
-## Source of truth
-
-Before calling Executor, inspect the current tool definition. For a direct tool, read its description. For Pi proxy mode, call `mcp({ describe: "executor_execute" })`. The live definition is the session-specific source of truth; this skill is the stable summary.
-
-## Mental model
-
-Inside an `execute` snippet:
-
-- The `tools` object is a **lazy proxy**. It is not enumerable. Do not probe it.
-- You **discover** tools with built-in helpers, then call the real tool by its full address.
-- The address is returned by `tools.search` / `tools.describe.tool` as a `path` like `"github.ronsanzone.personal.issues.list"`. Call it as `tools[path]`.
-- Stable built-in helpers:
-  - `tools.search({ query, namespace?, limit? })` → ranked matches
-  - `tools.describe.tool({ path })` → compact `inputTypeScript` / `outputTypeScript`
-- Inventory helpers change across Executor versions. Use one only when the current `execute` tool instructions advertise it.
-
-## Choose the call shape
-
-- **Direct:** one tool answers the request. Search, describe, then call it.
-- **Aggregate:** a domain tool already combines the needed reads. Prefer it over rebuilding the same chain.
-- **Composed:** later reads depend on earlier results, several independent reads can run in parallel, or intermediate results should stay out of model context. Use one bounded `execute` snippet.
-- **Interactive:** the next step needs user judgment, approval, or a write. Return the evidence first; make the next call separately.
-
-For a composed workflow, read [`MULTI_STEP_WORKFLOWS.md`](MULTI_STEP_WORKFLOWS.md) before writing the snippet. It contains the fan-out limits, error handling, and detailed use cases. A stricter caller-specific playbook takes priority.
-
-## Required workflow
-
-Follow this order unless you already know the exact path and shape with high confidence.
-
-1. **Search** for the tool by short intent phrase + key nouns.
-2. **Pick** the best path. Prefer an aggregate tool that covers the whole need.
-3. **Describe** every unfamiliar tool you will call.
-4. **Choose** direct, aggregate, composed, or interactive execution.
-5. **Call** each tool via the full `tools[path]` address.
-6. **Unwrap** MCP-style content blocks and return only the useful result.
-
-## Canonical pattern
+## Calling model
 
 ```ts
-const { items: matches } = await tools.search({ query: "github issues", limit: 5 });
-const path = matches[0]?.path;
-if (!path) return "No matching tools found.";
-
-const details = await tools.describe.tool({ path });
-// details.inputTypeScript / details.outputTypeScript give you the exact shape.
-
-const result = await tools[path]({ owner: "octocat", repo: "Hello-World" });
-return result;
+const { items } = await tools.search({ query: "jira create issue", limit: 5 }); // short intent + key nouns
+const path = items[0]?.path;                       // e.g. "jira.org.default.create_issue"
+if (!path) return "No matching tool.";
+const shape = await tools.describe.tool({ path }); // inputTypeScript / outputTypeScript — read before calling
+const result = await tools[path]({ /* exact args from shape */ });
+return unwrap(result);
 ```
 
-## Unwrapping MCP results
-
-MCP-backed tools often return:
-
 ```ts
-{ content: [{ type: "text", text: "{...json...}" }], structuredContent?: {...} }
-```
-
-Prefer `structuredContent`. Otherwise parse the first text block if it looks like JSON.
-
-```ts
-const unwrap = (result: any) => {
-  if (result?.ok === false) return result;
-  const value = result?.ok === true ? result.data : result;
-  if (value?.structuredContent) return value.structuredContent;
-  const text = value?.content?.find?.((b: any) => b?.type === "text")?.text;
-  if (typeof text !== "string") return value;
-  try { return JSON.parse(text); } catch { return value; }
+const unwrap = (r: any) => {
+  if (r?.ok === false) return r;
+  const v = r?.ok === true ? r.data : r;
+  if (v?.structuredContent) return v.structuredContent;
+  const text = v?.content?.find?.((b: any) => b?.type === "text")?.text;
+  if (typeof text !== "string") return v;
+  try { return JSON.parse(text); } catch { return v; }
 };
-
-return unwrap(await tools[path](args));
 ```
 
-## Hard rules
+Rules, in order of how often they are broken:
 
-### Required
+1. **Search first** for any integration you have not called this session; pass an **object** (`{ query, limit }`), never a bare string.
+2. **Describe before calling** an unfamiliar tool; never guess argument names or response shape. `includeSchemas` is no longer accepted.
+3. **Call by the full `path`** returned by search/describe. Never `tools.linear`, `tools.mcp`, or other guessed namespaces.
+4. **Unwrap** every result (`{ ok, data }` envelope, then `structuredContent`, then JSON text). Results are not plain JSON.
+5. **Fetch once, filter in the sandbox.** Paginate/extract over the variable you hold; return only the distilled result. Never re-fetch the same resource for the next slice, never dump raw payloads into model context.
+6. **Prefer an aggregate tool** that already combines the reads over rebuilding the chain.
+7. **Writes are separate** from discovery and bulk reads unless the user approved the exact writes. Bulk writes go in one snippet with a loop, not N gated calls.
+8. **No `fetch`** when Executor already has the integration.
+9. Executor is for work **outside the repo**. Files, code, local tests: native tools.
 
-- Always start with `tools.search({ query, ... })` for unknown integrations.
-- Always pass an **object** to helper tools (`{ query, limit }`, never a bare string).
-- Always call the real tool via the **full address** returned by `tools.search` / `tools.describe.tool`.
-- Use `tools.describe.tool({ path })` before invoking unfamiliar tools.
-- Prefer a domain aggregate tool before composing lower-level calls.
-- Bound read fan-out and trim the final result; load `MULTI_STEP_WORKFLOWS.md` for the defaults.
-- Keep writes separate from discovery and bulk-read snippets unless the user approved the exact writes.
+## Call shapes
 
-### Forbidden
+- **Direct** — one tool answers. Search, describe, call.
+- **Composed** — later reads depend on earlier ones, or several independent reads should stay out of model context: one bounded snippet. Read [MULTI_STEP_WORKFLOWS.md](MULTI_STEP_WORKFLOWS.md) first for fan-out limits, error handling, and worked cases.
+- **Interactive** — the next step needs user judgment or a write: return the evidence, make the next call separately.
 
-- Do not call `tools()` as a function.
-- Do not probe with `Object.keys(tools)`, `for...in tools`, or rely on `globalThis`.
-- Do not guess namespaces from property names like `tools.linear` or `tools.mcp` inside Executor's sandbox. (In the OpenCode code-mode fallback, the outer `tools.executor.*` is OpenCode's name for the Executor server — that one is correct.)
-- Do not pass a string to `tools.search`; pass an object.
-- Do not use `includeSchemas` on `tools.describe.tool`; that parameter is no longer accepted.
-- Do not assume tool results are already plain JSON — always unwrap.
-- Do not use `fetch` when Executor already has the integration you need.
+## Pauses
 
-## Decision rule
-
-- **Executor** is for work **outside the repo**: SaaS APIs, remote systems, configured MCP/OpenAPI/GraphQL, auth/approval-managed actions.
-- **Pi's native file tools** (`read`, `edit`, `write`, `bash`, etc.) are for work **inside the repo**: reading files, editing code, refactors, local tests and builds.
-
-## Interaction rule
-
-Let `execute` handle any Executor interaction inline. Only call `resume` if `execute` explicitly returns an `executionId` for a paused interaction that it could not finish inline.
-
-In Pi proxy mode, resume through the gateway:
-
-```js
-mcp({
-  tool: "executor_resume",
-  args: '{"executionId":"<id>","action":"accept","content":"{}"}'
-})
-```
-
-## Recovery checklist
-
-If an `execute` snippet behaves strangely:
-
-1. Did you load this skill before using `execute`?
-2. Did you call `tools.search({ ... })` instead of guessing?
-3. Did you pass an object to helper tools?
-4. Did you `tools.describe.tool({ path })` before calling an unfamiliar tool?
-5. Did you call the real tool via the full `path` (not a guessed namespace)?
-6. Did you unwrap the `{ ok, data }` envelope, then `structuredContent` / JSON text?
-7. If this was multi-step, did you prefer an aggregate tool and bound the fan-out?
-8. `Unknown tool 'search'` on OpenCode v2: set `codemode: false` for the executor server, or nest the snippet in `tools.executor.execute({ code })`.
+`execute` handles approvals inline. Call `resume` only when `execute` returns an `executionId` it could not finish: `{ executionId, action: "accept", content: "{}" }` (pi: via `mcp({ tool: "executor_resume", args: '…' })`).
