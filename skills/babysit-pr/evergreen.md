@@ -77,7 +77,7 @@ Classify every failing task/check as one of:
 
 1. **Caused by this diff** — root-cause from the logs, fix locally. Prefer running the failing test locally for signal before pushing: Evergreen queues are long, local is faster.
 2. **Staleness** — failure is against code this branch doesn't have; switch to [conflicts.md](conflicts.md).
-3. **Flaky / infra** — history shows intermittent failure or the error is environmental. Retry the task first. If it fails again, treat it as real.
+3. **Flaky / infra** — task history (`evg_get_task_history` via executor) shows the same task failing intermittently on mainline, or the error is environmental. One fresh run, never a second: an identical second failure was never flake, so reclassify and read the logs. A failure in code this diff never touched is staleness (class 2), not flake; confirm with `git merge-base --is-ancestor origin/master HEAD` (false means the branch is behind) before spending the retry.
 
 Write the classification and evidence into the state file's triage entry before any fix.
 

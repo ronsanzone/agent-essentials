@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Install agent-essentials safely.
 #
-# Skills are installed from the repo's central skills/ folder with `npx skills`.
+# Skills are installed from the repo's central skills/ folder with `npx skills`,
+# then the shared ~/.agents/skills store is synced from skills/ directly: for a
+# local-path source the skills CLI only writes per-agent copies and leaves the
+# store stale, so without the sync Claude's links would point at old content.
 # Only non-secret Claude config is package-managed. Runtime/local files such as
 # ~/.claude/.mcp.json and ~/.claude/settings.local.json are materialized as real
 # local files if they were previously symlinked to this repo.
@@ -41,6 +44,7 @@ BACKUP_DIR="$BACKUP_ROOT/agent-essentials-migration-$STAMP"
 INSTALL_SKILLS=1
 INSTALL_CONFIG=1
 DRY_RUN=0
+SHARED_SKILLS_ROOT="$HOME/.agents/skills"
 FORCE_CONFIG=0
 COPY_SKILLS=0
 AGENTS=(claude-code)
@@ -319,11 +323,31 @@ install_skills() {
   run "${cmd[@]}"
 }
 
+# Refresh every repo skill in the shared npx store. Skills the repo no longer
+# ships are not removed here (the store also holds skills from other sources);
+# retire those by hand, see INSTALL.md. `npx skills add <local path>`
+# copies into per-agent dirs but does not refresh ~/.agents/skills, and
+# `npx skills update` only pulls from the GitHub source recorded in its lock.
+sync_shared_store() {
+  local shared_root="$SHARED_SKILLS_ROOT"
+  local source name
+  run mkdir -p "$shared_root"
+  for source in "$ROOT"/skills/*/; do
+    name="$(basename "$source")"
+    if [[ -L "$shared_root/$name" ]]; then
+      run rm "$shared_root/$name"
+      note "replace symlinked store entry ~/.agents/skills/$name with a real copy"
+    fi
+    run rsync -a --delete "$source" "$shared_root/$name/"
+    note "sync shared skill ~/.agents/skills/$name <- skills/$name"
+  done
+}
+
 # Keep Claude's per-agent directory as a stable link view of the shared npx
 # store. The skills CLI may materialize real copies for a local source; those
 # copies are generated and must not become a second editable source of truth.
 canonicalize_shared_claude_skills() {
-  local shared_root="$HOME/.agents/skills"
+  local shared_root="$SHARED_SKILLS_ROOT"
   local claude_root="$TARGET_DIR/skills"
   [[ -d "$shared_root" ]] || return 0
   mkdir -p "$claude_root"
@@ -358,6 +382,7 @@ fi
 
 if [[ "$INSTALL_SKILLS" -eq 1 ]]; then
   install_skills
+  sync_shared_store
   canonicalize_shared_claude_skills
 fi
 

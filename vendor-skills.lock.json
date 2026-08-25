@@ -1,5 +1,27 @@
 {
   "skills": {
+    "blast-radius": {
+      "contentSha256": "3f6bb57227c4415e8deb5016a842d063dbe20736c7540311f1e962e752fee4ca",
+      "sourceCommit": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+      "sourcePath": "pstack/skills/blast-radius",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/cursor/plugins.git",
+      "updatedAt": "2026-08-23T18:22:32Z",
+      "upstreamContentSha256": "e09caf1d06de7ea40c9808c6e123ab53af7e775d238d0418fe08e24421264e17",
+      "vendoredAt": "2026-08-23T18:17:24Z",
+      "vendoredPath": "skills/blast-radius"
+    },
+    "create-verification-skill": {
+      "contentSha256": "e47077fb43922dacc1a091a944efea78704a039369bd6d14f1c802e89cabc60d",
+      "sourceCommit": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+      "sourcePath": "pstack/skills/create-verification-skill",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/cursor/plugins.git",
+      "updatedAt": "2026-08-23T17:47:27Z",
+      "upstreamContentSha256": "e64dc2f038b75da100c7c5842c44bcbb0b669fe0118dfc841aed07d29e70466d",
+      "vendoredAt": "2026-08-23T17:47:27Z",
+      "vendoredPath": "skills/create-verification-skill"
+    },
     "domain-modeling": {
       "contentSha256": "4a3852096a16cbc36b961c88715a00fbe961339401d8e540d00af9b18d583759",
       "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
@@ -45,15 +67,26 @@
       "vendoredPath": "skills/grilling"
     },
     "handoff": {
-      "contentSha256": "7bdf12fa386d6ddbac34ab60bd7afa36b5d1493b743d868b8d48faeb912809a7",
+      "contentSha256": "2f02bca23294c546104a38cbfb70a01d847c207ac4f20879fea62e36d7440d38",
       "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
       "sourcePath": "skills/productivity/handoff",
       "sourceRef": "main",
       "sourceRepo": "https://github.com/mattpocock/skills.git",
-      "updatedAt": "2026-07-24T00:23:54Z",
+      "updatedAt": "2026-08-23T18:17:09Z",
       "upstreamContentSha256": "7bdf12fa386d6ddbac34ab60bd7afa36b5d1493b743d868b8d48faeb912809a7",
       "vendoredAt": "2026-07-06T05:30:37Z",
       "vendoredPath": "skills/handoff"
+    },
+    "maintain-verification-skill": {
+      "contentSha256": "ae84b19495be2f744a1b74734d8bbee65d574a9545dddf684aa32a28efd5eaf9",
+      "sourceCommit": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+      "sourcePath": "pstack/skills/maintain-verification-skill",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/cursor/plugins.git",
+      "updatedAt": "2026-08-23T17:47:27Z",
+      "upstreamContentSha256": "5236af92c2606a4f43c1803b49c39a411a109007e504ba9a03090bbf7d2344ec",
+      "vendoredAt": "2026-08-23T17:47:27Z",
+      "vendoredPath": "skills/maintain-verification-skill"
     },
     "show-me": {
       "contentSha256": "cd52800d5e5f781d349522c76b1076effbbf2cc726b713322aa71c2a18cba28d",
@@ -66,6 +99,17 @@
       "vendoredAt": "2026-08-12T23:51:47Z",
       "vendoredPath": "skills/show-me"
     },
+    "show-me-your-work": {
+      "contentSha256": "9c4e1a35b5d581479dfbe659d5e1f5ea519f92c6f220e8ff97c80f23ae8effe3",
+      "sourceCommit": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+      "sourcePath": "pstack/skills/show-me-your-work",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/cursor/plugins.git",
+      "updatedAt": "2026-08-23T18:22:32Z",
+      "upstreamContentSha256": "6425b04eb0682bf1c14be1347213bddb9f13fe2ee18e37f50f178f1bf03904f4",
+      "vendoredAt": "2026-08-23T18:17:24Z",
+      "vendoredPath": "skills/show-me-your-work"
+    },
     "teach": {
       "contentSha256": "b2a1a9c41a3f6a3c61bfdff7d9271b11b24ec31fbfa37c1769370b37894a8418",
       "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
@@ -76,6 +120,17 @@
       "upstreamContentSha256": "b2a1a9c41a3f6a3c61bfdff7d9271b11b24ec31fbfa37c1769370b37894a8418",
       "vendoredAt": "2026-07-06T05:30:37Z",
       "vendoredPath": "skills/teach"
+    },
+    "why": {
+      "contentSha256": "283b8566654ad959d32e68f7c26b9bc2fff50982c0f24522aea05e43c7072fd6",
+      "sourceCommit": "46125561306434d8a1d7745d540d8932ab0cd2a2",
+      "sourcePath": "pstack/skills/why",
+      "sourceRef": "main",
+      "sourceRepo": "https://github.com/cursor/plugins.git",
+      "updatedAt": "2026-08-23T18:22:32Z",
+      "upstreamContentSha256": "5a100a40232566211ce600c2575898abf2bab80e28625ff07ba73257859e16bf",
+      "vendoredAt": "2026-08-23T18:21:03Z",
+      "vendoredPath": "skills/why"
     },
     "writing-great-skills": {
       "contentSha256": "a36fd02d44fa8e51dd49724a0a95d778c2e6c58ebb2d6633e6039fdc3247fe67",

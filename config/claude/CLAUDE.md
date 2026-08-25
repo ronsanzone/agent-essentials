@@ -10,6 +10,12 @@
 
 * **Docs and artifacts go to `~/notes/<project>/`**, never into work monorepos (mms, mongohouse, etc.). Don't pollute repos with plans, research, or handoff docs.
 
+* **Sequence verifiable units:** break multi-step work into units that each end in a check, and verify each before starting the next; never batch the checks at the end. For a bug fix, the failing test commits first and the fix lands on top.
+
+* **Prototype, don't ask:** when a "which approach" question can be answered by running something (behavior, output, timing), build the throwaway probe and let the result decide. Ask only for genuine product or preference calls.
+
+* **Separate before serializing:** parallel workers (herdr panes, subagents) never share a writable file, branch, or worktree. Split the target first; serialize only for a real invariant.
+
 ## Investigation discipline
 
 * **Validate = investigate, not confirm:** When asked to validate/confirm/check a doc, plan, or proposed solution, investigate the underlying problem independently and actively seek disconfirming evidence — verifying citations is not research.

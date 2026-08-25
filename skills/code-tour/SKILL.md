@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Code Tour
 
-Deep end-to-end guided tour of a PR, branch, or system feature. Dispatches 5 parallel research agents to trace flows across the codebase, then compiles findings and delegates HTML rendering to the `html-report` skill — producing a self-contained document with SVG diagrams, syntax-highlighted code, and collapsible sections.
+Deep end-to-end guided tour of a PR, branch, or system feature. Dispatches 5 parallel research agents to trace flows across the codebase, then compiles findings into one self-contained HTML document: well structured, information dense, and beautiful, with inline SVG diagrams, syntax-highlighted code, and collapsible sections.
 
 ## Usage
 
@@ -139,18 +139,14 @@ Other useful sections (include only when the research surfaces something interes
 
 These are not a checklist. Use judgment — if research surfaced something that doesn't fit these categories, add a section for it.
 
-### Step 6: Render via `html-report`
+### Step 6: Render the HTML
 
-Invoke the `html-report` skill with:
+Write one self-contained HTML file (inline CSS and JS, no external assets) from the Step 5 outline. The bar: well structured, information dense, beautiful.
 
-- **content** — the compiled outline from Step 5
-- **audience** — mapped from the Step 3 reader profile:
-  - "Ramp-up tour" → `engineer-internal-ramp-up`
-  - "PR review tour" → `engineer-internal-pr-review`
-  - "Showcase tour" → `stakeholder-external`
-- **design-language** — `editorial-parchment` (default; promote others as they ship per `design-languages/README.md`)
-- **hero** — title, lede (one italic-serif sentence for showcase tours; omit for engineer tours unless the diff has a clear thesis), eyebrow (project/subsystem name), meta pills (compiled date, branch or PR ref, reading time estimate, scope)
-- **output-path** — `~/notes/04_Research/<slug>-tour.html`
+- **Structure.** A sticky table of contents, numbered sections matching the outline, collapsible blocks for long code or tables, and a hero with title, eyebrow (project or subsystem), and meta pills (compiled date, branch or PR ref, scope, reading time). One-sentence lede for showcase tours; omit it for engineer tours unless the diff has a clear thesis.
+- **Density.** Every claim keeps its `file:line` citation. Diagrams are inline SVG. Code is syntax-highlighted and trimmed to the lines that matter. No filler prose, no decorative emoji.
+- **Tone.** Match the Step 3 reader profile (engineer ramp-up, engineer PR review, stakeholder showcase).
+- **Output path.** `~/notes/04_Research/<slug>-tour.html`.
 
 Derive the slug from:
 
@@ -158,7 +154,7 @@ Derive the slug from:
 - Branch mode: branch name (e.g., `feature-lcm-update-api`)
 - Topic mode: slugified topic (e.g., `capacity-denylist-system`)
 
-`html-report` returns the absolute path to the rendered HTML. Print it and run `open <absolute-path>`. **If `open` fails** (worktree cleanup, sandbox, headless host), just leave the path printed — the user can open it manually. Do not retry.
+Print the absolute path and run `open <absolute-path>`. **If `open` fails** (worktree cleanup, sandbox, headless host), just leave the path printed — the user can open it manually. Do not retry.
 
 
 ### Step 7: Iteration is Expected

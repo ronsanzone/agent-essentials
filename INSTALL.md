@@ -22,7 +22,7 @@ npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill '*' 
 Install a specific skill:
 
 ```bash
-npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill quick-review -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill review -y
 ```
 
 List available skills:
@@ -149,7 +149,14 @@ npx skills remove --global --agent claude-code --skill '*' -y
 Or remove specific skills:
 
 ```bash
-npx skills remove --global --agent claude-code quick-review
+npx skills remove --global --agent claude-code <name>
+```
+
+Retire a skill the repo no longer ships. The installer never deletes store entries, because `~/.agents/skills` also holds skills from other sources:
+
+```bash
+npx skills remove --global --agent claude-code <name>
+rm -rf ~/.agents/skills/<name> ~/.claude/skills/<name>
 ```
 
 Remove safe config links manually if desired:

@@ -8,8 +8,10 @@ description: Babysit a PR to green — one full pass of sweep, triage, fix, push
 One pass of the babysit loop: sweep every signal on a PR, triage before fixing, fix in priority order, push, log, report. Draft and non-draft PRs are handled identically. A run is a single pass — cadence comes from `/loop` re-invoking it, not from polling inside the skill.
 
 ```
-/babysit-pr [pr-url | pr-number]
+/babysit-pr [pr-url | pr-number] [check | drive | threads-only]
 ```
+
+Modes: `drive` (default) fixes what the pass can fix; `check` is one status sweep and a report, no fixes, the right mode for "check on X", "is it green", and docs-only PRs; `threads-only` answers review comments and touches nothing else. Name the mode in the report's first line.
 
 - Accepts GitHub URLs and Graphite URLs (`app.graphite.com/github/pr/<owner>/<repo>/<number>/...` → owner/repo + number).
 - No argument: resolve the PR from the current branch (`gh pr list --head "$(git branch --show-current)"`). If that finds nothing, ask for the URL.
@@ -21,6 +23,8 @@ One pass of the babysit loop: sweep every signal on a PR, triage before fixing, 
 - **Diagnose before fixing.** No fix lands without a triage entry first: what failed, root cause, evidence.
 - **Record every significant decision** — conflict resolutions, judgment calls in fixes, anything a reviewer would want flagged — in the state file's Decisions section and in the report.
 - **A push retriggers Evergreen/CI.** Batch all of a pass's fixes into one push; never separately kick a run right after pushing.
+- **Work the merge frontier.** In a stack, the lowest unmerged PR is the only one that matters until it merges. Read upstack threads and batch their fixes into the frontier's push wave; never push upstack while the frontier is red, since the restack retriggers their checks anyway.
+- **One babysitter per stack.** Before the first action, check the sibling state files (`~/.cache/babysit/<owner>-<repo>-*.md`). A pass logged there within the last hour means another agent owns it: stop and report instead of starting a second loop.
 - **Do not rewrite a normal PR branch just to update it from its base.** Merge the base branch and push normally. Force push only when a workflow has already rewritten history (typically a Graphite restack), and always use `--force-with-lease`.
 
 ## State file
@@ -52,7 +56,7 @@ Pass completion criterion: every signal source — mergeability, GitHub checks, 
 
 ## Report
 
-Verdict first, then what changed this pass, decisions made, and open items.
+Mode and verdict first, then what changed this pass, decisions made, and open items.
 
 - **GREEN** — checks pass, no conflicts, no unaddressed comments. Say so plainly; if running under `/loop`, note the loop can stop.
 - **IN-FLIGHT** — fixes pushed or CI still running; nothing needs the user. If not already under `/loop`, suggest `/loop 20m /babysit-pr <url>`.

@@ -22,7 +22,7 @@ scripts/install-claude.sh
 
 `install-claude.sh` does three things:
 
-1. Installs skills from `skills/` with `npx skills` into the shared `~/.agents/skills` store.
+1. Installs skills from `skills/` with `npx skills`, then syncs `skills/` into the shared `~/.agents/skills` store (the CLI does not refresh the store from a local path).
 2. Keeps `~/.claude/skills/<name>` as links into that shared store.
 3. Links only safe Claude config from `config/claude/` into `~/.claude`.
 
@@ -43,8 +43,7 @@ The structured research/design/implementation workflows are maintained separatel
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
-| **quick-review** | `/quick-review` | Single-pass expert review with severity-ranked findings |
-| **local-code-review** | `/local-code-review` | Local code review of working tree changes |
+| **review** | `/review` | Fast single-pass review of a PR, branch, range, or working tree; severity-ranked findings plus a dismissed list |
 | **submit-pr** | `/submit-pr` | Create or update draft PRs with generated descriptions |
 | **yeet** | `/yeet` | One-shot Jira + commit + push + draft PR workflow |
 
@@ -52,17 +51,32 @@ The structured research/design/implementation workflows are maintained separatel
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
-| **refine-ticket** | `/refine-ticket` | Refine Jira/pasted/file ticket context into `ticket.md` |
-| **investigate-and-fix** | `/investigate-and-fix` | Lightweight investigate → plan → implement workflow |
-| **session-retrospective** | `/session-retrospective` | Analyze session process efficiency |
 | **quiz** | `/quiz` | Tutor/quiz the user on session or topic understanding |
+
+### Verification Skills
+
+Vendored from [cursor/plugins pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT); provenance in `vendor-skills.lock.json`.
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| **create-verification-skill** | `/create-verification-skill` | Generate a project-local `verify-<app>` skill that drives the real app and captures proof, plus a per-feature map |
+| **maintain-verification-skill** | `/maintain-verification-skill` | Periodic pass that keeps a `verify-<app>` skill and its feature map honest against the current app |
+
+### Investigation Skills
+
+Vendored from [cursor/plugins pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT) and adapted to Claude Code + the executor MCP; provenance in `vendor-skills.lock.json`.
+
+| Skill | Command | Purpose |
+|-------|---------|---------|
+| **why** | `/why` | Why was this built this way: one investigator per evidence source (git/gh, Jira, Confluence, Glean, Grafana, Splunk, PagerDuty, Evergreen), cited and confidence-tiered |
+| **blast-radius** | `/blast-radius` | What a small change could break elsewhere, with the one safety fact proven by running code |
+| **show-me-your-work** | `/show-me-your-work` | Append-only TSV decision trail for long or unattended runs, audited against the transcript |
 
 ### Reporting & Presentation
 
 | Skill | Command | Purpose |
 |-------|---------|---------|
-| **code-tour** | `/code-tour` | Generate an interactive HTML tour of a PR, branch, or feature |
-| **html-report** | `/html-report` | Render compiled content as a self-contained HTML technical report |
+| **code-tour** | `/code-tour` | Generate a self-contained HTML tour of a PR, branch, or feature |
 
 ### Plannotator Skills
 
@@ -83,7 +97,7 @@ npx skills add ronsanzone/agent-essentials/skills --list
 Install one skill:
 
 ```bash
-npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill quick-review -y
+npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill review -y
 ```
 
 Install for multiple non-Pi agents:
@@ -116,10 +130,8 @@ scripts/install-claude.sh --agent claude-code --agent codex --agent opencode
 agent-essentials/
 ├── skills/                         # canonical reusable Agent Skills package source
 │   ├── code-tour/
-│   ├── html-report/
-│   ├── local-code-review/
 │   ├── plannotator-*/
-│   ├── quick-review/
+│   ├── review/
 │   ├── quiz/
 │   ├── submit-pr/
 │   └── yeet/

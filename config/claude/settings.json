@@ -23,7 +23,7 @@
       "mcp__executor__execute",
       "mcp__executor__resume"
     ],
-    "defaultMode": "acceptEdits",
+    "defaultMode": "auto",
     "additionalDirectories": [
       "~/notes/context-engineering"
     ]
@@ -172,6 +172,14 @@
   },
   "alwaysThinkingEnabled": true,
   "effortLevel": "high",
+  "modelSettings": {
+    "claude-melon-eap": {
+      "effortLevel": "xhigh"
+    },
+    "claude-opus-5": {
+      "effortLevel": "xhigh"
+    }
+  },
   "advisorModel": "fable",
   "autoDreamEnabled": true,
   "showThinkingSummaries": true,

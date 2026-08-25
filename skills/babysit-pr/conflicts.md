@@ -13,6 +13,8 @@ Check whether the branch is Graphite-managed (`gt log` succeeds and shows the br
   gt submit --stack
   ```
 - **Stacked but base not merged:** restack on the parent branch, resolve conflicts as below, then `gt submit --stack` so dependent PRs update too. Any rebase or fix on a stacked PR ends with a restack + stack submit — never update just the one PR.
+- **Never rewrite merged history.** A fix whose owning PR has already merged becomes a new PR on top of the remaining stack, not an amend of the merged branch.
+- **One actor on the stack.** `gt restack` and `gt submit --stack` rewrite every branch above the one you touch. Run them only when the sibling state files show no other pass working the stack; a second actor restacking concurrently discards finished work.
 
 ## 2. Non-stacked branch
 
