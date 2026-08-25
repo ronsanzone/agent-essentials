@@ -1,187 +1,84 @@
 # Agent Essentials
 
-Reusable agent skills and a small, safe Claude Code config overlay.
+Reusable agent skills plus a small Claude Code config overlay (CLAUDE.md, settings, hooks, agents). Everything the repo owns is **symlinked** into place, so edits here are live in Claude Code and pi immediately and nothing else can silently overwrite them.
 
-The package installs from its central `skills/` folder with the standard `npx skills` CLI, while local/runtime Claude files such as `.mcp.json` and `settings.local.json` remain real files in `~/.claude`.
-
-## Quick Start
-
-Install all skills globally for Claude Code:
-
-```bash
-npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill '*' -y
-```
-
-Or from a local checkout:
+## Quick start
 
 ```bash
 git clone git@github.com:ronsanzone/agent-essentials.git ~/code/agent-essentials
 cd ~/code/agent-essentials
-scripts/install-claude.sh
+scripts/install-claude.sh            # add --dry-run first if you like
 ```
 
-`install-claude.sh` does three things:
+The installer links:
 
-1. Installs skills from `skills/` with `npx skills`, then syncs `skills/` into the shared `~/.agents/skills` store (the CLI does not refresh the store from a local path).
-2. Keeps `~/.claude/skills/<name>` as links into that shared store.
-3. Links only safe Claude config from `config/claude/` into `~/.claude`.
+| Target | Source |
+|---|---|
+| `~/.agents/skills/<name>` | `skills/<name>` (shared store; pi reads it directly) |
+| `~/.claude/skills/<name>` | `../../.agents/skills/<name>` |
+| `~/.claude/agents/<name>.md` | `config/claude/agents/<name>.md` |
+| `~/.claude/hooks/<name>.sh` | `config/claude/hooks/<name>.sh` |
+| `~/.claude/CLAUDE.md`, `~/.claude/settings.json` | `config/claude/` |
 
-It intentionally does **not** manage real secrets/runtime files:
+It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, plugin caches, or sessions, and it leaves store entries from other sources alone (they show up in the drift report it prints at the end). `--prune` removes store entries for anything in `deprecated-skills/`. See [INSTALL.md](INSTALL.md).
 
-- `~/.claude/.mcp.json`
-- `~/.claude/settings.local.json`
-- `~/.claude/auth.json`
-- Claude plugin caches, sessions, project state, and other runtime files
+## Skills
 
-## Skills Overview
+"model + `/name`" skills load their description into every session and fire on matching requests; "user" skills only run when typed.
 
-### Context Engineering Workflows
+| Skill | Invoked by | Purpose |
+|---|---|---|
+| **babysit-pr** | model + `/babysit-pr` | Babysit a PR to green — one full pass of sweep, triage, fix, push, report |
+| **blast-radius** | user (`/blast-radius`) | Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up |
+| **bruh** | user (`/bruh`) | Restate the last message in plain human language, with no jargon |
+| **code-tour** | model + `/code-tour` | Deep end-to-end tour of a PR, branch, or subsystem as one self-contained HTML doc |
+| **create-verification-skill** | user (`/create-verification-skill`) | Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform |
+| **domain-modeling** | model + `/domain-modeling` | Build and sharpen a project's domain model |
+| **executor-usage** | model + `/executor-usage` | Load before any Executor `execute` call (Claude `mcp__executor__execute`, pi/OpenCode `executor_execute`) |
+| **grilling** | model + `/grilling` | Grill the user relentlessly about a plan, decision, or idea |
+| **handoff** | model + `/handoff` | Write a handoff doc for another session or model |
+| **herdr** | model + `/herdr` | Control herdr from inside it — list/split panes, spawn agents in sibling panes, read their output, wait for output or agent status |
+| **maintain-verification-skill** | user (`/maintain-verification-skill`) | Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections |
+| **pr-report** | model + `/pr-report` | Report every open PR you own — verdict, blocker, and who holds the ball — then hand the ones needing work to babysit-pr |
+| **review** | user (`/review`) | Fast single-pass code review of a PR, branch, ref range, or working tree |
+| **show-me-your-work** | user (`/show-me-your-work`) | Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result) |
+| **show-me** | model + `/show-me` | Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts |
+| **submit-pr** | model + `/submit-pr` | Create or update a draft PR |
+| **why** | model + `/why` | Design rationale from the historical record — "why does X work this way", "why did we pick Y", regressions, postmortems, where a threshold came from |
+| **writing-great-skills** | user (`/writing-great-skills`) | Reference for writing and editing skills well — the vocabulary and principles that make a skill predictable |
+| **yeet** | user (`/yeet`) | One-shot end-of-session ship — commit relevant changes, resolve the ticket, push, open a draft PR via submit-pr |
 
-The structured research/design/implementation workflows are maintained separately in [context-engineering-workflows-v2](https://github.com/ronsanzone/context-engineering-workflows-v2). Install that package independently; this repository owns reusable general-purpose skills and Claude configuration.
+Structured research → design → implementation pipelines live in [context-engineering-workflows-v2](https://github.com/ronsanzone/context-engineering-workflows-v2); MMS-specific QA skills live in the employees repo. `vendor-skills.lock.json` records provenance for skills vendored from other repos (cursor/plugins pstack, dmmulroy).
 
-### Code Review & PR Skills
+## Config overlay (`config/claude/`)
 
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **review** | `/review` | Fast single-pass review of a PR, branch, range, or working tree; severity-ranked findings plus a dismissed list |
-| **submit-pr** | `/submit-pr` | Create or update draft PRs with generated descriptions |
-| **yeet** | `/yeet` | One-shot Jira + commit + push + draft PR workflow |
+- `CLAUDE.md` — global rules: simplicity, execution discipline (prove it works, sequence verifiable units, prove reachability), notes go to `~/notes/<project>/`, subagent routing, executor pointer, communication style.
+- `settings.json` — permissions (`defaultMode: auto`), model/effort, hooks. Machine-specific hooks and paths go in `settings.local.json` (see the `.example`).
+- `hooks/guards.sh` — PreToolUse guards: untracked `.md` inside a work monorepo → ask; `--clean-db`, `reset --hard`, force push → ask; `rm` under `~/.claude/projects/*/memory` → deny.
+- `agents/` — `codebase-analyzer` (model inherit), `codebase-locator`, `codebase-pattern-finder`, `web-search-researcher`.
 
-### Workflow Skills
-
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **quiz** | `/quiz` | Tutor/quiz the user on session or topic understanding |
-
-### Verification Skills
-
-Vendored from [cursor/plugins pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT); provenance in `vendor-skills.lock.json`.
-
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **create-verification-skill** | `/create-verification-skill` | Generate a project-local `verify-<app>` skill that drives the real app and captures proof, plus a per-feature map |
-| **maintain-verification-skill** | `/maintain-verification-skill` | Periodic pass that keeps a `verify-<app>` skill and its feature map honest against the current app |
-
-### Investigation Skills
-
-Vendored from [cursor/plugins pstack](https://github.com/cursor/plugins/tree/main/pstack) (MIT) and adapted to Claude Code + the executor MCP; provenance in `vendor-skills.lock.json`.
-
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **why** | `/why` | Why was this built this way: one investigator per evidence source (git/gh, Jira, Confluence, Glean, Grafana, Splunk, PagerDuty, Evergreen), cited and confidence-tiered |
-| **blast-radius** | `/blast-radius` | What a small change could break elsewhere, with the one safety fact proven by running code |
-| **show-me-your-work** | `/show-me-your-work` | Append-only TSV decision trail for long or unattended runs, audited against the transcript |
-
-### Reporting & Presentation
-
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **code-tour** | `/code-tour` | Generate a self-contained HTML tour of a PR, branch, or feature |
-
-### Plannotator Skills
-
-| Skill | Command | Purpose |
-|-------|---------|---------|
-| **plannotator-annotate** | `/plannotator-annotate` | Open Plannotator annotation UI for files/URLs/folders |
-| **plannotator-last** | `/plannotator-last` | Annotate the latest assistant message |
-| **plannotator-review** | `/plannotator-review` | Open Plannotator code review UI |
-
-## Install Options
-
-List available skills without installing:
-
-```bash
-npx skills add ronsanzone/agent-essentials/skills --list
-```
-
-Install one skill:
-
-```bash
-npx skills add ronsanzone/agent-essentials/skills -g -a claude-code --skill review -y
-```
-
-Install for multiple non-Pi agents:
-
-```bash
-npx skills add ronsanzone/agent-essentials/skills -g -a claude-code -a codex -a opencode --skill '*' -y
-```
-
-Pi discovers the shared global store at `~/.agents/skills` automatically. Do not pass `-a pi` while `~/.pi/agent/skills` is intentionally absent.
-
-Install safe Claude config plus skills from a checkout:
-
-```bash
-scripts/install-claude.sh
-```
-
-Useful installer flags:
-
-```bash
-scripts/install-claude.sh --dry-run
-scripts/install-claude.sh --skills-only
-scripts/install-claude.sh --config-only
-scripts/install-claude.sh --force-config
-scripts/install-claude.sh --agent claude-code --agent codex --agent opencode
-```
-
-## Directory Structure
+## Layout
 
 ```text
 agent-essentials/
-├── skills/                         # canonical reusable Agent Skills package source
-│   ├── code-tour/
-│   ├── plannotator-*/
-│   ├── review/
-│   ├── quiz/
-│   ├── submit-pr/
-│   └── yeet/
-├── config/claude/                  # safe Claude Code config overlay
-│   ├── CLAUDE.md
-│   ├── settings.json
-│   ├── settings.local.json.example
-│   ├── mcp.json.example
-│   └── docs/
-├── deprecated-skills/
-├── scripts/
-│   ├── install-claude.sh
-│   └── link-claude-files.sh        # compatibility shim
-├── README.md
-└── INSTALL.md
+├── skills/<name>/SKILL.md[, references/, scripts/]   # one dir per skill
+├── deprecated-skills/                                # retired; `--prune` removes them from the store
+├── config/claude/
+│   ├── CLAUDE.md  settings.json  settings.local.json.example  mcp.json.example
+│   ├── agents/*.md
+│   └── hooks/guards.sh
+├── scripts/install-claude.sh
+├── vendor-skills.lock.json
+├── README.md  INSTALL.md
 ```
 
-## Dot Integration
+## Adding a skill
 
-For `~/code/dot`, the profile apply command should be:
-
-```bash
-DOT_ITEM_claude_essentials_APPLY="./scripts/install-claude.sh"
-```
-
-This keeps `dot down` as the orchestration command while avoiding whole-directory Claude symlinks.
-
-## Adding New Skills
-
-Create a directory under `skills/` with a `SKILL.md` file:
-
-```yaml
----
-name: my-skill
-description: Use when ...
----
-```
-
-Validate discovery:
-
-```bash
-npx skills add ./skills --list
-```
+Create `skills/<name>/SKILL.md` with `name` and `description` frontmatter (description = trigger phrases only, ≤150 chars; body = rules, evidence bar, output shape; long material in `references/`). Add `disable-model-invocation: true` only for verbs you will type. Re-run `scripts/install-claude.sh`. Check two weeks later whether it fired; if not, deprecate it.
 
 ## Requirements
 
-- Claude Code CLI for Claude usage
-- Node/npm for `npx skills`
-- `gh` CLI for GitHub/PR-related skills
-- `plannotator` CLI for Plannotator skills
+Claude Code CLI · `gh` · `jq` (hooks) · `herdr` for the herdr skill · `plannotator` plugin (installed separately) for plan/diff annotation.
 
 ## License
 
