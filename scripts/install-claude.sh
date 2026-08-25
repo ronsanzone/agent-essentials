@@ -183,7 +183,8 @@ prune_deprecated() {
     name="$(basename "${d%/}")"
     for p in "$SHARED_SKILLS_ROOT/$name" "$TARGET_DIR/skills/$name"; do
       [[ -e "$p" || -L "$p" ]] || continue
-      if [[ -L "$p" ]] || diff -qr "$p" "${d%/}" >/dev/null 2>&1; then
+      # ~/.claude/skills real dirs are never ours (plannotator CLI, vendors) — only prune links there.
+      if [[ -L "$p" ]] || { [[ "$p" == "$SHARED_SKILLS_ROOT/"* ]] && diff -qr "$p" "${d%/}" >/dev/null 2>&1; }; then
         note "prune $p"; run rm -r "$p"
       else
         note "leave $p (real content differs from the deprecated copy; not ours)"
