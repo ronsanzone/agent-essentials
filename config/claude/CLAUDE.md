@@ -4,7 +4,7 @@
 
 ## Execution discipline
 
-* **Prove it works before reporting done:** Never report a change as working without observing its effect — a passing test, the expected log line, a screenshot, an API response. "Should work" / "is now installed" without observation is not done.
+* **Prove it works before reporting done:** Never report a change as working without observing its effect — a passing test, the expected log line, a screenshot, an API response. "Should work" / "is now installed" without observation is not done. Any report of state (done, green, pushed, passing, verified) ends with an `Evidence:` block — the command or URL and the observed result; without it, write "unverified".
 
 * **Tests are transformative, not additive:** When changing behavior, modify or remove the existing tests that covered the old behavior. Don't accumulate parallel near-duplicate tests across iterations; end each change with the minimal test set.
 

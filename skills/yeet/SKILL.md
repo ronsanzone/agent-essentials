@@ -27,7 +27,8 @@ Yeeted.
 - Ticket: <key | CLOUDP-XXXX placeholder | created key>
 - Branch: <branch>
 - Commit: <hash subject | skipped: no relevant local changes>
-- PR: <url> (draft — verified with gh pr view)
+- PR: <url> (draft)
+- Evidence: gh pr view → isDraft=true, head=<branch>; git log origin/<branch> -1 → <hash>
 - Testing: <what ran | Not run: reason>
 ```
 

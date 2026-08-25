@@ -62,3 +62,5 @@ Mode and verdict first, then what changed this pass, decisions made, and open it
 - **GREEN** — checks pass, no conflicts, no unaddressed comments. Say so plainly; if running under `/loop`, note the loop can stop.
 - **IN-FLIGHT** — fixes pushed or CI still running; nothing needs the user. If not already under `/loop`, suggest `/loop 20m /babysit-pr <url>`.
 - **BLOCKED** — needs the user: drafted replies to post, a conflict resolution needing a call, a failing test with an ambiguous fix. List exactly what and why.
+
+Every GREEN / fixed / in-flight claim carries an `Evidence:` line with what was observed: `gh pr checks <n>` output, the Spruce patch URL with task states, the pushed hash from `git log origin/<branch> -1`, the comment URL. A signal you did not observe this pass is BLOCKED or "unverified" — never GREEN.

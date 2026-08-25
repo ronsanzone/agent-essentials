@@ -78,6 +78,8 @@ One table, one row per PR — number and link, title, verdict, and the blocker s
 
 Link failing Evergreen builds; never open them. Diagnosing a red task is `babysit-pr`'s work, and doing it here would duplicate that skill and blow up the sweep.
 
+Each verdict cites its source on an `Evidence:` line — `gh pr view --json mergeable,reviewDecision`, `gh pr checks` or the patch URL with task states, the comment URL. A verdict with no source is UNKNOWN, not GREEN.
+
 ## Offer
 
 Close by offering to babysit. Preselect the PRs whose owner is the user and whose verdict is CONFLICT, RED, or COMMENTS — those are what `babysit-pr` can actually move. Ask which to take with `AskUserQuestion`.

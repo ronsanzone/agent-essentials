@@ -151,6 +151,8 @@ Rules:
 - Domain tool findings carry their source tag in the title: `M1. [react-doctor] Stale closure in setPageNum`.
 - Dismissed lists what you considered and rejected, including dismissed domain tool warnings. Omit it only when nothing was weighed and rejected.
 
+- A finding stated as confirmed names what confirmed it (test run, repro command, trace) on an `Evidence:` line; otherwise label it plausible.
+
 ## Escalate by reference
 
 - Multi-agent review with adversarial verification of each finding: Claude Code's built-in `/code-review`.
