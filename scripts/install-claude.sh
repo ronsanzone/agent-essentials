@@ -186,7 +186,7 @@ prune_deprecated() {
       if [[ -L "$p" ]] || diff -qr "$p" "${d%/}" >/dev/null 2>&1; then
         note "prune $p"; run rm -r "$p"
       else
-        backup "$p"
+        note "leave $p (real content differs from the deprecated copy; not ours)"
       fi
     done
   done

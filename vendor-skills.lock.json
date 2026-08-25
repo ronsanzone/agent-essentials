@@ -33,28 +33,6 @@
       "vendoredAt": "2026-07-06T05:30:37Z",
       "vendoredPath": "skills/domain-modeling"
     },
-    "grill-me": {
-      "contentSha256": "1252987913586e62cf543911bcc0bba7037d5df34c750ed018c58ff10a6dadfb",
-      "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
-      "sourcePath": "skills/productivity/grill-me",
-      "sourceRef": "main",
-      "sourceRepo": "https://github.com/mattpocock/skills.git",
-      "updatedAt": "2026-07-24T00:23:54Z",
-      "upstreamContentSha256": "1252987913586e62cf543911bcc0bba7037d5df34c750ed018c58ff10a6dadfb",
-      "vendoredAt": "2026-07-06T05:30:37Z",
-      "vendoredPath": "skills/grill-me"
-    },
-    "grill-with-docs": {
-      "contentSha256": "f71924f06b0ed1c46e983ee6f91b6851fa5b26395b69c27790b5289a436e6704",
-      "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
-      "sourcePath": "skills/engineering/grill-with-docs",
-      "sourceRef": "main",
-      "sourceRepo": "https://github.com/mattpocock/skills.git",
-      "updatedAt": "2026-07-24T00:23:54Z",
-      "upstreamContentSha256": "f71924f06b0ed1c46e983ee6f91b6851fa5b26395b69c27790b5289a436e6704",
-      "vendoredAt": "2026-07-06T05:30:37Z",
-      "vendoredPath": "skills/grill-with-docs"
-    },
     "grilling": {
       "contentSha256": "3849a4d59b8594be1e56957addb64fe14a9a082a8211ed772f06555109affb04",
       "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
@@ -109,17 +87,6 @@
       "upstreamContentSha256": "6425b04eb0682bf1c14be1347213bddb9f13fe2ee18e37f50f178f1bf03904f4",
       "vendoredAt": "2026-08-23T18:17:24Z",
       "vendoredPath": "skills/show-me-your-work"
-    },
-    "teach": {
-      "contentSha256": "b2a1a9c41a3f6a3c61bfdff7d9271b11b24ec31fbfa37c1769370b37894a8418",
-      "sourceCommit": "ed37663cc5fbef691ddfecd080dff42f7e7e350d",
-      "sourcePath": "skills/productivity/teach",
-      "sourceRef": "main",
-      "sourceRepo": "https://github.com/mattpocock/skills.git",
-      "updatedAt": "2026-07-24T00:23:54Z",
-      "upstreamContentSha256": "b2a1a9c41a3f6a3c61bfdff7d9271b11b24ec31fbfa37c1769370b37894a8418",
-      "vendoredAt": "2026-07-06T05:30:37Z",
-      "vendoredPath": "skills/teach"
     },
     "why": {
       "contentSha256": "283b8566654ad959d32e68f7c26b9bc2fff50982c0f24522aea05e43c7072fd6",
