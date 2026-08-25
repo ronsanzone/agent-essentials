@@ -1,6 +1,6 @@
 ---
 name: why
-description: Design rationale from the historical record — "why does X work this way", "why did we pick Y", regressions, postmortems, where a threshold came from. Not for runtime behavior (use code-tour / codebase-analyzer).
+description: "Design rationale from the historical record: why does X work this way, why we picked Y, regressions, postmortems, where a threshold came from."
 ---
 
 # Why

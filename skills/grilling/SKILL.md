@@ -1,6 +1,6 @@
 ---
 name: grilling
-description: Grill the user relentlessly about a plan, decision, or idea. Use when the user wants to stress-test their thinking, says "grill me", or asks to be interviewed before acting. Modes: default (one question at a time), batch (whole frontier per round), docs (also maintain the domain model).
+description: "Grill the user relentlessly about a plan or decision before acting. Triggers: \"grill me\", \"interview me\", stress-test my thinking. Modes: default, batch, docs."
 ---
 
 Interview the user relentlessly about every aspect of this until you reach a shared understanding. Map it as a decision tree: every decision branches into the decisions that hang off it. Walk the branches, resolving dependencies one by one. For each question, give your recommended answer — the user mostly accepts with one word, so make the recommendation good.

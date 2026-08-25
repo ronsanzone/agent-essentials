@@ -1,6 +1,6 @@
 ---
 name: executor-usage
-description: Load before any Executor `execute` call (Claude `mcp__executor__execute`, pi/OpenCode `executor_execute`). Discover with tools.search, describe, then call by full path.
+description: "Load before any Executor execute call (Claude mcp__executor__execute, pi/OpenCode executor_execute): search, describe, then call by full path."
 metadata:
   short-description: Required calling pattern for Executor execute
 ---

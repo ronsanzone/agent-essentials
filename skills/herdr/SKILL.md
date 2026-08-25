@@ -1,6 +1,6 @@
 ---
 name: herdr
-description: Control herdr from inside it — list/split panes, spawn agents in sibling panes, read their output, wait for output or agent status. Only when HERDR_ENV=1.
+description: "Control herdr from inside it (HERDR_ENV=1): split panes, spawn agents in sibling panes, read their output, wait for output or status."
 ---
 
 # herdr

@@ -1,6 +1,6 @@
 ---
 name: code-tour
-description: Deep end-to-end tour of a PR, branch, or subsystem as one self-contained HTML doc. Use for "code tour", "tour of the change", "code walkthrough", "walkthrough html", "ramp me up on", "walk me through this PR/system".
+description: "End-to-end HTML tour of a PR, branch, or subsystem. Triggers: code tour, tour of the change, code walkthrough, walkthrough html, ramp me up on."
 ---
 
 # Code Tour

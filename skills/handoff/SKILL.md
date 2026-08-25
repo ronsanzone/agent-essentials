@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Write a handoff doc for another session or model. Use for "write a handoff", "handoff doc", "hand this off", "monitor handoff", "write a prompt for another session".
+description: "Write a handoff doc for another session or model: \"write a handoff\", \"handoff doc\", \"hand this off\", \"monitor handoff\", \"prompt for another session\"."
 argument-hint: "What will the next session be used for?"
 ---
 
