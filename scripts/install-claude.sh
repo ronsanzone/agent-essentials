@@ -1,13 +1,18 @@
 #!/usr/bin/env bash
-# Install agent-essentials safely.
+# Install agent-essentials.
 #
-# Skills are installed from the repo's central skills/ folder with `npx skills`,
-# then the shared ~/.agents/skills store is synced from skills/ directly: for a
-# local-path source the skills CLI only writes per-agent copies and leaves the
-# store stale, so without the sync Claude's links would point at old content.
-# Only non-secret Claude config is package-managed. Runtime/local files such as
-# ~/.claude/.mcp.json and ~/.claude/settings.local.json are materialized as real
-# local files if they were previously symlinked to this repo.
+# Model: everything this repo owns is a symlink back into the repo, so edits
+# here are live everywhere and nothing else can silently overwrite them.
+#
+#   ~/.agents/skills/<name>        -> $ROOT/skills/<name>        (shared store; pi reads this)
+#   ~/.claude/skills/<name>        -> ../../.agents/skills/<name> (Claude's view of the store)
+#   ~/.claude/agents/<name>.md     -> $ROOT/config/claude/agents/<name>.md
+#   ~/.claude/hooks/<name>.sh      -> $ROOT/config/claude/hooks/<name>.sh
+#   ~/.claude/CLAUDE.md, settings.json -> $ROOT/config/claude/...
+#
+# Store entries from other sources (npx skills, plugins, other repos) are left
+# alone and listed in the drift report at the end. Runtime/local files such as
+# ~/.claude/.mcp.json and ~/.claude/settings.local.json are never symlinked.
 
 set -euo pipefail
 
@@ -16,377 +21,211 @@ usage() {
 Usage: scripts/install-claude.sh [options]
 
 Options:
-  --skills-only       Install skills only; skip Claude config links/examples.
-  --config-only       Install Claude config only; skip npx skills install.
+  --skills-only       Install skills/agents/hooks only; skip CLAUDE.md/settings links.
+  --config-only       Install Claude config only; skip skills/agents/hooks.
+  --prune             Also remove store entries named in deprecated-skills/.
   --dry-run           Print planned actions without changing files.
   --force-config      Back up and replace existing real config files/directories.
-  --copy-skills       Pass --copy to npx skills instead of the default symlink mode.
-  --agent AGENT       Agent target for npx skills (default: claude-code). May repeat.
+  --agent AGENT       Also run `npx skills add` for another agent (codex, opencode...). May repeat.
   --target-dir DIR    Claude config dir (default: ~/.claude).
   -h, --help          Show this help.
 
-Examples:
-  scripts/install-claude.sh
-  scripts/install-claude.sh --dry-run
-  scripts/install-claude.sh --skills-only --agent claude-code --agent codex --agent opencode
-
-Pi discovers the shared ~/.agents/skills store automatically; do not pass --agent pi.
+Pi discovers ~/.agents/skills automatically; do not pass --agent pi.
 EOF
 }
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG_DIR="$ROOT/config/claude"
 TARGET_DIR="$HOME/.claude"
-BACKUP_ROOT="$HOME/.claude/backups"
-STAMP="$(date +%Y%m%d-%H%M%S)"
-BACKUP_DIR="$BACKUP_ROOT/agent-essentials-migration-$STAMP"
+SHARED_SKILLS_ROOT="$HOME/.agents/skills"
+BACKUP_DIR="$HOME/.claude/backups/agent-essentials-$(date +%Y%m%d-%H%M%S)"
 
 INSTALL_SKILLS=1
 INSTALL_CONFIG=1
+PRUNE=0
 DRY_RUN=0
-SHARED_SKILLS_ROOT="$HOME/.agents/skills"
 FORCE_CONFIG=0
-COPY_SKILLS=0
-AGENTS=(claude-code)
-CUSTOM_AGENTS=0
+AGENTS=()
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --skills-only)
-      INSTALL_CONFIG=0
-      shift
-      ;;
-    --config-only)
-      INSTALL_SKILLS=0
-      shift
-      ;;
-    --dry-run)
-      DRY_RUN=1
-      shift
-      ;;
-    --force-config)
-      FORCE_CONFIG=1
-      shift
-      ;;
-    --copy-skills)
-      COPY_SKILLS=1
-      shift
-      ;;
+    --skills-only) INSTALL_CONFIG=0; shift ;;
+    --config-only) INSTALL_SKILLS=0; shift ;;
+    --prune) PRUNE=1; shift ;;
+    --dry-run) DRY_RUN=1; shift ;;
+    --force-config) FORCE_CONFIG=1; shift ;;
     --agent|-a)
       [[ $# -ge 2 && -n "${2:-}" ]] || { echo "missing value after $1" >&2; exit 1; }
-      if [[ "$2" == "pi" ]]; then
-        echo "Pi discovers the shared ~/.agents/skills store automatically; do not install a Pi target." >&2
-        exit 1
-      fi
-      if [[ "$CUSTOM_AGENTS" -eq 0 ]]; then
-        AGENTS=()
-        CUSTOM_AGENTS=1
-      fi
-      AGENTS+=("$2")
-      shift 2
-      ;;
+      [[ "$2" != "pi" ]] || { echo "Pi reads ~/.agents/skills directly; do not pass --agent pi." >&2; exit 1; }
+      AGENTS+=("$2"); shift 2 ;;
     --target-dir)
       [[ $# -ge 2 && -n "${2:-}" ]] || { echo "missing value after --target-dir" >&2; exit 1; }
-      TARGET_DIR="$2"
-      shift 2
-      ;;
-    -h|--help)
-      usage
-      exit 0
-      ;;
-    *)
-      echo "unknown argument: $1" >&2
-      usage >&2
-      exit 1
-      ;;
+      TARGET_DIR="$2"; shift 2 ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "unknown argument: $1" >&2; usage >&2; exit 1 ;;
   esac
 done
 
 run() {
   if [[ "$DRY_RUN" -eq 1 ]]; then
-    printf '[dry-run]'
-    printf ' %q' "$@"
-    printf '\n'
+    printf '[dry-run]'; printf ' %q' "$@"; printf '\n'
   else
     "$@"
   fi
 }
-
 note() { printf '%s\n' "$*"; }
 warn() { printf 'WARN: %s\n' "$*" >&2; }
 
-ensure_backup_dir() {
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    note "[dry-run] mkdir -p $BACKUP_DIR"
-  else
-    mkdir -p "$BACKUP_DIR"
-  fi
+backup() { # move $1 into the backup dir under a flattened name
+  local path="$1" name
+  name="${path#"$HOME"/}"; name="${name//\//-}"
+  run mkdir -p "$BACKUP_DIR"
+  note "backup $path -> $BACKUP_DIR/$name"
+  run mv "$path" "$BACKUP_DIR/$name"
 }
 
-backup_path() {
-  local path="$1"
-  local rel backup_name
-  rel="${path#"$TARGET_DIR"/}"
-  backup_name="${rel//\//-}"
-  ensure_backup_dir
-  note "backup $path -> $BACKUP_DIR/$backup_name"
-  run mv "$path" "$BACKUP_DIR/$backup_name"
-}
-
-symlink_target_is_this_repo() {
-  local path="$1"
-  [[ -L "$path" ]] || return 1
-  local target
-  target="$(readlink "$path")"
-  case "$target" in
-    "$ROOT"|"$ROOT"/*|"$HOME/code/agent-essentials"|"$HOME/code/agent-essentials"/*|~/code/agent-essentials|~/code/agent-essentials/*)
-      return 0
-      ;;
-    *)
-      return 1
-      ;;
+points_into_repo() { # $1 = symlink path
+  [[ -L "$1" ]] || return 1
+  case "$(readlink "$1")" in
+    "$ROOT"|"$ROOT"/*|~/code/agent-essentials|~/code/agent-essentials/*) return 0 ;;
+    *) return 1 ;;
   esac
 }
 
-materialize_local_symlink() {
-  local rel="$1"
-  local mode="$2"
-  local path="$TARGET_DIR/$rel"
-
-  [[ -L "$path" ]] || return 0
-  if ! symlink_target_is_this_repo "$path"; then
-    warn "leaving $path alone; symlink target is outside this repo"
-    return 0
-  fi
-
-  if [[ ! -e "$path" ]]; then
-    note "remove broken repo symlink $path"
-    run rm "$path"
-    return 0
-  fi
-
-  local backup_name tmp
-  backup_name="${rel//\//-}"
-  ensure_backup_dir
-  note "materialize $path as a real local file (backup: $BACKUP_DIR/$backup_name)"
-  if [[ "$DRY_RUN" -eq 1 ]]; then
-    note "[dry-run] cp -pL $path $BACKUP_DIR/$backup_name"
-    note "[dry-run] replace symlink with dereferenced file and chmod $mode"
-    return 0
-  fi
-  cp -pL "$path" "$BACKUP_DIR/$backup_name"
-  tmp="$(mktemp)"
-  cp -pL "$path" "$tmp"
-  rm "$path"
-  mv "$tmp" "$path"
-  chmod "$mode" "$path" || true
-}
-
-remove_repo_symlink() {
-  local rel="$1"
-  local path="$TARGET_DIR/$rel"
-  [[ -L "$path" ]] || return 0
-  if symlink_target_is_this_repo "$path"; then
-    note "remove old repo symlink $path"
-    run rm "$path"
-  fi
-}
-
-materialize_or_remove_obsolete_symlink() {
-  local rel="$1"
-  local path="$TARGET_DIR/$rel"
-  [[ -L "$path" ]] || return 0
-  if ! symlink_target_is_this_repo "$path"; then
-    warn "leaving obsolete-looking $path alone; symlink target is outside this repo"
-    return 0
-  fi
-
-  if [[ -e "$path" ]]; then
-    local backup_name tmp
-    backup_name="${rel//\//-}"
-    ensure_backup_dir
-    note "materialize obsolete $path as local content (backup: $BACKUP_DIR/$backup_name)"
-    if [[ "$DRY_RUN" -eq 1 ]]; then
-      note "[dry-run] copy dereferenced content, replace symlink"
-      return 0
-    fi
-    cp -aL "$path" "$BACKUP_DIR/$backup_name"
-    tmp="$(mktemp -d)"
-    cp -aL "$path" "$tmp/content"
-    rm "$path"
-    mv "$tmp/content" "$path"
-    rmdir "$tmp"
-  else
-    note "remove broken obsolete repo symlink $path"
-    run rm "$path"
-  fi
-}
-
-install_managed_link() {
-  local rel="$1"
-  local src="$CONFIG_DIR/$rel"
-  local dest="$TARGET_DIR/$rel"
-
-  [[ -e "$src" || -L "$src" ]] || return 0
-
+# link <src> <dest> [identical-ok]
+# Replace $dest with a symlink to $src. Existing symlinks are replaced.
+# Existing real content: replaced if byte-identical to $src (generated copies),
+# otherwise backed up when --force-config, else skipped with a warning.
+link() {
+  local src="$1" dest="$2"
   if [[ -L "$dest" ]]; then
-    local current_target
-    current_target="$(readlink "$dest")"
-    if [[ "$current_target" == "$src" ]]; then
-      note "ok link $dest -> $src"
-      return 0
-    fi
-    if symlink_target_is_this_repo "$dest"; then
-      note "replace managed symlink $dest -> $src"
-      run rm "$dest"
-    else
-      warn "skip $dest; symlink target is outside this repo"
-      return 0
-    fi
+    [[ "$(readlink "$dest")" == "$src" ]] && { note "ok   $dest"; return 0; }
+    run rm "$dest"
   elif [[ -e "$dest" ]]; then
-    if [[ "$FORCE_CONFIG" -eq 1 ]]; then
-      backup_path "$dest"
+    if diff -qr "$dest" "$src" >/dev/null 2>&1; then
+      note "replace identical copy $dest with link"
+      run rm -r "$dest"
+    elif [[ "$FORCE_CONFIG" -eq 1 ]]; then
+      backup "$dest"
     else
-      warn "skip $dest; exists as real local content (use --force-config to replace)"
+      warn "skip $dest; real content differs from repo (use --force-config to back up and replace)"
       return 0
     fi
   fi
-
-  run mkdir -p "$(dirname "$dest")"
+  [[ -d "$(dirname "$dest")" ]] || run mkdir -p "$(dirname "$dest")"
   run ln -s "$src" "$dest"
   note "link $dest -> $src"
 }
 
-install_example_copy() {
-  local src_rel="$1"
-  local dest_rel="$2"
-  local src="$CONFIG_DIR/$src_rel"
-  local dest="$TARGET_DIR/$dest_rel"
-
-  [[ -f "$src" ]] || return 0
-
-  if [[ -L "$dest" ]]; then
-    if symlink_target_is_this_repo "$dest"; then
-      note "replace old example symlink $dest with local copy"
-      run rm "$dest"
-    else
-      warn "skip $dest; symlink target is outside this repo"
-      return 0
-    fi
-  elif [[ -e "$dest" ]]; then
-    note "ok $dest exists"
-    return 0
-  fi
-
-  run mkdir -p "$(dirname "$dest")"
-  run cp "$src" "$dest"
-  note "copy example $dest"
+# Runtime files must be real local files, never links into this repo.
+materialize_local() {
+  local path="$TARGET_DIR/$1" mode="$2" tmp
+  [[ -L "$path" ]] && points_into_repo "$path" || return 0
+  if [[ ! -e "$path" ]]; then note "remove broken repo symlink $path"; run rm "$path"; return 0; fi
+  note "materialize $path as a real local file"
+  if [[ "$DRY_RUN" -eq 1 ]]; then return 0; fi
+  tmp="$(mktemp)"; cp -pL "$path" "$tmp"; rm "$path"; mv "$tmp" "$path"; chmod "$mode" "$path" || true
 }
 
-migrate_old_layout() {
-  note "== migrate old agent-essentials symlinks =="
-  run mkdir -p "$TARGET_DIR"
-
-  # Local/runtime files must survive package removal as real, non-symlink files.
-  materialize_local_symlink ".mcp.json" 600
-  materialize_local_symlink "settings.local.json" 600
-
-  # npx skills owns this path now; remove the old whole-directory package link.
-  remove_repo_symlink "skills"
-
-  # These are not part of the new package layout. Preserve if the old target still
-  # exists; otherwise remove broken repo-owned symlinks.
-  materialize_or_remove_obsolete_symlink "agents"
-  materialize_or_remove_obsolete_symlink "commands"
-  materialize_or_remove_obsolete_symlink "rules"
+remove_repo_symlink() { # old whole-directory links from earlier layouts
+  local path="$TARGET_DIR/$1"
+  [[ -L "$path" ]] && points_into_repo "$path" || return 0
+  note "remove old repo symlink $path"; run rm "$path"
 }
 
 install_config() {
-  note "== install safe Claude config =="
-  install_managed_link "CLAUDE.md"
-  install_managed_link "settings.json"
-  install_managed_link "docs"
-  install_example_copy "settings.local.json.example" "settings.local.json.example"
-  install_example_copy "mcp.json.example" ".mcp.json.example"
+  note "== Claude config =="
+  materialize_local ".mcp.json" 600
+  materialize_local "settings.local.json" 600
+  remove_repo_symlink "skills"
+  remove_repo_symlink "docs"
+  link "$CONFIG_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
+  link "$CONFIG_DIR/settings.json" "$TARGET_DIR/settings.json"
+  for f in settings.local.json.example mcp.json.example; do
+    [[ -f "$CONFIG_DIR/$f" && ! -e "$TARGET_DIR/.$f" && ! -e "$TARGET_DIR/$f" ]] || continue
+    run cp "$CONFIG_DIR/$f" "$TARGET_DIR/$f"; note "copy example $TARGET_DIR/$f"
+  done
 }
 
 install_skills() {
-  note "== install skills via npx skills =="
-  local cmd=(npx skills add "$ROOT/skills" -g --skill '*' -y)
-  local agent
-  for agent in "${AGENTS[@]}"; do
-    cmd+=(-a "$agent")
+  note "== skills (symlink store) =="
+  run mkdir -p "$SHARED_SKILLS_ROOT" "$TARGET_DIR/skills"
+  local src name
+  for src in "$ROOT"/skills/*/; do
+    src="${src%/}"; name="$(basename "$src")"
+    [[ -f "$src/SKILL.md" ]] || { warn "skills/$name has no SKILL.md; skipped"; continue; }
+    link "$src" "$SHARED_SKILLS_ROOT/$name"
+    link "../../.agents/skills/$name" "$TARGET_DIR/skills/$name"
   done
-  if [[ "$COPY_SKILLS" -eq 1 ]]; then
-    cmd+=(--copy)
+  if [[ ${#AGENTS[@]} -gt 0 ]]; then
+    local cmd=(npx skills add "$ROOT/skills" -g --skill '*' -y)
+    local agent; for agent in "${AGENTS[@]}"; do cmd+=(-a "$agent"); done
+    note "== npx skills for other agents: ${AGENTS[*]} =="
+    run "${cmd[@]}"
   fi
-  run "${cmd[@]}"
 }
 
-# Refresh every repo skill in the shared npx store. Skills the repo no longer
-# ships are not removed here (the store also holds skills from other sources);
-# retire those by hand, see INSTALL.md. `npx skills add <local path>`
-# copies into per-agent dirs but does not refresh ~/.agents/skills, and
-# `npx skills update` only pulls from the GitHub source recorded in its lock.
-sync_shared_store() {
-  local shared_root="$SHARED_SKILLS_ROOT"
-  local source name
-  run mkdir -p "$shared_root"
-  for source in "$ROOT"/skills/*/; do
-    name="$(basename "$source")"
-    if [[ -L "$shared_root/$name" ]]; then
-      run rm "$shared_root/$name"
-      note "replace symlinked store entry ~/.agents/skills/$name with a real copy"
-    fi
-    run rsync -a --delete "$source" "$shared_root/$name/"
-    note "sync shared skill ~/.agents/skills/$name <- skills/$name"
+install_agents_and_hooks() {
+  note "== agents + hooks =="
+  local f
+  for f in "$CONFIG_DIR"/agents/*.md; do
+    [[ -f "$f" ]] && link "$f" "$TARGET_DIR/agents/$(basename "$f")"
+  done
+  for f in "$CONFIG_DIR"/hooks/*.sh; do
+    [[ -f "$f" ]] && link "$f" "$TARGET_DIR/hooks/$(basename "$f")"
   done
 }
 
-# Keep Claude's per-agent directory as a stable link view of the shared npx
-# store. The skills CLI may materialize real copies for a local source; those
-# copies are generated and must not become a second editable source of truth.
-canonicalize_shared_claude_skills() {
-  local shared_root="$SHARED_SKILLS_ROOT"
-  local claude_root="$TARGET_DIR/skills"
-  [[ -d "$shared_root" ]] || return 0
-  mkdir -p "$claude_root"
-
-  local source name dest backup
-  for source in "$shared_root"/*; do
-    [[ -d "$source" ]] || continue
-    name="$(basename "$source")"
-    dest="$claude_root/$name"
-    if [[ -L "$dest" && "$(readlink "$dest")" == "../../.agents/skills/$name" ]]; then
-      continue
-    fi
-    if [[ -e "$dest" || -L "$dest" ]]; then
-      if [[ -d "$dest" ]] && diff -qr "$dest" "$source" >/dev/null 2>&1; then
-        rm -r "$dest"
+prune_deprecated() {
+  note "== prune deprecated skills from the store =="
+  local d name p
+  for d in "$ROOT"/deprecated-skills/*/; do
+    name="$(basename "${d%/}")"
+    for p in "$SHARED_SKILLS_ROOT/$name" "$TARGET_DIR/skills/$name"; do
+      [[ -e "$p" || -L "$p" ]] || continue
+      if [[ -L "$p" ]] || diff -qr "$p" "${d%/}" >/dev/null 2>&1; then
+        note "prune $p"; run rm -r "$p"
       else
-        backup="${name//\//-}"
-        ensure_backup_dir
-        note "backup divergent Claude skill $dest -> $BACKUP_DIR/skills-$backup"
-        run mv "$dest" "$BACKUP_DIR/skills-$backup"
+        backup "$p"
       fi
-    fi
-    run ln -s "../../.agents/skills/$name" "$dest"
-    note "link Claude shared skill $dest -> ~/.agents/skills/$name"
+    done
   done
 }
 
-if [[ "$INSTALL_CONFIG" -eq 1 ]]; then
-  migrate_old_layout
-  install_config
-fi
+drift_report() {
+  note "== drift report: ~/.agents/skills =="
+  local p name target repo
+  for p in "$SHARED_SKILLS_ROOT"/*; do
+    [[ -e "$p" || -L "$p" ]] || continue
+    name="$(basename "$p")"; repo="$ROOT/skills/$name"
+    if [[ -L "$p" ]]; then
+      target="$(readlink "$p")"
+      if [[ "$target" == "$repo" ]]; then printf '  %-36s symlink -> repo\n' "$name"
+      else printf '  %-36s symlink -> %s\n' "$name" "$target"; fi
+    elif [[ -d "$repo" ]]; then
+      printf '  %-36s COPY, repo has same name -> %s\n' "$name" "$(diff -rq "$p" "$repo" >/dev/null 2>&1 && echo identical || echo 'DIVERGENT (run installer to relink)')"
+    else
+      printf '  %-36s copy (source unknown to this repo)\n' "$name"
+    fi
+  done
+  note "== drift report: ~/.claude/skills not pointing at the store =="
+  for p in "$TARGET_DIR"/skills/*; do
+    [[ -e "$p" || -L "$p" ]] || continue
+    name="$(basename "$p")"
+    if [[ -L "$p" ]]; then
+      [[ "$(readlink "$p")" == "../../.agents/skills/$name" ]] || printf '  %-36s symlink -> %s\n' "$name" "$(readlink "$p")"
+    else
+      printf '  %-36s REAL DIR (not managed)\n' "$name"
+    fi
+  done
+}
 
+if [[ "$INSTALL_CONFIG" -eq 1 ]]; then install_config; fi
 if [[ "$INSTALL_SKILLS" -eq 1 ]]; then
   install_skills
-  sync_shared_store
-  canonicalize_shared_claude_skills
+  install_agents_and_hooks
+  [[ "$PRUNE" -eq 1 ]] && prune_deprecated
 fi
-
+drift_report
 note "agent-essentials install complete"
-if [[ "$DRY_RUN" -eq 0 && -d "$BACKUP_DIR" ]]; then
-  note "backups: $BACKUP_DIR"
-fi
+[[ "$DRY_RUN" -eq 0 && -d "$BACKUP_DIR" ]] && note "backups: $BACKUP_DIR" || true
