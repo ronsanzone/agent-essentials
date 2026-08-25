@@ -31,16 +31,7 @@ A caller-specific playbook may set stricter or more exhaustive rules. Follow it 
 
 Executor tools usually return `{ ok: true, data, http? }` or `{ ok: false, error }`. MCP-backed `data` may then contain `structuredContent` or text content blocks.
 
-```ts
-const unwrap = (result: any) => {
-  if (result?.ok === false) return result;
-  const value = result?.ok === true ? result.data : result;
-  if (value?.structuredContent) return value.structuredContent;
-  const text = value?.content?.find?.((b: any) => b?.type === "text")?.text;
-  if (typeof text !== "string") return value;
-  try { return JSON.parse(text); } catch { return value; }
-};
-```
+Use the `unwrap` helper from `SKILL.md` (envelope → `structuredContent` → JSON text).
 
 For fan-out, preserve partial success. Do not throw away four useful results because the fifth failed.
 
