@@ -25,7 +25,7 @@ Per selected PR, with `<worktree>` resolved from `headRefName` (see the branch-t
 ```bash
 PANE=$(herdr pane split --current --direction right --cwd <worktree> --no-focus \
   | jq -r '.result.pane.pane_id')
-herdr pane run "$PANE" "eapclaude --permission-mode auto"
+herdr pane run "$PANE" "claude --permission-mode auto"
 for i in $(seq 45); do
   herdr pane read "$PANE" --source visible --lines 5 | grep -q "auto mode on" && break
   sleep 2

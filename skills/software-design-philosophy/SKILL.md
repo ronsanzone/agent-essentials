@@ -5,7 +5,7 @@ description: Use when reviewing code, designing features, or evaluating architec
 
 # Software Design Philosophy
 
-Evaluate code or designs against the principles from "A Philosophy of Software Design." Surface only the 2-3 most relevant principles and red flags — no checklist, no boilerplate.
+Evaluate code or designs against the principles from "A Philosophy of Software Design." 
 
 ## Mode Detection
 
@@ -13,20 +13,10 @@ Determine mode from the input:
 
 - **Review mode**: You have code, a diff, file paths, or a PR to evaluate.
 - **Design mode**: You have a feature description, design doc, or architecture proposal to evaluate.
+- **Combined mode**: You have both the code and documentation. 
 
-## Review Mode
-
-1. Read/analyze the code or diff provided
-2. Evaluate against all principles and red flags below
-3. Select the 2-3 most relevant findings (violations or exemplary adherence worth noting)
-4. Output each finding using the format below
-
-## Design Mode
-
-1. Read/analyze the design or feature description provided
-2. Evaluate against all principles below
-3. Select the 2-3 most relevant principles that should guide this design
-4. Output each finding using the format below, with "Action" describing what to watch for during implementation
+## Evaluation Process
+Your goal is to deeply analyze the given input scope and surface the most relevant design principles and red flags. Be specific and provide actionable feedback. Be thorough, but concise. Avoid generic statements. Focus on the most important issues and provide concrete suggestions for improvement. Provide clear evidence that you have identified a principle or red flag, and explain why it is relevant to the input.
 
 ## Output Format
 
@@ -34,10 +24,8 @@ For each finding:
 
 **[Principle or Red Flag Name]** — [one-line summary of relevance]
 - **Where:** [file:line, function name, or design component]
-- **Why:** [1-2 sentences explaining the issue or opportunity]
+- **Why:** [explain what the red flag is in detail]
 - **Action:** [concrete suggestion or implementation guidance]
-
-No preamble. No summary. Just the findings.
 
 ---
 

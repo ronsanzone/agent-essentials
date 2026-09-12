@@ -43,8 +43,9 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **review** | user (`/review`) | Fast single-pass code review of a PR, branch, ref range, or working tree |
 | **show-me-your-work** | user (`/show-me-your-work`) | Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result) |
 | **session-mine** | model + `/session-mine` | Mine Claude Code + pi transcripts: per-skill usage by month (`usage` mode, the 2-week check for new skills) or a cited friction / boilerplate / skill-candidate report (`full` mode) |
+| **software-design-philosophy** | model + `/software-design-philosophy` | Evaluate code and designs using principles and red flags from *A Philosophy of Software Design* |
 | **brief** | model + `/brief` | Coordinator→implementer brief another session executes unattended: pinned sha, Decided, Rules, commit groups with Checks, Out of scope, Done when; plus the progress/questions/results companion-file contract |
-| **spawn** | model + `/spawn` | Start an implementer for a brief in its own worktree + herdr pane (`eapclaude --effort high` default), send the kickoff, watch questions/status via Monitor, write the coordinator review |
+| **spawn** | model + `/spawn` | Start an implementer for a brief in its own worktree + herdr pane (`claude --effort high` default), send the kickoff, watch questions/status via Monitor, write the coordinator review |
 | **show-me** | model + `/show-me` | Help the user understand the current topic visually with concise diagrams, code-shape sketches, and focused HTML artifacts |
 | **submit-pr** | model + `/submit-pr` | Create or update a draft PR |
 | **why** | model + `/why` | Design rationale from the historical record — "why does X work this way", "why did we pick Y", regressions, postmortems, where a threshold came from |

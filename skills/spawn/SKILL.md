@@ -17,8 +17,9 @@ re-derive flags. Communication after kickoff is through files only.
    user's convention applies, else `git worktree add <dir> -b <branch> <base>`; for a Graphite stack, `gt create <branch>`
    inside the worktree on the named parent. **One implementer per brief and per worktree**: check `herdr pane list` for a
    pane already in that cwd and the mtime of `<slug>-progress.md`; if either shows live work, stop and report it.
-3. **Pane.** `herdr` recipe: split `--no-focus`, `pane run "cd <worktree> && eapclaude --effort high"` (the standing
-   default; `pi` with the model the user named when they ask for pi), `wait output --match ">"`.
+3. **Pane.** `herdr` recipe: split `--no-focus`, `pane run "cd <worktree> && <agent-command>"`, `wait output --match ">"`.
+   `<agent-command>` is whatever the ask calls for — `claude --effort high` for a Claude session, `pi <model>` when the
+   user names pi.
 4. **Kickoff.** One `pane run` with the message below, filled from the brief. Short — the brief carries the rules.
 5. **Watch.** Don't spend turns polling the pane. Start a `Monitor` on a command that returns when either fires:
    `herdr wait agent-status <P> --status blocked --timeout <long>` / `--status done`, or `<slug>-questions.md` mtime
@@ -42,8 +43,8 @@ Begin with the reading and write your plan section before editing code.
 
 ## Not in herdr
 
-If `HERDR_ENV` is unset, don't fake it: print the worktree command, the launch command (`cd <worktree> && eapclaude
---effort high`), and the kickoff message as a paste-ready block, and stop.
+If `HERDR_ENV` is unset, don't fake it: print the worktree command, the launch command (`cd <worktree> &&
+<agent-command>`), and the kickoff message as a paste-ready block, and stop.
 
 ## Report
 
