@@ -25,7 +25,7 @@ Outcome: a **draft** PR for the current branch with a filled description, verifi
 ## Flow
 
 1. State: `git status --porcelain`; current and default branch (`git symbolic-ref refs/remotes/origin/HEAD`); `gh pr list --head <branch> --json number,url,isDraft`.
-2. **New PR**: `git fetch origin && git rebase origin/<default>` — on conflict stop, resolve, rerun tests; `git push -u origin <branch>`; build the body per `references/pr-body.md`; `gh pr create --draft --title "<KEY>: <title>" --body "$(cat <<'EOF' … EOF)"`.
+2. **New PR**: `git fetch origin && git rebase origin/<default>` — on conflict stop, resolve, rerun tests; `git push -u origin <branch>`; build the body per `references/pr-body.md`, including the visual Change outline; `gh pr create --draft --title "<KEY>: <title>" --body "$(cat <<'EOF' … EOF)"`.
 3. **Existing PR**: push new commits (plain `git push`). If the body is empty, an unfilled template, or placeholder-only, offer to fill it and apply with `gh pr edit <n> --body …`.
 4. Verify: `gh pr view <n> --json url,isDraft,headRefName,commits` — `isDraft` must be true and `headRefName` must match.
 
