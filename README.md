@@ -40,6 +40,8 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **herdr** | model + `/herdr` | Control herdr from inside it — list/split panes, spawn agents in sibling panes, read their output, wait for output or agent status |
 | **maintain-verification-skill** | user (`/maintain-verification-skill`) | Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections |
 | **pr-report** | model + `/pr-report` | Report every open PR you own — verdict, blocker, and who holds the ball — then hand the ones needing work to babysit-pr |
+| **recall** | user (`/recall`) | Rebuild recent working context from Claude Code + pi transcripts, live git/gh state, and the shared record (via `why`), then hand back a current-state brief |
+| **reflect** | user (`/reflect`) | Three parallel reviewers (judgment, tooling, divergent) mine the current transcript for durable learnings; a synthesizer routes each to a skill edit you approve |
 | **review** | user (`/review`) | Fast single-pass code review of a PR, branch, ref range, or working tree |
 | **show-me-your-work** | user (`/show-me-your-work`) | Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result) |
 | **session-mine** | model + `/session-mine` | Mine Claude Code + pi transcripts: per-skill usage by month (`usage` mode, the 2-week check for new skills) or a cited friction / boilerplate / skill-candidate report (`full` mode) |
