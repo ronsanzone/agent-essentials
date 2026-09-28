@@ -63,6 +63,10 @@ Structured research → design → implementation pipelines live in [context-eng
 - `hooks/guards.sh` — PreToolUse guards: untracked `.md` inside a work monorepo → ask; `--clean-db`, `reset --hard`, force push → ask; `rm` under `~/.claude/projects/*/memory` → deny.
 - `agents/` — `codebase-analyzer` (model inherit), `codebase-locator`, `codebase-pattern-finder`, `web-search-researcher`.
 
+## OpenCode plugins (`config/opencode/`)
+
+`plugins.txt` lists the OpenCode plugins this repo owns, one spec per line. `scripts/install-opencode-plugins.sh` runs `opencode plugin add` for each missing entry (idempotent; `--update` refreshes all of them; `--dry-run` previews). Plugins installed outside the list are never touched. `opencode-vim` (vim-style prompt editing + session navigation) is the first entry.
+
 ## Layout
 
 ```text
@@ -73,7 +77,9 @@ agent-essentials/
 │   ├── CLAUDE.md  settings.json  settings.local.json.example  mcp.json.example
 │   ├── agents/*.md
 │   └── hooks/guards.sh
-├── scripts/install-claude.sh
+├── config/opencode/
+│   └── plugins.txt                                   # opencode plugins owned here
+├── scripts/install-claude.sh  install-opencode-plugins.sh
 ├── vendor-skills.lock.json
 ├── README.md  INSTALL.md
 ```

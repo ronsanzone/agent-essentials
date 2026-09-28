@@ -1,0 +1,5 @@
+# OpenCode plugins owned by this repo, one spec per line.
+# Installed by scripts/install-opencode-plugins.sh via `opencode plugin add`.
+# Lines starting with # and blank lines are ignored.
+
+opencode-vim@latest

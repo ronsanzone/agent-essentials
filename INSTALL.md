@@ -22,6 +22,16 @@ Flags: `--dry-run` (read-only; every mutation is printed instead), `--skills-onl
 
 Claude Code and pi need nothing beyond the installer. For Codex/OpenCode: `scripts/install-claude.sh --agent codex --agent opencode`, or directly `npx skills add ronsanzone/agent-essentials/skills -g -a codex --skill '*' -y`.
 
+## OpenCode plugins
+
+```bash
+scripts/install-opencode-plugins.sh --dry-run   # read the plan
+scripts/install-opencode-plugins.sh             # apply
+scripts/install-opencode-plugins.sh --update    # refresh all listed plugins
+```
+
+The plugin list lives in `config/opencode/plugins.txt` (one spec per line, `#` comments). Each entry is installed with `opencode plugin add <spec>`; entries already installed are skipped, and anything not in the list is left alone. Restart the OpenCode TUI after installing or updating.
+
 ## Dot integration
 
 In `~/code/dot/profiles/personal.env`: `DOT_ITEM_claude_essentials_APPLY="./scripts/install-claude.sh --prune"`, then `dot down --apply-only`.
