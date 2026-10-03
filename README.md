@@ -34,13 +34,13 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **code-tour** | model + `/code-tour` | Deep end-to-end tour of a PR, branch, or subsystem as one self-contained HTML doc |
 | **create-verification-skill** | user (`/create-verification-skill`) | Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform |
 | **domain-modeling** | model + `/domain-modeling` | Build and sharpen a project's domain model |
-| **executor-usage** | model + `/executor-usage` | Load before any Executor `execute` call (Claude `mcp__executor__execute`, pi/OpenCode `executor_execute`) |
+| **executor-usage** | model + `/executor-usage` | Load before using Executor integrations — passthrough search/invoke or the client's execute sandbox |
 | **grilling** | model + `/grilling` | Grill the user relentlessly about a plan, decision, or idea |
 | **handoff** | model + `/handoff` | Write a handoff doc for another session or model |
 | **herdr** | model + `/herdr` | Control herdr from inside it — list/split panes, spawn agents in sibling panes, read their output, wait for output or agent status |
 | **maintain-verification-skill** | user (`/maintain-verification-skill`) | Periodic pass that keeps a project's verification skill and feature map honest: parallel source readers per feature, one live session driving every feature, at most one PR of proven corrections |
 | **pr-report** | model + `/pr-report` | Report every open PR you own — verdict, blocker, and who holds the ball — then hand the ones needing work to babysit-pr |
-| **recall** | user (`/recall`) | Rebuild recent working context from Claude Code + pi transcripts, live git/gh state, and the shared record (via `why`), then hand back a current-state brief |
+| **recall** | model + `/recall` | Recall prior work for a topic from the `trail` index (`~/code/trail`), the notes it points to and live git/gh state: locate a session or worktree, brief where work stands, or gather what earlier sessions found |
 | **reflect** | user (`/reflect`) | Three parallel reviewers (judgment, tooling, divergent) mine the current transcript for durable learnings; a synthesizer routes each to a skill edit you approve |
 | **review** | user (`/review`) | Fast single-pass code review of a PR, branch, ref range, or working tree |
 | **show-me-your-work** | user (`/show-me-your-work`) | Keep a reviewable decision trail for long-running or unattended work: a TSV log with one row per decision (what, why, evidence, result) |

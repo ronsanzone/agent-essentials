@@ -22,6 +22,12 @@
 
 * **Validate = investigate, not confirm:** When asked to validate/confirm/check a doc, plan, or proposed solution, investigate the underlying problem independently and actively seek disconfirming evidence — verifying citations is not research.
 
+## Prior work
+
+* **`trail` before searching:** before grepping transcripts or `~/notes` for earlier work ("where did I leave off", "find the session/worktree/notes for X"), run `trail <PR url | ticket | notes path | words>`. It lists the sessions, branch, worktree and notes for that handle across Claude Code, pi and opencode. A note it flags `STALE` is history: check live state instead.
+
+* **Records, not trackers:** notes are dated records (brief, review, evidence, handoff) and are not edited to follow the present. Live state has one home per project, the dated "State" section of its `README.md`; don't create new `STATUS` or `CURRENT_STATE` files.
+
 ## Context Engineering
 Context is our most important commodity. Maintaining a small context is a top priority. You MUST adhere to the following:
 

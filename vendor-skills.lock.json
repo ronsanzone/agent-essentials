@@ -66,17 +66,6 @@
       "vendoredAt": "2026-08-23T17:47:27Z",
       "vendoredPath": "skills/maintain-verification-skill"
     },
-    "recall": {
-      "contentSha256": "2bac14ace1fe48292e18c86cceb436192d022770093ec9a090918c14f5e35668",
-      "sourceCommit": "86ecc82055e4d3cb567e72c56f390800a4978c9b",
-      "sourcePath": "pstack/skills/recall",
-      "sourceRef": "main",
-      "sourceRepo": "https://github.com/cursor/plugins.git",
-      "updatedAt": "2026-09-23T01:43:02Z",
-      "upstreamContentSha256": "20d964b58929f5fac75c58698fc472943b92ce3e33510c26cb93649280f67977",
-      "vendoredAt": "2026-09-23T01:43:02Z",
-      "vendoredPath": "skills/recall"
-    },
     "reflect": {
       "contentSha256": "b493c39926157d1f0f8718e730b988527a33cf02f61d8b8a27730584c5388046",
       "sourceCommit": "86ecc82055e4d3cb567e72c56f390800a4978c9b",

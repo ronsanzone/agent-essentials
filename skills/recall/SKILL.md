@@ -1,38 +1,48 @@
 ---
 name: recall
-description: "Reconstruct your recent working context from your own chat history, live state, and the shared record (user reports, prior fixes, incidents), then hand back a tight current-state brief. Use for 'recall my work on X', 'catch me up', 'what have I been working on', 'where did I leave off', before starting or resuming work."
-disable-model-invocation: true
+description: "Recall prior work from the trail index, notes and live state. Use when the user asks where they left off, wants catching up on a topic or directory, wants the session, branch, worktree or notes for something found, or wants what earlier sessions decided or learned gathered."
 ---
 
 # Recall
 
-**Before you start or resume work, you rebuild the user's recent working context and hand back a tight capsule of where things stand now and what to do next.**
+Rebuild the working context for a topic from what is already recorded, cheapest source first: the **trail** index, then the notes it points to, then live state. Transcripts are for what those three leave open.
 
-Keep it tight and on-topic. Read only what the in-scope threads need, then stop.
+`trail` indexes Claude Code, pi and opencode sessions. One call per handle:
 
-Your context lives in two records. Your own chat history holds what you did and decided. The shared record holds everything that happened around the same code under other names: the symptoms users keep reporting, the fixes that shipped and got reverted, the errors still firing in prod. That second record is what the **why** skill searches, across source control, the issue tracker, chat and issue channels, long-form docs, and error tracking. A feature with a long bug tail keeps most of its story there, so don't reconstruct it from your transcripts alone.
+| Call | Returns |
+|---|---|
+| `trail here` | recent sessions, most-reused notes and PRs for this directory |
+| `trail <PR url \| ticket \| words>` | sessions that worked on it, sessions that only mentioned it, branch, worktree, notes ranked by reuse |
+| `trail <notes path>` | who wrote the note, who has used it since, whether it is `STALE` |
+| `trail <session id>` | what was asked in order, how the session ended, its notes and PRs, transcript path, resume command |
 
-Transcripts live in two stores. Every line is one JSON event.
+## Steps
 
-- Claude Code: `~/.claude/projects/<slug>/<uuid>.jsonl`, where `<slug>` is the workspace path with each "/" and "." turned into "-" (so `/Users/you/proj` becomes `-Users-you-proj`). Subagent chats sit under `<uuid>/subagents/`.
-- pi: `~/.pi/agent/sessions/<slug>/<timestamp>_<uuid>.jsonl`, where `<slug>` is `--<path without leading slash, "/" turned into "-">--` (so `/Users/you/proj` becomes `--Users-you-proj--`).
+1. **Route.** Name the branch of recall the ask is, in one line, with its topic:
+   - **locate** — a session, branch, worktree or note is wanted. Run the one `trail` call that answers it, reply with those lines and the resume command, and stop.
+   - **resume** — work is to be continued or its state reported. Steps 2–6, then the brief.
+   - **gather** — what several sessions decided, learned or reported is wanted. Steps 2–6, then the findings list.
 
-1. Classify, then route. One specific prior chat to resume is `claude --resume` or `pi --resume`, not this. Mining sessions for skill candidates or friction is `session-mine`. A human-readable summary of your work is a different task. Recall loads working context across recent chats before you act. If the user already gave you a full state capsule (paths, branch, the change), use it and skip the mining.
-2. Lock the scope before searching. Pin the window ("recent" is a real range, default the last 7 days), the topic if named, and the workspace (default the active one. Never read another project's transcripts without being asked). State the scope back. Never quietly turn "all" into "recent N".
-3. Fan out across your chat history. Spawn parallel subagents on a fast, cheap model, each taking a slice of the corpus. Tell every subagent to order candidates by real modification time (`ls -t`) and never by UUID name, grep the topic first and then read only the matching chats and only their relevant regions, and skip the current chat plus obvious noise (subagent, eval, and test chats). Each returns the same schema, one block per chat: topic, the user's goal, decisions, open threads, struggles and corrections, and artifacts (PRs, tickets, branches), each citing the chat UUID. For one or two chats, skip the fan-out and search directly. The raw transcripts stay in the subagents. The main thread gets only their findings.
-4. Sweep the shared record whenever the topic names a feature, file, subsystem, area, or bug. This is the default, not a judgment call, and "my work on X" does not exempt it. Hand it to the **why** skill's source investigators, but steer their question from "why was this built this way" to "what's the current state, what's been tried and didn't hold, and what are users still reporting". Reuse its per-source playbooks, run the investigators in parallel with the chat-history mining, and inherit its posture: one investigator per source, null results are findings, skip an unavailable MCP and say so. Fold what comes back into the brief. Skip this step only for pure activity recall with no named target ("what did I do this week"), where your own history and live state are the entire answer.
-5. Verify against live state. Take the PRs, branches, and tickets that the mining and the sweep surfaced and check them with `git` and `gh`. When the answer hinges on what an agent actually did (the tools it ran, files it read, errors it hit), read the full transcript, not just a trimmed local copy.
-6. Write the brief to the contract below. Group by thread. Stay on the named topic.
+   A full state capsule already in the prompt (paths, branch, the change) is the context: use it and skip to step 5.
+2. **Trail.** Run `trail` on the handle the user gave; on their words if they gave none; `trail here` if they gave neither. Each PR or branch under "worked on it" is a **thread**, plus any the user named. Sessions under "mentioned in" join a thread only when marked "you asked". A heading that reads "newest N of M" means older sessions exist: say so when the user asked for all of it. Done when every thread has its sessions and its top notes listed.
+3. **Sessions.** Run `trail <id>` on each thread's sessions, newest first, until one adds nothing new. What was asked and how it ended is that session's summary.
+4. **Notes.** Read each thread's most-reused note, the project `README.md` State section when there is one. A note marked `STALE` is history: take decisions and reasons from it, and status from step 5.
+5. **Live state.** Check every PR, branch and worktree the reply will name, now: `gh pr view <n> -R <repo> --json state,isDraft,mergedAt,statusCheckRollup`, `git -C <dir> status -sb`, `git worktree list`. Done when every status the reply states rests on a command run in this session.
+6. **Transcripts, for what is still open.** When the answer turns on what an agent did or found (a decision, an error, feedback from a run) and steps 3–4 do not hold it, open the transcript at the path `trail <id>` gives: grep for the topic and read those regions. For four or more transcripts, give each to a subagent on a fast model with one schema: topic, decisions, open threads, problems hit, artifacts, each citing the session id. The raw transcripts stay with the subagents.
 
-## Output contract
+When a thread's story lives outside your own sessions (a regression, a decision others made, a bug users keep reporting), hand that question to the **why** skill and fold what returns into Problems.
 
-Lead with the capsule, then the thread status, then the problems, then the next move. Deeper detail goes below or gets cut.
+On a machine without `trail`, say so and replace steps 2–3 with a grep of `~/.claude/projects/*/*.jsonl` and `~/.pi/agent/sessions/*/*.jsonl`, newest first by `ls -t`.
 
-- **Capsule.** At most 5 bullets. What this work is and where it stands overall.
-- **Threads.** One line each, prefixed with exactly one status tag: `[merged #N]`, `[open PR #N]`, `[in flight <branch>]`, `[verified, uncommitted]`, `[reverted #N]`, or `[planned, not started]`. A thread with no tag is not done yet, so tag it.
-- **Problems.** At most 5, the recurring ones. Include the symptoms users keep reporting and any fix that shipped and was reverted, so the next attempt starts where the last one failed.
-- **Next move.** The single most useful next action, concrete.
+## The brief (resume)
 
-An adjacent feature or ticket stays out unless it blocks this one. When the capsule and thread lines outgrow a screen, cut detail before you cut threads. Cite chat findings by UUID and shared-record findings by their source (PR #, ticket ID, chat permalink, error-tracker issue), and sanitize private context before any public output.
+- **Capsule.** At most 5 bullets: what this work is and where it stands.
+- **Threads.** One line each, opening with exactly one tag: `[merged #N]`, `[open PR #N]`, `[in flight <branch>]`, `[verified, uncommitted]`, `[reverted #N]` or `[planned, not started]`.
+- **Problems.** At most 5, the recurring ones, including any fix that shipped and was reverted.
+- **Next move.** The single most useful next action, with the resume command when it is "continue session X".
 
-**Reply:** the brief, to the contract above.
+Cite sessions by their first 8 characters and notes by path. An adjacent feature or ticket stays out unless it blocks this one. When the brief outgrows a screen, cut detail before threads.
+
+## The findings list (gather)
+
+One line per finding, ranked by how much it matters to the ask, each citing the session id and date it came from. Group repeats: a finding seen in three sessions is one line with three citations.
