@@ -33,6 +33,7 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **bruh** | user (`/bruh`) | Restate the last message in plain human language, with no jargon |
 | **code-tour** | model + `/code-tour` | Deep end-to-end tour of a PR, branch, or subsystem as one self-contained HTML doc |
 | **create-verification-skill** | user (`/create-verification-skill`) | Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform |
+| **creating-motion-visuals** | model + `/creating-motion-visuals` | Create motion visuals with Psychopomp using its psychopomp and explainer-motion project skills |
 | **domain-modeling** | model + `/domain-modeling` | Build and sharpen a project's domain model |
 | **executor-usage** | model + `/executor-usage` | Load before using Executor integrations — passthrough search/invoke or the client's execute sandbox |
 | **grilling** | model + `/grilling` | Grill the user relentlessly about a plan, decision, or idea |
