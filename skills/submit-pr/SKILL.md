@@ -15,6 +15,7 @@ Outcome: a **draft** PR for the current branch with a filled description, verifi
 - Never `--force`. `--force-with-lease` only when the branch was already pushed and you rewrote its history on purpose. Never force-push to resolve a merge conflict.
 - The Testing section states exactly what ran, or `Not run: <reason>`. Never claim tests you did not run.
 - Present the body for review before creating the PR, unless the caller asked for one-shot (e.g. `yeet`).
+- Screenshots and video go through `gh --attach` (see Attachments). Never upload evidence to an external host — that leaks internal data.
 
 ## Ticket
 
@@ -25,9 +26,18 @@ Outcome: a **draft** PR for the current branch with a filled description, verifi
 ## Flow
 
 1. State: `git status --porcelain`; current and default branch (`git symbolic-ref refs/remotes/origin/HEAD`); `gh pr list --head <branch> --json number,url,isDraft`.
-2. **New PR**: `git fetch origin && git rebase origin/<default>` — on conflict stop, resolve, rerun tests; `git push -u origin <branch>`; build the body per `references/pr-body.md`, including the visual Change outline; `gh pr create --draft --title "<KEY>: <title>" --body "$(cat <<'EOF' … EOF)"`.
+2. **New PR**: `git fetch origin && git rebase origin/<default>` — on conflict stop, resolve, rerun tests; `git push -u origin <branch>`; build the body per `references/pr-body.md`, including the visual Change outline; `gh pr create --draft --title "<KEY>: <title>" --body-file <path>`; attach any visual evidence (see Attachments).
 3. **Existing PR**: push new commits (plain `git push`). If the body is empty, an unfilled template, or placeholder-only, offer to fill it and apply with `gh pr edit <n> --body …`.
 4. Verify: `gh pr view <n> --json url,isDraft,headRefName,commits` — `isDraft` must be true and `headRefName` must match.
+
+## Attachments (screenshots, video)
+
+`gh pr create/edit --attach <file>#<alt text>` uploads the file and returns a `github.com/user-attachments/...` URL scoped to repo access. Up to 50 files. Use it for visual evidence instead of describing a screenshot the reviewer cannot see.
+
+- **Reference rewriting is exact-match and fragile.** gh rewrites `![alt](./shot.png)` in the body only when the path string matches the `--attach` argument literally. On a mismatch (body `shot.png`, attach `/abs/path/shot.png`) it leaves your refs dangling *and* appends the assets at the bottom — clean up both.
+- **Most reliable path:** `--attach` the files, then `gh pr view <n> --json body` to read the returned URLs, inline them with `![alt](url)`, and re-apply with `gh pr edit <n> --body-file`. One extra edit, no matching rules to satisfy.
+- **Video is a bare URL** on its own line — GitHub renders it as a player. An image-style `![alt](url)` for a video renders broken.
+- Verify: `gh pr view <n> --json body` shows no leftover local paths, and the asset URLs return 200.
 
 ## Report
 

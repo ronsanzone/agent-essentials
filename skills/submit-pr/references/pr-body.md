@@ -25,6 +25,10 @@ Read context files only if the user passed them as arguments.
 
 Total editable prose under ~400 words (outline code blocks excluded). Factual tone; no internal phase names ("Phase 5"), no acronyms a reviewer outside the team would not know.
 
+## Evidence attachments
+
+When a change was verified in a UI, attach the screenshots/video rather than describing them — see "Attachments" in `../SKILL.md` for the `gh --attach` mechanics. Put them under Testing, one line of caption each, and never leave the body pointing at a local path the reviewer cannot open.
+
 ## Change outline
 
 The reviewer's map of the implementation, drawn with the `show-me` conventions (`../show-me/SKILL.md`). Pick the smallest set of views that explains the change; skip any that did not change. Order them so the story reads easily — often contract or data shape first, then behavior, then files.
