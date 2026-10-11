@@ -25,7 +25,7 @@
       "~/notes/context-engineering"
     ]
   },
-  "model": "fable",
+  "model": "opus",
   "hooks": {
     "Notification": [
       {
@@ -333,5 +333,6 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "light-daltonized",
   "editorMode": "vim",
+  "agentPushNotifEnabled": true,
   "skipAutoPermissionPrompt": true
 }
