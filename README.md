@@ -31,6 +31,7 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **babysit-pr** | model + `/babysit-pr` | Babysit a PR to green — one full pass of sweep, triage, fix, push, report |
 | **blast-radius** | user (`/blast-radius`) | Find what a change could break somewhere else before it ships, beyond the diff, and prove the one fact it's safe because of by running real code instead of writing it up |
 | **bruh** | user (`/bruh`) | Restate the last message in plain human language, with no jargon |
+| **cleanup-prs** | model + `/cleanup-prs` | Close out Jira tickets whose code is already merged — scan your merged PRs for ticket keys, list the open ones, resolve them after you confirm |
 | **code-tour** | model + `/code-tour` | Deep end-to-end tour of a PR, branch, or subsystem as one self-contained HTML doc |
 | **create-verification-skill** | user (`/create-verification-skill`) | Generate a project-local verification skill that drives your app the way a user does — any language, framework, or platform |
 | **creating-motion-visuals** | model + `/creating-motion-visuals` | Create motion visuals with Psychopomp using its psychopomp and explainer-motion project skills |
