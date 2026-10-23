@@ -1,6 +1,7 @@
 ---
 name: creating-motion-visuals
 description: Create motion visuals with Psychopomp. Use for animated explainers, diagrams, code walkthroughs, or deterministic motion graphics.
+disable-model-invocation: true
 ---
 
 # Preflight
