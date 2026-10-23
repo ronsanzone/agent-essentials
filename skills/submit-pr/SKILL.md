@@ -17,18 +17,30 @@ Outcome: a **draft** PR for the current branch with a filled description, verifi
 - Present the body for review before creating the PR, unless the caller asked for one-shot (e.g. `yeet`).
 - Screenshots and video go through `gh --attach` (see Attachments). Never upload evidence to an external host — that leaks internal data.
 
+## Remote
+
+Never assume `origin` is upstream: in mongohouse and mms-automation `origin` is the ronsanzone fork. Resolve once and use `$UP` everywhere below:
+
+```bash
+UP=$(git remote -v | awk '$2 ~ /github\.com[:\/]10gen\// {print $1; exit}'); UP=${UP:-origin}
+REPO=$(git remote get-url "$UP" | sed -E 's#.*github\.com[:/]##; s#\.git$##')
+DEFAULT=$(git symbolic-ref --short "refs/remotes/$UP/HEAD" 2>/dev/null || { git remote set-head "$UP" -a >/dev/null; git symbolic-ref --short "refs/remotes/$UP/HEAD"; }); DEFAULT=${DEFAULT#"$UP"/}
+```
+
+PR branches live on `$UP` (no fork PRs). If the branch already exists on a fork remote with an open fork PR, stop and ask before moving it.
+
 ## Ticket
 
 - Key comes from the branch name, commits, or an argument (`[A-Z][A-Z0-9]+-[0-9]+`). Title: `<KEY>: <title>`.
-- **MMS repos: a `CLOUDP-XXXX` placeholder prefix auto-creates the ticket. When that prefix is present or requested, do not create a Jira issue.**
-- Otherwise create a ticket only when asked, through executor (`tools.search({query:"jira create issue"})`, then `tools.describe.tool` before calling). Not a CLI.
+- **10gen/mms only: a `CLOUDP-XXXX` placeholder prefix auto-creates the ticket.** When that prefix is present or requested there, do not create a Jira issue. It does not work in mongohouse, mms-automation or other repos.
+- Otherwise create a ticket only when asked, through Executor (`jira_create_issue`; load `executor-usage` for the calling shape). Not a CLI.
 
 ## Flow
 
-1. State: `git status --porcelain`; current and default branch (`git symbolic-ref refs/remotes/origin/HEAD`); `gh pr list --head <branch> --json number,url,isDraft`.
-2. **New PR**: `git fetch origin && git rebase origin/<default>` — on conflict stop, resolve, rerun tests; `git push -u origin <branch>`; build the body per `references/pr-body.md`, including the visual Change outline; `gh pr create --draft --title "<KEY>: <title>" --body-file <path>`; attach any visual evidence (see Attachments).
-3. **Existing PR**: push new commits (plain `git push`). If the body is empty, an unfilled template, or placeholder-only, offer to fill it and apply with `gh pr edit <n> --body …`.
-4. Verify: `gh pr view <n> --json url,isDraft,headRefName,commits` — `isDraft` must be true and `headRefName` must match.
+1. State: `git status --porcelain`; resolve `$UP`/`$REPO`/`$DEFAULT` (see Remote); `gh pr list -R "$REPO" --head <branch> --json number,url,isDraft`.
+2. **New PR**: `git fetch "$UP" && git rebase "$UP/$DEFAULT"` — on conflict stop, resolve, rerun tests; `git push -u "$UP" <branch>`; build the body per `references/pr-body.md`, including the visual Change outline; `gh pr create -R "$REPO" --head <branch> --base "$DEFAULT" --draft --title "<KEY>: <title>" --body-file <path>`; attach any visual evidence (see Attachments).
+3. **Existing PR**: push new commits to the PR's head remote (`git push "$UP" <branch>`). If the body is empty, an unfilled template, or placeholder-only, offer to fill it and apply with `gh pr edit <n> --body …`.
+4. Verify: `gh pr view <n> -R "$REPO" --json url,isDraft,headRefName,headRepositoryOwner,commits` — `isDraft` must be true, `headRefName` must match, and `headRepositoryOwner` must be the 10gen org for 10gen repos (not the fork).
 
 ## Attachments (screenshots, video)
 

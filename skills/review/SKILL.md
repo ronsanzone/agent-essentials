@@ -21,7 +21,7 @@ Report only. Do not edit code. The user picks what to act on.
 
 ## 1. Resolve the target
 
-- **No argument.** Base is the first that succeeds: `git symbolic-ref refs/remotes/origin/HEAD`, then `main`, then `master`; none → ask. Range is `<base>...HEAD`, plus the working tree (`git diff HEAD`).
+- **No argument.** Base is the first that succeeds: `<UP>/HEAD` where `<UP>` is the remote whose URL matches `github.com[:/]10gen/` (in mongohouse and mms-automation `origin` is a stale fork), then `git symbolic-ref refs/remotes/origin/HEAD`, then `main`, then `master`; none → ask. Range is `<base>...HEAD`, plus the working tree (`git diff HEAD`).
 - **Branch name.** Same, with that base.
 - **PR.** A number, a GitHub URL, or a Graphite URL (`app.graphite.com/github/pr/<owner>/<repo>/<n>/...`). `gh pr view <n> --json title,body,baseRefName,headRefName,additions,deletions,changedFiles`; add `-R <owner/repo>` only when the URL names a repo other than the current one.
 - **Range.** `git diff <a>...<b>`.
@@ -55,7 +55,7 @@ Local: `git diff <base>...HEAD`, then `git diff HEAD`, kept separate (branch com
 
 - **Under ~200 changed lines.** Read the diff. Open surrounding code only where a finding needs the call chain.
 - **Larger, or touching shared code.** Read the changed hunks with surrounding context in each modified file. For oversized files read the changed ranges, not the whole file.
-- **PR in the current repo.** `git fetch origin pull/<n>/head:refs/remotes/pr/<n>` once, then `git show pr/<n>:<path>` for context. Do not check the branch out.
+- **PR in the current repo.** `git fetch <UP> pull/<n>/head:refs/remotes/pr/<n>` once (`<UP>` = the 10gen remote; a fork has no PR refs), then `git show pr/<n>:<path>` for context. Do not check the branch out.
 - **PR in another repo.** Review the diff alone and say context was unavailable.
 
 ## 5. Review through the lenses

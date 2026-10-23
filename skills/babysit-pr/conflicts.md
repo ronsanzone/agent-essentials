@@ -21,8 +21,9 @@ Check whether the branch is Graphite-managed (`gt log` succeeds and shows the br
 Merge the latest base into the already-pushed PR branch. Do not rebase it just to update from the base; that rewrites public history and forces a force push for no benefit.
 
 ```bash
-git fetch origin
-git merge origin/<default-branch>
+# $UP = the 10gen remote (see submit-pr "Remote"); origin is a fork in mongohouse/mms-automation
+git fetch "$UP"
+git merge "$UP/<default-branch>"
 ```
 
 Resolve conflicts hunk by hunk. Every non-mechanical resolution — anywhere both sides changed behavior and you chose — goes in the Decisions section verbatim: file, what each side wanted, what you picked, why.
@@ -34,7 +35,7 @@ If a conflict requires a product/design call you cannot defend from the code, st
 Re-run the tests covering the conflicted files before pushing. For a non-stacked branch updated with a merge commit:
 
 ```bash
-git push origin <branch>
+git push <pr-head-remote> <branch>   # the remote the PR head lives on: headRepositoryOwner from gh pr view
 ```
 
 Use `git push --force-with-lease` only when a workflow has already rewritten history, such as a Graphite restack. The push retriggers CI/Evergreen — do not kick a separate run.

@@ -26,6 +26,7 @@ Modes: `drive` (default) fixes what the pass can fix; `check` is one status swee
 - **Work the merge frontier.** In a stack, the lowest unmerged PR is the only one that matters until it merges. Read upstack threads and batch their fixes into the frontier's push wave; never push upstack while the frontier is red, since the restack retriggers their checks anyway.
 - **One babysitter per stack.** Before the first action, check the sibling state files (`~/.cache/babysit/<owner>-<repo>-*.md`). A pass logged there within the last hour means another agent owns it: stop and report instead of starting a second loop.
 - **Do not submit an Evergreen patch unless the PR is stacked (GitHub cannot build stacked mms PRs) or the user asked for one.** GitHub runs the checks on a normal PR; monitor those. A targeted early-signal patch for one failing task is the only other exception.
+- **Resolve remotes, never assume `origin`.** Base = the remote whose URL matches `github.com[:/]10gen/` (`origin` in `~/mms`, `upstream` in mongohouse and mms-automation, where `origin` is the fork). Push to the remote the PR head lives on (`gh pr view --json headRepositoryOwner`). Same snippet as submit-pr's "Remote" section.
 - **Do not rewrite a normal PR branch just to update it from its base.** Merge the base branch and push normally. Force push only when a workflow has already rewritten history (typically a Graphite restack), and always use `--force-with-lease`.
 
 ## State file

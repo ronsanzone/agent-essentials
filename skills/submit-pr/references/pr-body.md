@@ -3,9 +3,9 @@
 ## Gather context
 
 ```bash
-DEFAULT=$(git symbolic-ref refs/remotes/origin/HEAD | sed 's@^refs/remotes/origin/@@')
-git diff origin/$DEFAULT...HEAD --stat && git diff origin/$DEFAULT...HEAD
-git log origin/$DEFAULT..HEAD --oneline
+# $UP / $DEFAULT resolved per SKILL.md "Remote" (origin is a fork in some repos)
+git diff "$UP/$DEFAULT"...HEAD --stat && git diff "$UP/$DEFAULT"...HEAD
+git log "$UP/$DEFAULT"..HEAD --oneline
 git branch --show-current   # usually carries the ticket key
 ```
 
