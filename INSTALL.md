@@ -10,7 +10,7 @@ scripts/install-claude.sh             # apply
 ## What the installer does
 
 1. **Runtime files stay real files.** If `~/.claude/.mcp.json` or `~/.claude/settings.local.json` is a symlink into this repo (old layout), it is replaced by a real local copy. Old whole-directory links (`~/.claude/skills`, `~/.claude/docs`) into this repo are removed.
-2. **Config links:** `config/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`, `config/claude/settings.json` → `~/.claude/settings.json`. Examples (`settings.local.json.example`, `mcp.json.example`) are copied once if absent.
+2. **Config links:** `config/claude/CLAUDE.md` → `~/.claude/CLAUDE.md`, `config/claude/settings.json` → `~/.claude/settings.json`, `config/claude/mods` → `~/.claude/mods`, and `config/shared/AGENTS.md` → `~/.config/opencode/AGENTS.md` and `~/.pi/agent/AGENTS.md`. Examples (`settings.local.json.example`, `mcp.json.example`) are copied once if absent.
 3. **Skills:** for every `skills/<name>/` with a `SKILL.md`, `~/.agents/skills/<name>` → `skills/<name>` and `~/.claude/skills/<name>` → `../../.agents/skills/<name>`. Pi reads `~/.agents/skills` directly. Existing real directories are replaced when byte-identical to the repo; otherwise skipped with a warning (use `--force-config` to back them up and replace).
 4. **Agents and hooks:** `config/claude/agents/*.md` → `~/.claude/agents/`, `config/claude/hooks/*.sh` → `~/.claude/hooks/`.
 5. **`--prune`:** removes `~/.agents/skills/<name>` and `~/.claude/skills/<name>` for every name in `deprecated-skills/`, but only when the entry is a symlink or identical to the deprecated copy — a foreign real directory with the same name is left alone and reported.

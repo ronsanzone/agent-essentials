@@ -1,0 +1,17 @@
+{
+  "name": "artifact-tray",
+  "version": "0.1.0",
+  "description": "Offers to open, annotate or copy each report, doc or video the session writes; /open and /tray reach them later.",
+  "author": {
+    "name": "Ron Sanzone"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "folders": {
+      "type": "string",
+      "title": "Artifact folders",
+      "description": "Comma-separated folders whose new files count as artifacts.",
+      "default": "~/notes"
+    }
+  }
+}

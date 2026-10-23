@@ -9,6 +9,7 @@
 #   ~/.claude/agents/<name>.md     -> $ROOT/config/claude/agents/<name>.md
 #   ~/.claude/hooks/<name>.sh      -> $ROOT/config/claude/hooks/<name>.sh
 #   ~/.claude/CLAUDE.md, settings.json -> $ROOT/config/claude/...
+#   ~/.config/opencode/AGENTS.md, ~/.pi/agent/AGENTS.md -> $ROOT/config/shared/AGENTS.md
 #
 # Store entries from other sources (npx skills, plugins, other repos) are left
 # alone and listed in the drift report at the end. Runtime/local files such as
@@ -141,6 +142,11 @@ install_config() {
   remove_repo_symlink "docs"
   link "$CONFIG_DIR/CLAUDE.md" "$TARGET_DIR/CLAUDE.md"
   link "$CONFIG_DIR/settings.json" "$TARGET_DIR/settings.json"
+  # Local Claude Code mods (ci-band, artifact-tray), loaded via CLAUDE_CODE_PLUGIN_DIRS in settings.json.
+  link "$CONFIG_DIR/mods" "$TARGET_DIR/mods"
+  # Shared global rules: Claude imports them from CLAUDE.md; OpenCode and Pi read AGENTS.md directly.
+  link "$ROOT/config/shared/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
+  link "$ROOT/config/shared/AGENTS.md" "$HOME/.pi/agent/AGENTS.md"
   for f in settings.local.json.example mcp.json.example; do
     [[ -f "$CONFIG_DIR/$f" && ! -e "$TARGET_DIR/.$f" && ! -e "$TARGET_DIR/$f" ]] || continue
     run cp "$CONFIG_DIR/$f" "$TARGET_DIR/$f"; note "copy example $TARGET_DIR/$f"

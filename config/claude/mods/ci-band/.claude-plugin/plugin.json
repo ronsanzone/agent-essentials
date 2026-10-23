@@ -1,0 +1,23 @@
+{
+  "name": "ci-band",
+  "version": "0.1.0",
+  "description": "Shows the branch's PR checks and Evergreen patches above the prompt, and says when they turn red or green.",
+  "author": {
+    "name": "Ron Sanzone"
+  },
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "evergreenUi": {
+      "type": "string",
+      "title": "Evergreen UI",
+      "description": "Base URL a patch link is built from.",
+      "default": "https://spruce.corp.mongodb.com"
+    },
+    "sound": {
+      "type": "boolean",
+      "title": "Chime",
+      "description": "Play a short chime when checks turn green or red.",
+      "default": true
+    }
+  }
+}
