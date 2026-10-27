@@ -29,11 +29,8 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 
 | Skill | Invoked by | Purpose |
 |---|---|---|
-| **babysit-pr** | model + `/babysit-pr` | Babysit a PR to green — one full pass of sweep, triage, fix, push, report |
-| **ci-triage** | model + `/ci-triage` | `ci-triage report/wait/patch`: one-command CI brief for a PR or Evergreen run (merge queue included), blocking wait, scoped early-signal patches |
 | **blast-radius** | user (`/blast-radius`) | Find what a change could break beyond the diff, and prove the one fact it's safe because of by running real code |
 | **bruh** | user (`/bruh`) | Restate the last message in plain human language, with no jargon |
-| **cleanup-prs** | model + `/cleanup-prs` | Close out Jira tickets whose code is already merged, after you confirm |
 | **create-verification-skill** | user (`/create-verification-skill`) | Generate a project-local verification skill that drives your app the way a user does |
 | **creating-motion-visuals** | user (`/creating-motion-visuals`) | Create motion visuals with Psychopomp |
 | **executor-usage** | model + `/executor-usage` | Executor 2 calling pattern, known tool paths (Jira, Confluence, Evergreen, Glean), result unwrapping |
@@ -41,11 +38,10 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **maintain-verification-skill** | user (`/maintain-verification-skill`) | Periodic pass that keeps a project's verification skill and feature map honest |
 | **recall** | model + `/recall` | Recall prior work from the `trail` index (`~/code/trail`), its notes and live git/gh state |
 | **review** | user (`/review`) | Fast single-pass code review of a PR, branch, ref range, or working tree |
+| **ship** | model + `/ship` | One entry point for the PR lifecycle: `shipctl next` picks the playbook (open a draft PR, get it to green incl. merge queue and comments, Graphite stacks, early-signal Evergreen patches, land and close out tickets) |
 | **show-me** | model + `/show-me` | Help the user understand the current topic visually with concise diagrams and focused HTML artifacts |
 | **software-design-philosophy** | model + `/software-design-philosophy` | Evaluate code and designs using *A Philosophy of Software Design* |
-| **submit-pr** | model + `/submit-pr` | Create or update a draft PR (resolves the 10gen remote; never assumes `origin`) |
 | **why** | user (`/why`) | Design rationale from the historical record |
-| **yeet** | user (`/yeet`) | One-shot end-of-session ship — commit, ticket, push, draft PR via submit-pr |
 
 Retired skills live in `deprecated-skills/`; `scripts/install-claude.sh --prune` removes them from the store.
 

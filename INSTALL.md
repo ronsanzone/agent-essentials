@@ -45,8 +45,8 @@ In `~/code/dot/profiles/personal.env`: `DOT_ITEM_claude_essentials_APPLY="./scri
 ```bash
 scripts/install-claude.sh --dry-run            # nothing unexpected planned
 test ! -L ~/.claude/.mcp.json && test ! -L ~/.claude/settings.local.json
-readlink ~/.agents/skills/babysit-pr           # -> <repo>/skills/babysit-pr
-readlink ~/.claude/skills/babysit-pr           # -> ../../.agents/skills/babysit-pr
+readlink ~/.agents/skills/ship           # -> <repo>/skills/ship
+readlink ~/.claude/skills/ship           # -> ../../.agents/skills/ship
 readlink ~/.claude/hooks/guards.sh ~/.claude/agents/codebase-analyzer.md
 echo '{"tool_name":"Bash","tool_input":{"command":"git push --force origin x"}}' | ~/.claude/hooks/guards.sh   # -> ask
 ```

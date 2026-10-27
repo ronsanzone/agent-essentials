@@ -3,11 +3,11 @@ import importlib.util
 import os
 import unittest
 
-_path = os.path.join(os.path.dirname(__file__), "..", "scripts", "ci-triage")
-_loader = importlib.machinery.SourceFileLoader("ci_triage", _path)
-_spec = importlib.util.spec_from_loader("ci_triage", _loader)
-ct = importlib.util.module_from_spec(_spec)
-_loader.exec_module(ct)
+_path = os.path.join(os.path.dirname(__file__), "..", "scripts", "shipctl")
+_loader = importlib.machinery.SourceFileLoader("shipctl", _path)
+_spec = importlib.util.spec_from_loader("shipctl", _loader)
+shipctl = importlib.util.module_from_spec(_spec)
+_loader.exec_module(shipctl)
 
 # Real lines from the 10gen/mms#193540 merge-queue failure (test log has print_time prefixes).
 TEST_LOG = """\
@@ -41,14 +41,14 @@ class ResolveTest(unittest.TestCase):
                 {"kind": "task", "id": "mms_unit_java_X_patch_0b28_6adf_26_10_26"},
         }
         for target, want in cases.items():
-            self.assertEqual(want, ct.resolve(target, os.getcwd()), target)
-        with self.assertRaises(ct.Fail):
-            ct.resolve("not-a-target", os.getcwd())
+            self.assertEqual(want, shipctl.resolve(target, os.getcwd()), target)
+        with self.assertRaises(shipctl.Fail):
+            shipctl.resolve("not-a-target", os.getcwd())
 
 
 class ExcerptTest(unittest.TestCase):
     def test_test_log_keeps_assertion_and_first_xgen_frame(self):
-        lines = ct.test_excerpt(TEST_LOG)
+        lines = shipctl.test_excerpt(TEST_LOG)
         self.assertTrue(lines[0].startswith('ERROR: expected: <{"tag🙂":"🙂"}>'), lines)
         self.assertEqual(
             "at com.xgen.svc.nds.res.LifecycleManagementConfResourceUnitTests.configure_x"
@@ -56,9 +56,40 @@ class ExcerptTest(unittest.TestCase):
         self.assertFalse(any("AssertionFailureBuilder" in l for l in lines))
 
     def test_task_log_drops_tss_noise(self):
-        lines = ct.excerpt(TASK_LOG, ct.COMPILE_LINE_RE, 15)
+        lines = shipctl.excerpt(TASK_LOG, shipctl.COMPILE_LINE_RE, 15)
         self.assertEqual(["server/src/main/com/xgen/Foo.java:12: error: [NullAway] dereferenced expression bar is @Nullable",
                           "ConnectionResetError: [Errno 104] Connection reset by peer"], lines)
+
+
+class VerdictTest(unittest.TestCase):
+    PR = {"state": "OPEN", "mergeable": "MERGEABLE"}
+
+    def test_work_order(self):
+        cases = [
+            ({"on_default": True, "uncommitted": ["a"]}, "NO_BRANCH"),
+            ({"uncommitted": ["a"]}, "UNCOMMITTED"),
+            ({"ahead": 2}, "NO_PR"),
+            ({}, "NOTHING"),
+            ({"pr": dict(VerdictTest.PR, state="MERGED")}, "MERGED"),
+            ({"pr": VerdictTest.PR, "unpushed": True, "checks_failed": ["x"]}, "UNPUSHED"),
+            ({"pr": dict(VerdictTest.PR, mergeable="CONFLICTING"), "threads": [1], "checks_failed": ["x"]}, "CONFLICT"),
+            ({"pr": VerdictTest.PR, "threads": [1], "checks_failed": ["x"]}, "THREADS"),
+            ({"pr": VerdictTest.PR, "mq_failed_on_head": [{"reason": "FAILED_CHECKS"}]}, "CI_RED"),
+            ({"pr": dict(VerdictTest.PR, mergeQueueEntry={"state": "QUEUED"})}, "WAITING"),
+            ({"pr": VerdictTest.PR, "checks_pending": ["x"]}, "WAITING"),
+            ({"pr": VerdictTest.PR}, "READY"),
+        ]
+        for facts, want in cases:
+            self.assertEqual(want, shipctl.verdict(facts)[0], facts)
+        self.assertEqual(["THREADS", "CI_RED"],
+                         shipctl.verdict({"pr": self.PR, "threads": [1], "checks_failed": ["x"]})[1])
+
+
+class MqHeadTest(unittest.TestCase):
+    def test_reads_tested_head_from_message(self):
+        msg = "GitHub Merge Queue: CLOUDP-459367: Canonicalize the LCM criteria query (#193540) (1865bbc) [merge-base 0b28312]"
+        self.assertEqual("1865bbc", shipctl.mq_head({"message": msg}))
+        self.assertIsNone(shipctl.mq_head({"message": "not a merge queue version"}))
 
 
 class PatchPlanTest(unittest.TestCase):
@@ -66,13 +97,13 @@ class PatchPlanTest(unittest.TestCase):
         self.assertEqual(
             {"variant": "int", "task": "GENERATE_INT_TESTS_BAZEL_COMBINED", "narrowed": True, "task_def": "atm",
              "params": ["int_use_rbe=false", "task_def_names=atm"]},
-            ct.patch_plan("INT_JAVA_ATM", "int", "GENERATE_INT_TESTS_BAZEL_COMBINED"))
+            shipctl.patch_plan("INT_JAVA_ATM", "int", "GENERATE_INT_TESTS_BAZEL_COMBINED"))
         self.assertEqual(
             {"variant": "unit_java", "task": "GENERATE_UNIT_TESTS_BAZEL_RBE", "narrowed": False, "params": []},
-            ct.patch_plan("UNIT_JAVA_NDS_API_UI", "unit_java", "GENERATE_UNIT_TESTS_BAZEL_RBE"))
+            shipctl.patch_plan("UNIT_JAVA_NDS_API_UI", "unit_java", "GENERATE_UNIT_TESTS_BAZEL_RBE"))
         self.assertEqual(
             {"variant": "code_health", "task": "COMPILE_BAZEL", "narrowed": True, "params": []},
-            ct.patch_plan("COMPILE_BAZEL", "code_health", None))
+            shipctl.patch_plan("COMPILE_BAZEL", "code_health", None))
 
 
 if __name__ == "__main__":

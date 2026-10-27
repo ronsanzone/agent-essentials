@@ -14,7 +14,7 @@ type Site = { requestId: string; rows: readonly (readonly CiState[])[] }
 
 const PANE = 'ci-band'
 const TITLE = 'CI'
-const BABYSIT = '/babysit-pr'
+const BABYSIT = '/ship green'
 const TICK_MS = 15_000
 const ACTIVE_MS = 45_000
 const IDLE_MS = 5 * 60_000

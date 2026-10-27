@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Triage failing CI for a GitHub PR or an Evergreen version in one call, for agents.
+"""Ship-lifecycle CLI for agents: where a branch stands, CI triage, waiting, early-signal patches.
 
 usage:
-  ci-triage report <target> [-C DIR] [--no-fetch] [--max-tasks N] [--max-tests N]
-  ci-triage wait   <target> [-C DIR] [--interval S] [--timeout S]
-  ci-triage patch  <task url|task id|NAME --variant V> [-C DIR] [--uncommitted] [--dry-run]
+  shipctl next   [<pr>] [-C DIR] [--json]
+  shipctl report <target> [-C DIR] [--no-fetch] [--max-tasks N] [--max-tests N]
+  shipctl wait   <target> [-C DIR] [--interval S] [--timeout S]
+  shipctl patch  <task url|task id|NAME --variant V> [-C DIR] [--uncommitted] [--dry-run]
 
 <target>: a GitHub PR URL, owner/repo#N, a bare PR number (repo from DIR's 10gen remote), an
 Evergreen/Spruce version, patch or task URL, or a 24-hex version id.
@@ -13,6 +14,8 @@ report prints one bounded brief: GitHub-native failures, the PR's Evergreen run 
 attempt for the PR, failed tasks with mainline history, the assertion or compiler lines from the
 logs, branch staleness, where each failing test came from, and the local bazel command to rerun it.
 wait blocks until the PR's checks and any running merge-queue attempt finish.
+next prints one verdict for the branch or PR (NO_BRANCH, UNCOMMITTED, NO_PR, UNPUSHED, CONFLICT,
+THREADS, CI_RED, WAITING, READY, MERGED, CLOSED, NOTHING) and the ship playbook that handles it.
 
 Evergreen is read through its REST API with `evergreen client get-oauth-token` (corp host; static
 API keys are rejected). Read-only, except `git fetch` of the base remote unless --no-fetch.
@@ -175,6 +178,12 @@ def mq_versions(evg, project, pr_number, since):
 
 # ---------- GitHub ----------
 
+def mq_head(version):
+    """The PR head a merge-queue version tested: "GitHub Merge Queue: <title> (#N) (1865bbc) [merge-base …]"."""
+    m = re.search(r"\(#\d+\) \(([0-9a-f]{7,40})\)", version.get("message", ""))
+    return m.group(1) if m else None
+
+
 def gh_pr(repo, number):
     p = run(["gh", "pr", "view", str(number), "-R", repo, "--json",
              "number,title,url,headRefOid,headRefName,baseRefName,createdAt,state,mergeStateStatus,statusCheckRollup"])
@@ -268,6 +277,8 @@ def locate_test(ctx, test_file):
         if method and method not in git("show", f"HEAD:{path}").stdout:
             info["method_added_by"] = git("log", "-1", "--format=%h %s", "-S", method, ctx["upstream"], "--",
                                           path).stdout.strip() or "?"
+            sha = info["method_added_by"].split()[0]
+            info["method_removed_here"] = sha != "?" and git("merge-base", "--is-ancestor", sha, "HEAD").returncode == 0
     d = os.path.dirname(path)
     if os.path.exists(os.path.join(ctx["cwd"], d, "BUILD.bazel")):
         info["target"] = f"//{d}:{cls}"
@@ -348,7 +359,10 @@ def local_lines(loc, ctx):
         lines.append(f"**not on this branch**: exists only on {ctx['upstream']}, added by {loc['added_by']} "
                      f"→ merge {ctx['upstream']} and rerun locally")
     else:
-        if loc.get("method_added_by"):
+        if loc.get("method_removed_here"):
+            lines.append(f"test `{loc['method']}` was renamed or removed on this branch (it came from "
+                         f"{loc['method_added_by']}, which the branch already contains)")
+        elif loc.get("method_added_by"):
             lines.append(f"**test `{loc['method']}` is not on this branch**: added on {ctx['upstream']} by "
                          f"{loc['method_added_by']} → merge {ctx['upstream']}, then rerun locally")
         if loc.get("touched_by_branch"):
@@ -356,7 +370,7 @@ def local_lines(loc, ctx):
         if loc.get("changed_upstream"):
             lines.append(f"changed on {ctx['upstream']} since the merge base: " + "; ".join(loc["changed_upstream"]))
     if loc.get("target"):
-        filt = f" --test_filter='{loc['method']}'" if loc.get("method") else ""
+        filt = f" --test_filter='{loc['method']}'" if loc.get("method") and not loc.get("method_removed_here") else ""
         lines.append(f"repro: `bazel test {loc['target']} --test_output=errors{filt}`")
         if loc["int_test"]:
             lines.append("int test: needs a local MongoDB (see the mms-dev-loop skill); run *IntTests targets one at a time")
@@ -368,7 +382,7 @@ def triage_version(evg, vid, ctx, args, out, label):
     out.append(f"\n## {label}: {v.get('status')}")
     out.append(f"{SPRUCE}/version/{vid} · requester `{v.get('requester')}` · {(v.get('message') or '').splitlines()[0][:140] if v.get('message') else ''}")
     if v.get("status") in RUNNING:
-        out.append("still running; `ci-triage wait` blocks until it finishes")
+        out.append("still running; `shipctl wait` blocks until it finishes")
     tasks, aborted = failed_tasks(evg, vid)
     if not tasks:
         out.append("no failed tasks" + (f" ({aborted} aborted)" if aborted else ""))
@@ -390,7 +404,7 @@ def report(args):
     if tgt["kind"] == "version":
         v = evg.get(f"versions/{tgt['id']}")
         ctx = local_context(args.C, "master", not args.no_fetch)
-        out.append(f"# ci-triage: version {tgt['id']} ({v.get('project')})")
+        out.append(f"# shipctl: version {tgt['id']} ({v.get('project')})")
         out += local_header(ctx)
         failures += triage_version(evg, tgt["id"], ctx, args, out, "Evergreen version")
         print("\n".join(out))
@@ -398,7 +412,7 @@ def report(args):
 
     pr = gh_pr(tgt["repo"], tgt["number"])
     ctx = local_context(args.C, pr["baseRefName"], not args.no_fetch)
-    out.append(f"# ci-triage: {tgt['repo']}#{pr['number']} {pr['title']}")
+    out.append(f"# shipctl: {tgt['repo']}#{pr['number']} {pr['title']}")
     out.append(f"{pr['url']} · {pr['state']} · merge state {pr['mergeStateStatus']} · head `{pr['headRefOid'][:12]}`")
     if ctx and ctx["head"] != pr["headRefOid"]:
         out.append(f"note: local HEAD `{ctx['head'][:12]}` is not the PR head; local facts describe {ctx['cwd']}")
@@ -435,15 +449,26 @@ def report(args):
                    f"{len(removals)} removal(s) from the queue")
         for r in removals:
             out.append(f"- removed {r['createdAt']}: {r['reason']}")
+        head = pr["headRefOid"]
         for v in mqs:
             names = ""
             if v.get("status") == "failed":
                 names = " · failed: " + (", ".join(t["display_name"] for t in failed_tasks(evg, v["version_id"])[0]) or "?")
-            out.append(f"- {v['create_time'][:16]} {v['status']} {SPRUCE}/version/{v['version_id']}{names}")
+            tested = mq_head(v)
+            stale = f" · tested older head {tested}" if tested and not head.startswith(tested) else ""
+            out.append(f"- {v['create_time'][:16]} {v['status']} {SPRUCE}/version/{v['version_id']}{names}{stale}")
         latest_failed = next((v for v in mqs if v.get("status") == "failed"), None)
         if latest_failed:
-            failures += triage_version(evg, latest_failed["version_id"], ctx, args, out,
-                                       "Latest failed merge-queue attempt")
+            tested = mq_head(latest_failed)
+            if tested and not head.startswith(tested):
+                out.append(f"\nThe current head `{head[:10]}` has not been through the merge queue; the failure "
+                           f"below is from older head `{tested}`. Check it is fixed (staleness lines, local "
+                           f"repro); do not report it as the current state.")
+                triage_version(evg, latest_failed["version_id"], ctx, args, out,
+                               f"Latest failed merge-queue attempt (older head {tested})")
+            else:
+                failures += triage_version(evg, latest_failed["version_id"], ctx, args, out,
+                                           "Latest failed merge-queue attempt")
     print("\n".join(out))
     return 1 if failures or native_bad else 0
 
@@ -489,12 +514,143 @@ def wait(args):
                   + (f": {', '.join(bad[:8])}" if bad else ""), flush=True)
             last = state
         if not pend:
-            print("done: " + ("failures → run `ci-triage report " + args.target + "`" if bad else "green"))
+            print("done: " + ("failures → run `shipctl report " + args.target + "`" if bad else "green"))
             return 1 if bad else 0
         if time.time() > deadline:
             print(f"timeout after {args.timeout}s; still pending: {', '.join(pend[:8])}")
             return 3
         time.sleep(args.interval)
+
+
+# ---------- next ----------
+
+# Verdict -> the ship playbook that handles it. Order in verdict() is the work order.
+PLAYBOOKS = {"NO_BRANCH": "open", "UNCOMMITTED": "open", "NO_PR": "open", "UNPUSHED": "open",
+             "CONFLICT": "green", "THREADS": "green", "CI_RED": "green", "WAITING": "wait",
+             "READY": "stop", "MERGED": "land", "CLOSED": "stop", "NOTHING": "stop"}
+PR_STATE_Q = """query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){
+  number url title state isDraft mergeable mergeStateStatus reviewDecision headRefName headRefOid baseRefName
+  mergeQueueEntry{state position}
+  commits(last:1){nodes{commit{committedDate}}}
+  reviewThreads(first:100){nodes{isResolved isOutdated comments(first:1){nodes{author{login}}}}}
+  timelineItems(last:10,itemTypes:[REMOVED_FROM_MERGE_QUEUE_EVENT]){nodes{... on RemovedFromMergeQueueEvent{createdAt reason}}}
+}}}"""
+
+
+def verdict(f):
+    """Pure: gathered facts -> (verdict, flags). Local work first, then conflicts → threads → CI → waiting."""
+    flags = [k for k in ("UNCOMMITTED", "UNPUSHED") if f.get(k.lower())]
+    pr = f.get("pr")
+    if f.get("on_default") and (f.get("uncommitted") or f.get("ahead")):
+        return "NO_BRANCH", flags
+    if not pr:
+        return ("UNCOMMITTED" if f.get("uncommitted") else "NO_PR" if f.get("ahead") else "NOTHING"), flags
+    if pr["state"] in ("MERGED", "CLOSED"):
+        return pr["state"], flags
+    if pr["mergeable"] == "CONFLICTING":
+        flags.append("CONFLICT")
+    if f.get("threads"):
+        flags.append("THREADS")
+    if f.get("checks_failed") or f.get("mq_failed_on_head"):
+        flags.append("CI_RED")
+    if f.get("checks_pending") or pr.get("mergeQueueEntry"):
+        flags.append("WAITING")
+    for v in ("UNCOMMITTED", "UNPUSHED", "CONFLICT", "THREADS", "CI_RED", "WAITING"):
+        if v in flags:
+            return v, flags
+    return "READY", flags
+
+
+def gather(args):
+    git = lambda *a: run(["git", *a], cwd=args.C, check=False).stdout.strip()
+    remote, repo = base_remote(args.C)
+    if not remote:
+        remote = "origin"
+        m = re.search(r"github\.com[:/]([^/\s]+/[^/\s]+?)(?:\.git)?$", git("remote", "get-url", "origin"))
+        repo = m.group(1) if m else None
+    default = git("symbolic-ref", "--short", f"refs/remotes/{remote}/HEAD").removeprefix(f"{remote}/") or "master"
+    branch = git("branch", "--show-current")
+    status = git("status", "--porcelain").splitlines()
+    f = {"repo": repo, "remote": remote, "default": default, "branch": branch, "head": git("rev-parse", "HEAD"),
+         "on_default": branch == default,
+         "uncommitted": [l[3:] for l in status if not l.startswith("??")],
+         "untracked": [l[3:] for l in status if l.startswith("??") and not l[3:].startswith("bazel-")],
+         "ahead": int(git("rev-list", "--count", f"{remote}/{default}..HEAD") or 0)}
+    number = None
+    if args.target:
+        tgt = resolve(args.target, args.C)
+        if tgt["kind"] != "pr":
+            raise Fail("next takes a PR (or nothing, for the current branch)")
+        repo, number = tgt["repo"], tgt["number"]
+        f["repo"] = repo
+    elif repo and branch and not f["on_default"]:
+        p = run(["gh", "pr", "list", "-R", repo, "--head", branch, "--state", "all", "--json", "number",
+                 "--limit", "1"], check=False)
+        hits = json.loads(p.stdout or "[]") if p.returncode == 0 else []
+        number = hits[0]["number"] if hits else None
+    if not number:
+        return f
+    owner, name = repo.split("/")
+    p = run(["gh", "api", "graphql", "-f", f"query={PR_STATE_Q}", "-F", f"o={owner}", "-F", f"n={name}",
+             "-F", f"p={number}"])
+    pr = json.loads(p.stdout)["data"]["repository"]["pullRequest"]
+    f["pr"] = pr
+    rows = check_rows(gh_pr(repo, number))
+    f["checks_failed"] = [r["name"] for r in rows if r["state"] in GH_FAILED]
+    f["checks_pending"] = [r["name"] for r in rows if r["state"] in GH_PENDING]
+    head_date = pr["commits"]["nodes"][0]["commit"]["committedDate"]
+    f["mq_failed_on_head"] = [n for n in pr["timelineItems"]["nodes"]
+                              if n and n["reason"] != "DEQUEUED" and n["createdAt"] > head_date]
+    open_threads = [t for t in pr["reviewThreads"]["nodes"] if not t["isResolved"]]
+    f["threads"] = [t for t in open_threads if not t["isOutdated"]]
+    f["outdated_threads"] = len(open_threads) - len(f["threads"])
+    if branch == pr["headRefName"]:
+        f["unpushed"] = f["head"] != pr["headRefOid"] and run(
+            ["git", "merge-base", "--is-ancestor", pr["headRefOid"], "HEAD"], cwd=args.C, check=False).returncode == 0
+    return f
+
+
+def next_cmd(args):
+    f = gather(args)
+    v, flags = verdict(f)
+    pr = f.get("pr")
+    if args.json:
+        print(json.dumps({"verdict": v, "playbook": PLAYBOOKS[v], "flags": flags, "facts": f}, default=str))
+        return 0
+    book = PLAYBOOKS[v]
+    out = [f"verdict: {v}", f"playbook: {book}" + (f" → playbooks/{book}.md" if book in ("open", "green", "land") else "")]
+    if flags:
+        out.append("flags: " + ", ".join(flags))
+    out.append(f"branch: {f['branch'] or '(detached)'} · {f['ahead']} commits ahead of {f['remote']}/{f['default']}"
+               + (f" · {len(f['uncommitted'])} uncommitted" if f["uncommitted"] else "")
+               + (f" · {len(f['untracked'])} untracked" if f["untracked"] else ""))
+    if pr:
+        out.append(f"pr: {pr['url']} · {pr['state']}{' draft' if pr['isDraft'] else ''} · mergeable {pr['mergeable']}"
+                   f" · {pr['mergeStateStatus']} · review {pr['reviewDecision'] or 'none'} · base {pr['baseRefName']}")
+        if pr["baseRefName"] != f["default"]:
+            out.append(f"stacked: base is {pr['baseRefName']}, not {f['default']} → playbooks/stack.md applies")
+        if pr.get("mergeQueueEntry"):
+            out.append(f"merge queue: {pr['mergeQueueEntry']['state']} (position {pr['mergeQueueEntry']['position']})")
+        if f.get("checks_failed"):
+            out.append("failing checks: " + ", ".join(f["checks_failed"][:8]))
+        if f.get("mq_failed_on_head"):
+            out.append(f"merge queue removed this head {len(f['mq_failed_on_head'])}x: "
+                       + ", ".join(n["reason"] for n in f["mq_failed_on_head"]))
+        if f.get("checks_pending"):
+            out.append(f"pending checks: {len(f['checks_pending'])}")
+        if f.get("threads") or f.get("outdated_threads"):
+            who = {}
+            for t in f.get("threads", []):
+                login = ((t["comments"]["nodes"] or [{}])[0].get("author") or {}).get("login", "?")
+                who[login] = who.get(login, 0) + 1
+            out.append(f"unresolved threads: {len(f.get('threads', []))} current"
+                       + (f" ({', '.join(f'{k} ×{n}' for k, n in who.items())})" if who else "")
+                       + (f", {f['outdated_threads']} outdated" if f.get("outdated_threads") else ""))
+        hint = {"CI_RED": f"shipctl report {pr['url']} -C {args.C}", "WAITING": f"shipctl wait {pr['url']}"}.get(v)
+        if hint:
+            out.append(f"next command: {hint}")
+    print("\n".join(out))
+    return 0
 
 
 # ---------- patch ----------
@@ -559,7 +715,7 @@ def patch(args):
         print("note: the tree has uncommitted changes; they are not in the patch (pass --uncommitted)")
 
     sha = run(["git", "rev-parse", "--short=10", "HEAD"], cwd=args.C).stdout.strip()
-    desc = args.description or f"ci-triage: {name} on {sha}"
+    desc = args.description or f"shipctl: {name} on {sha}"
     cmd = ["evergreen", "patch", "-p", project, "-d", desc, "-y", "--finalize", "-v", plan["variant"],
            "-t", plan["task"]] + [a for p in plan["params"] for a in ("--param", p)]
     if args.uncommitted:
@@ -585,7 +741,7 @@ def patch(args):
     if generator and plan["narrowed"]:
         print(f"{generator} runs first, then generates only {name}")
     print(f"{SPRUCE}/version/{pid}")
-    print(f"next: ci-triage wait {pid}")
+    print(f"next: shipctl wait {pid}")
     return 0
 
 
@@ -613,11 +769,15 @@ def main():
     p.add_argument("--allow-untracked", action="store_true")
     p.add_argument("--whole-variant", action="store_true", help="patch a generator that cannot be narrowed")
     p.add_argument("--dry-run", action="store_true", help="print the evergreen command, submit nothing")
+    n = sub.add_parser("next")
+    n.add_argument("target", nargs="?", help="PR (default: the current branch's PR)")
+    n.add_argument("-C", default=os.getcwd())
+    n.add_argument("--json", action="store_true")
     args = ap.parse_args()
     try:
-        sys.exit({"report": report, "wait": wait, "patch": patch}[args.cmd](args))
+        sys.exit({"report": report, "wait": wait, "patch": patch, "next": next_cmd}[args.cmd](args))
     except Fail as e:
-        print(f"ci-triage: {e}", file=sys.stderr)
+        print(f"shipctl: {e}", file=sys.stderr)
         sys.exit(2)
 
 

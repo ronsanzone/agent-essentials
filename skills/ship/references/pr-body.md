@@ -3,7 +3,7 @@
 ## Gather context
 
 ```bash
-# $UP / $DEFAULT resolved per SKILL.md "Remote" (origin is a fork in some repos)
+# $UP / $DEFAULT resolved per ship SKILL.md Hard stops (origin is a fork in some repos)
 git diff "$UP/$DEFAULT"...HEAD --stat && git diff "$UP/$DEFAULT"...HEAD
 git log "$UP/$DEFAULT"..HEAD --oneline
 git branch --show-current   # usually carries the ticket key
@@ -27,11 +27,11 @@ Total editable prose under ~400 words (outline code blocks excluded). Factual to
 
 ## Evidence attachments
 
-When a change was verified in a UI, attach the screenshots/video rather than describing them — see "Attachments" in `../SKILL.md` for the `gh --attach` mechanics. Put them under Testing, one line of caption each, and never leave the body pointing at a local path the reviewer cannot open.
+When a change was verified in a UI, attach the screenshots/video rather than describing them — see Attachments below. Put them under Testing, one line of caption each, and never leave the body pointing at a local path the reviewer cannot open.
 
 ## Change outline
 
-The reviewer's map of the implementation, drawn with the `show-me` conventions (`../show-me/SKILL.md`). Pick the smallest set of views that explains the change; skip any that did not change. Order them so the story reads easily — often contract or data shape first, then behavior, then files.
+The reviewer's map of the implementation, drawn with the `show-me` conventions (`../../show-me/SKILL.md`). Pick the smallest set of views that explains the change; skip any that did not change. Order them so the story reads easily — often contract or data shape first, then behavior, then files.
 
 | View | Use when |
 |---|---|
@@ -83,3 +83,11 @@ External API calls (latency, error handling) · schema/migration changes · auth
 ## Testing
 - <commands run, patch links | Not run: <reason>>
 ```
+
+## Attachments (screenshots, video)
+
+`gh pr create/edit --attach <file>#<alt text>` uploads the file and returns a `github.com/user-attachments/...` URL scoped to repo access. It takes up to 50 files.
+
+- **Most reliable path:** `--attach` the files, read the returned URLs with `gh pr view <n> --json body`, inline them as `![alt](url)`, and re-apply with `gh pr edit <n> --body-file`. gh's own reference rewriting matches path strings exactly and leaves dangling refs on any mismatch.
+- **Video is a bare URL** on its own line, which GitHub renders as a player. Wrapping it in `![alt](url)` renders broken.
+- **Verify:** `gh pr view <n> --json body` shows no leftover local paths, and the asset URLs return 200.

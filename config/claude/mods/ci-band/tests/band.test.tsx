@@ -220,7 +220,7 @@ test('an all-green PR leaves the band for the status line', async ($, on) => {
   expect(host.status()).toBe('✓ PR #12 2 passed')
 })
 
-test('turning red toasts, chimes and suggests the babysit command', async ($, on) => {
+test('turning red toasts, chimes and suggests /ship green', async ($, on) => {
   const host = world(on)
   host.answers.set('gh pr view --json', pr(RUNNING))
   await $.session.start(START)
@@ -231,11 +231,11 @@ test('turning red toasts, chimes and suggests the babysit command', async ($, on
 
   expect(host.toasts).toEqual(['✗ PR #12: CI / unit failed'])
   expect(host.chimes).toEqual(['sounds/fail.wav'])
-  expect(host.suggestions).toEqual([`/babysit-pr ${PR}`])
+  expect(host.suggestions).toEqual([`/ship green ${PR}`])
 
   const ui = await $.ui.mount({ ...BAND, surface: 'terminal' })
   await ui.press({ key: 'act' })
-  expect(host.drafts).toEqual([`/babysit-pr ${PR}`])
+  expect(host.drafts).toEqual([`/ship green ${PR}`])
 })
 
 test('a red PR with checks still running keeps the fast poll', async ($, on) => {

@@ -22,6 +22,7 @@ Shared by Claude Code (imported from `~/.claude/CLAUDE.md`), OpenCode (`~/.confi
 ## Git and repos
 
 * **Never assume `origin` is upstream.** Resolve the base remote as the one whose URL matches `github.com[:/]10gen/`: in `~/mms` that is `origin`; in mongohouse and mms-automation `origin` is the ronsanzone fork and `upstream` is 10gen. Branch from, rebase on and push PR branches to the 10gen remote; no PRs from forks.
+* **PRs and CI go through `ship`:** for any PR, CI or branch-shipping question or action (status, "is it ready", open, fix CI, comments, stacks, patches, close-out), load the `ship` skill and start with `shipctl next`. Do not hand-roll `gh`/Evergreen chains.
 * **Artifacts go to `~/notes/<project>/`**, never into work monorepos (mms, mongohouse, etc.): no plans, research or handoff docs in repos.
 * **No AI attribution** in commits, PRs or tickets: no `Co-Authored-By` trailers, no "generated with" footers.
 * **Searching monorepos:** use `rg` (or ast-grep) scoped to the relevant directories. No `grep -r` over a whole monorepo, no `find ~` or `find /`.
