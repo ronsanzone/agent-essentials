@@ -5,7 +5,7 @@ description: Load first for any question or action about a branch's or PR's stat
 
 # Ship
 
-`/ship` is approval to run the routine steps without per-step confirmation: branch, ticket, stage, commit, push, draft PR, fix pushes, and a re-run of the one task that flaked. Stop only for the hard stops below, an ambiguous choice, a failed command, or anything destructive.
+This skill runs the same way in Claude Code (`/ship …`), OpenCode (`/ship …`) and Pi (`/skill:ship …`), and loads when the user asks to ship. Invoking it is approval to run the routine steps without per-step confirmation: branch, ticket, stage, commit, push, draft PR, fix pushes, and a re-run of the one task that flaked. Stop only for the hard stops below, an ambiguous choice, a failed command, or anything destructive.
 
 ## Route first
 
@@ -19,14 +19,14 @@ description: Load first for any question or action about a branch's or PR's stat
    |---|---|---|
    | `NO_BRANCH`, `UNCOMMITTED`, `NO_PR`, `UNPUSHED` | Local work not yet on a PR | [playbooks/open.md](playbooks/open.md) |
    | `CONFLICT`, `THREADS`, `CI_RED` | PR needs work | [playbooks/green.md](playbooks/green.md) |
-   | `WAITING` | CI or the merge queue is running | `shipctl wait <pr>` (background if possible), then run `next` again |
+   | `WAITING` | CI or the merge queue is running | `shipctl wait <pr>` (it blocks; give it a long timeout or run it in the background), then run `next` again |
    | `READY` | Mergeable; only a human step is left | Report it and stop. The user marks it ready, approves, or merges |
    | `MERGED` | PR merged | [playbooks/land.md](playbooks/land.md) |
    | `CLOSED`, `NOTHING` | Nothing to ship | Report and stop |
 
    A `stacked:` line in the output also loads [playbooks/stack.md](playbooks/stack.md). `check` is one `shipctl next` plus `shipctl report` when `CI_RED`, with no changes.
-2. **Copy the playbook's numbered steps into your todo list verbatim**, before acting. A step you skip stays listed with the reason. Do not merge, reorder or summarize the steps.
-3. **After each playbook, run `shipctl next` again** and continue until the verdict is `WAITING`, `READY` or a stop. "Get this over the line" means loop. A single `open` stops after the PR exists.
+2. **Copy the playbook's numbered steps into your todo list verbatim**, before acting. Use the harness's todo tool, or a numbered checklist in your reply if it has none. A step you skip stays listed with the reason. Do not merge, reorder or summarize the steps.
+3. **After each playbook, run `shipctl next` again.** "Get this over the line" means keep going: on `WAITING`, run `shipctl wait`, then `next` again, until `READY` or a stop. That loop needs no harness loop command. A single `open` or `check` stops after one pass.
 
 ## Hard stops (every playbook)
 
@@ -55,7 +55,7 @@ description: Load first for any question or action about a branch's or PR's stat
 | Early-signal Evergreen patch | `shipctl patch <task-url> [--uncommitted]` (see [playbooks/patch.md](playbooks/patch.md)) |
 | Tickets whose PRs merged | `~/.agents/skills/ship/scripts/cleanup_prs.py scan` / `resolve … --apply` |
 
-`shipctl` is `scripts/shipctl` (on PATH as `~/bin/shipctl`). It needs `gh`, `git`, and `evergreen` logged in once (`evergreen client get-oauth-token` must print a token). Use the `evergreen` CLI and the Evergreen MCP only when `shipctl` output doesn't answer the question.
+`shipctl` is `scripts/shipctl` (on PATH as `~/bin/shipctl`). It needs `gh`, `git`, and `evergreen` logged in once (`evergreen client get-oauth-token` must print a token). Use the Evergreen MCP only when `shipctl` output doesn't answer the question. From the `evergreen` CLI use only `patch`, `finalize-patch` and `client get-oauth-token`. Never guess other subcommands (`list-tasks`, `version`, `task display` and `patch list` don't exist or do something else).
 
 ## State file
 
@@ -68,4 +68,4 @@ description: Load first for any question or action about a branch's or PR's stat
 
 ## Report
 
-Lead with the outcome: `OPENED`, `GREEN`/`READY`, `IN-FLIGHT`, `BLOCKED` or `LANDED`. Then give what changed, the decisions you made, any drafted replies, and the open items. Every state claim ends with `Evidence:`, meaning live state read back after the last action (`shipctl next` output, `gh pr view`, the pushed hash, Spruce task states). A signal you didn't observe this run is "unverified", never green. Under `/loop`, say when the loop can stop. Otherwise suggest `/loop 20m /ship green <url>` while the verdict is `WAITING` or `IN-FLIGHT`.
+Lead with the outcome: `OPENED`, `GREEN`/`READY`, `IN-FLIGHT`, `BLOCKED` or `LANDED`. Then give what changed, the decisions you made, any drafted replies, and the open items. Every state claim ends with `Evidence:`, meaning live state read back after the last action (`shipctl next` output, `gh pr view`, the pushed hash, Spruce task states). A signal you didn't observe this run is "unverified", never green. When stopping while the verdict is `WAITING` or `IN-FLIGHT`, give the user the command to resume: `/ship green <url>` (Pi: `/skill:ship green <url>`). In Claude Code, `/loop 20m /ship green <url>` repeats it on a schedule. When already running under a loop, say when it can stop.

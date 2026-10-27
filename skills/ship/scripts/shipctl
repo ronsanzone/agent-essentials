@@ -111,10 +111,10 @@ class Evergreen:
 
 
 def failed_tasks(evg, version_id):
-    """Failed (not aborted) tasks of a version, plus the count of aborted ones."""
-    failed, aborted = [], 0
+    """Failed (not aborted) tasks of a version, the count of aborted ones, and restarted tasks still running."""
+    failed, aborted, rerunning = [], 0, []
     for b in evg.get(f"versions/{version_id}/builds"):
-        if b.get("status") not in ("failed",):
+        if b.get("status") not in ("failed", "started"):
             continue
         for t in evg.get(f"builds/{b['_id']}/tasks", {"limit": 500}):
             ds = t.get("display_status") or t.get("status")
@@ -122,7 +122,9 @@ def failed_tasks(evg, version_id):
                 aborted += 1
             elif ds in FAILED:
                 failed.append(t)
-    return failed, aborted
+            elif ds in RUNNING and t.get("execution", 0) > 0:
+                rerunning.append(t)
+    return failed, aborted, rerunning
 
 
 def mainline_history(evg, task):
@@ -199,6 +201,24 @@ def check_rows(pr):
             "url": c.get("detailsUrl") or c.get("targetUrl") or "",
         })
     return rows
+
+
+def split_checks(evg, rows):
+    """-> (failed, pending) check names. A red Evergreen check whose version is running again (a restarted
+    task) counts as pending: GitHub shows the old failure until the rerun finishes."""
+    failed = [r["name"] for r in rows if r["state"] in GH_FAILED]
+    pending = [r["name"] for r in rows if r["state"] in GH_PENDING]
+    running = {}
+    for r in rows:
+        m = re.search(rf"/version/({VERSION_ID})|_([0-9a-f]{{24}})_\d\d_\d\d_\d\d", r["url"])
+        vid = m and (m.group(1) or m.group(2))
+        if r["name"] in failed and vid:
+            if vid not in running:
+                running[vid] = evg.get(f"versions/{vid}").get("status") in RUNNING
+            if running[vid]:
+                failed.remove(r["name"])
+                pending.append(f"{r['name']} (rerunning)")
+    return failed, pending
 
 
 def mq_removals(repo, number):
@@ -383,7 +403,10 @@ def triage_version(evg, vid, ctx, args, out, label):
     out.append(f"{SPRUCE}/version/{vid} · requester `{v.get('requester')}` · {(v.get('message') or '').splitlines()[0][:140] if v.get('message') else ''}")
     if v.get("status") in RUNNING:
         out.append("still running; `shipctl wait` blocks until it finishes")
-    tasks, aborted = failed_tasks(evg, vid)
+    tasks, aborted, rerunning = failed_tasks(evg, vid)
+    for t in rerunning:
+        out.append(f"rerunning: {t['build_variant']} / {t['display_name']} (execution {t['execution']}; an earlier "
+                   f"execution failed, and GitHub shows that failure until this run finishes)")
     if not tasks:
         out.append("no failed tasks" + (f" ({aborted} aborted)" if aborted else ""))
         return 0
@@ -497,8 +520,7 @@ def wait(args):
         if tgt["kind"] == "pr":
             pr = gh_pr(tgt["repo"], tgt["number"])
             rows = check_rows(pr)
-            pend = [r["name"] for r in rows if r["state"] in GH_PENDING]
-            bad = [r["name"] for r in rows if r["state"] in GH_FAILED]
+            bad, pend = split_checks(evg, rows)
             since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
             vids = {m.group(1) for r in rows if (m := VERSION_RE.search(r["url"]))}
             projects = {evg.get(f"versions/{v}")["project"] for v in vids}
@@ -596,8 +618,7 @@ def gather(args):
     pr = json.loads(p.stdout)["data"]["repository"]["pullRequest"]
     f["pr"] = pr
     rows = check_rows(gh_pr(repo, number))
-    f["checks_failed"] = [r["name"] for r in rows if r["state"] in GH_FAILED]
-    f["checks_pending"] = [r["name"] for r in rows if r["state"] in GH_PENDING]
+    f["checks_failed"], f["checks_pending"] = split_checks(Evergreen(), rows)
     head_date = pr["commits"]["nodes"][0]["commit"]["committedDate"]
     f["mq_failed_on_head"] = [n for n in pr["timelineItems"]["nodes"]
                               if n and n["reason"] != "DEQUEUED" and n["createdAt"] > head_date]
@@ -637,7 +658,8 @@ def next_cmd(args):
             out.append(f"merge queue removed this head {len(f['mq_failed_on_head'])}x: "
                        + ", ".join(n["reason"] for n in f["mq_failed_on_head"]))
         if f.get("checks_pending"):
-            out.append(f"pending checks: {len(f['checks_pending'])}")
+            p = f["checks_pending"]
+            out.append(f"pending checks: {len(p)}" + (f" ({', '.join(p)})" if len(p) <= 5 else ""))
         if f.get("threads") or f.get("outdated_threads"):
             who = {}
             for t in f.get("threads", []):

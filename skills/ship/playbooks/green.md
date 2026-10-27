@@ -1,6 +1,6 @@
 # Playbook: get a PR to green
 
-For the verdicts `CONFLICT`, `THREADS` and `CI_RED`, or `/ship green <pr>`. One pass covers several steps: sweep every signal, triage before fixing, fix in work order, push once, then log. Cadence comes from `/loop`, not from polling inside a pass.
+For the verdicts `CONFLICT`, `THREADS` and `CI_RED`, or `/ship green <pr>`. One pass covers several steps: sweep every signal, triage before fixing, fix in work order, push once, then log. Between passes, wait with `shipctl wait` (SKILL.md step 3), never with `sleep` loops.
 
 Mode, named in the report's first line:
 - **drive** (default): fix what can be fixed.
