@@ -1,13 +1,18 @@
 # Playbook: failing checks / Evergreen tasks
 
-## Split the failures by system
+## Start with `ci-triage`
 
-From `gh pr checks`, separate:
+Run `ci-triage report <pr-url> -C <pr checkout>` (ci-triage skill) first. In one call it covers:
 
-- **GitHub-native checks** (Actions, code_health, lint): logs via `gh run view <run-id> --log-failed`.
-- **Evergreen checks** (target URLs at evergreen/spruce.corp.mongodb.com): debug via the executor MCP using the workflow below.
+- GitHub-native failures, with their `gh run view --log-failed` commands.
+- The PR's Evergreen run and every merge-queue attempt.
+- Failing-test assertions and mainline flake history.
+- Staleness, including whether the failing test exists only upstream.
+- The local bazel repro command.
 
-## Fetching Evergreen failure details
+Use `ci-triage wait <pr-url>` instead of sleep-polling. Fall back to the MCP chain below only when the brief's excerpt doesn't establish the root cause.
+
+## Fetching Evergreen failure details (fallback)
 
 Load the `executor-usage` skill, then work inside `execute` snippets. Tool paths move between Executor connections; **discover them with `tools.search` each session and `tools.describe.tool` before calling — the live catalog wins over anything written here.** The chain has three levels; do not stop early.
 
@@ -37,7 +42,7 @@ Write the classification and evidence into the state file's triage entry before 
 
 Batch all fixes into one push; the push retriggers the PR's Evergreen run.
 
-**Early signal:** when one Evergreen task failed and the full run is slow, submit a targeted patch running just that task alongside the push — fast confirmation of the fix without waiting for the whole waterfall.
+**Early signal:** when one Evergreen task failed and the full run is slow, submit a targeted patch running just that task alongside the push — fast confirmation of the fix without waiting for the whole waterfall. Use `ci-triage patch <task url>`: it handles generated `INT_JAVA_*` tasks and refuses `UNIT_JAVA_*`, which can't be narrowed (rerun those locally).
 
 ## Manual patch cases
 

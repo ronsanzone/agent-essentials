@@ -1,0 +1,625 @@
+#!/usr/bin/env python3
+"""Triage failing CI for a GitHub PR or an Evergreen version in one call, for agents.
+
+usage:
+  ci-triage report <target> [-C DIR] [--no-fetch] [--max-tasks N] [--max-tests N]
+  ci-triage wait   <target> [-C DIR] [--interval S] [--timeout S]
+  ci-triage patch  <task url|task id|NAME --variant V> [-C DIR] [--uncommitted] [--dry-run]
+
+<target>: a GitHub PR URL, owner/repo#N, a bare PR number (repo from DIR's 10gen remote), an
+Evergreen/Spruce version, patch or task URL, or a 24-hex version id.
+
+report prints one bounded brief: GitHub-native failures, the PR's Evergreen run and every merge-queue
+attempt for the PR, failed tasks with mainline history, the assertion or compiler lines from the
+logs, branch staleness, where each failing test came from, and the local bazel command to rerun it.
+wait blocks until the PR's checks and any running merge-queue attempt finish.
+
+Evergreen is read through its REST API with `evergreen client get-oauth-token` (corp host; static
+API keys are rejected). Read-only, except `git fetch` of the base remote unless --no-fetch.
+Exit codes: report 0 nothing failing, 1 failures found, 2 usage/auth error. wait 0 green,
+1 something failed, 3 timeout.
+"""
+import argparse
+import datetime as dt
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+EVG = os.environ.get("CI_TRIAGE_EVG_HOST", "https://evergreen.corp.mongodb.com")
+SPRUCE = "https://spruce.corp.mongodb.com"
+FAILED = {"failed", "setup-failed", "system-failed", "task-timed-out", "test-timed-out", "known-issue"}
+RUNNING = {"created", "started", "undispatched", "dispatched", "will-run", "pending"}
+GH_PENDING = {"PENDING", "IN_PROGRESS", "QUEUED", "EXPECTED", "WAITING", "REQUESTED"}
+GH_FAILED = {"FAILURE", "ERROR", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "STARTUP_FAILURE"}
+MQ_LOOKBACK_DAYS = 7
+MQ_MAX_PAGES = 10
+
+# Lines worth showing from a failing test's log, and from a task log with no test results.
+TEST_LINE_RE = re.compile(
+    r"AssertionFailedError|AssertionError|ComparisonFailure|expected:|Expected|Received|"
+    r"Exception|Error:|^\s*●|FAIL\b")
+COMPILE_LINE_RE = re.compile(
+    r"\berror:|\bERROR:|\bFAILED:|\[NullAway\]|error TS\d+|\bError:|BUILD FAILED|"
+    r"exited with code [1-9]|Command failed|^[\w.]+(?:Error|Exception): ")
+NOISE_RE = re.compile(
+    r"TSS|tss_quarantine|log_spec\.yaml|teardown|Posting test logs|"
+    r"ERROR: Build did NOT complete|--- BEGIN|--- END")
+FRAME_RE = re.compile(r"\bat (com\.xgen\.\S+)")
+TIMESTAMP_RE = re.compile(r"^\[\d{4}/\d\d/\d\d [\d:.]+\]\s*")
+VERSION_ID = r"[0-9a-f]{24}|[\w-]+_[0-9a-f]{40}"  # patch/merge-queue ids, mainline ids
+VERSION_RE = re.compile(rf"/(?:version|patch)/({VERSION_ID})(?:[/?#]|$)")
+TASK_RE = re.compile(r"/task/([^/?#]+)")
+PR_URL_RE = re.compile(r"github\.com/([^/]+/[^/]+)/pull/(\d+)")
+PR_REF_RE = re.compile(r"^([\w.-]+/[\w.-]+)#(\d+)$")
+MQ_PR_RE = r"\(#{}\)"
+
+
+class Fail(Exception):
+    pass
+
+
+def run(cmd, cwd=None, check=True, timeout=120):
+    p = subprocess.run(cmd, cwd=cwd, capture_output=True, text=True, timeout=timeout)
+    if check and p.returncode != 0:
+        raise Fail(f"{' '.join(cmd)}: {p.stderr.strip()[:300]}")
+    return p
+
+
+# ---------- Evergreen REST ----------
+
+class Evergreen:
+    def __init__(self):
+        self.token = None
+
+    def _token(self, refresh=False):
+        if self.token is None or refresh:
+            p = run(["evergreen", "client", "get-oauth-token"], check=False)
+            lines = [l for l in p.stdout.splitlines() if l.strip()]
+            if p.returncode != 0 or not lines:
+                raise Fail("`evergreen client get-oauth-token` failed; run it once interactively to log in: "
+                           + p.stderr.strip()[:200])
+            self.token = lines[-1].strip()
+        return self.token
+
+    def raw(self, path, params=None):
+        url = path if path.startswith("http") else f"{EVG}/rest/v2/{path}"
+        if params:
+            url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
+        url = url.replace("https://evergreen.mongodb.com/", f"{EVG}/")
+        for attempt in (0, 1):
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {self._token(attempt == 1)}"})
+            try:
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    return r.read().decode("utf-8", "replace")
+            except urllib.error.HTTPError as e:
+                if e.code == 401 and attempt == 0:
+                    continue
+                raise Fail(f"GET {url}: HTTP {e.code} {e.read().decode('utf-8', 'replace')[:200]}")
+        raise AssertionError("unreachable")
+
+    def get(self, path, params=None):
+        return json.loads(self.raw(path, params))
+
+
+def failed_tasks(evg, version_id):
+    """Failed (not aborted) tasks of a version, plus the count of aborted ones."""
+    failed, aborted = [], 0
+    for b in evg.get(f"versions/{version_id}/builds"):
+        if b.get("status") not in ("failed",):
+            continue
+        for t in evg.get(f"builds/{b['_id']}/tasks", {"limit": 500}):
+            ds = t.get("display_status") or t.get("status")
+            if ds == "aborted" or t.get("aborted"):
+                aborted += 1
+            elif ds in FAILED:
+                failed.append(t)
+    return failed, aborted
+
+
+def mainline_history(evg, task):
+    try:
+        runs = evg.get(f"projects/{task['project_id']}/tasks/{urllib.parse.quote(task['display_name'])}",
+                       {"build_variant": task["build_variant"], "num_versions": 10})
+    except Fail:
+        return None
+    runs = [r for r in runs if r.get("requester") == "gitter_request"]
+    bad = sum(1 for r in runs if (r.get("display_status") or r.get("status")) in FAILED)
+    return bad, len(runs)
+
+
+def excerpt(text, line_re, limit):
+    out, seen = [], set()
+    for line in text.splitlines():
+        s = TIMESTAMP_RE.sub("", line.strip())
+        if not s or NOISE_RE.search(s) or not line_re.search(s):
+            continue
+        s = s[:400]
+        if s not in seen:
+            seen.add(s)
+            out.append(s)
+        if len(out) >= limit:
+            break
+    return out
+
+
+def test_excerpt(text):
+    lines = excerpt(text, TEST_LINE_RE, 4)
+    frame = next((m.group(1) for m in map(FRAME_RE.search, text.splitlines()) if m), None)
+    if frame:
+        lines.append(f"at {frame}")
+    return lines
+
+
+def mq_versions(evg, project, pr_number, since):
+    """Merge-queue versions for one PR, newest first, back to `since`."""
+    out, start, pat = [], None, re.compile(MQ_PR_RE.format(pr_number))
+    for _ in range(MQ_MAX_PAGES):
+        params = {"requester": "github_merge_request", "limit": 100}
+        if start is not None:
+            params["start"] = start
+        page = evg.get(f"projects/{project}/versions", params)
+        if not page:
+            break
+        out += [v for v in page if pat.search(v.get("message", ""))]
+        if page[-1]["create_time"] < since or len(page) < 100:
+            break
+        start = page[-1]["order"] - 1
+    return out
+
+
+# ---------- GitHub ----------
+
+def gh_pr(repo, number):
+    p = run(["gh", "pr", "view", str(number), "-R", repo, "--json",
+             "number,title,url,headRefOid,headRefName,baseRefName,createdAt,state,mergeStateStatus,statusCheckRollup"])
+    return json.loads(p.stdout)
+
+
+def check_rows(pr):
+    rows = []
+    for c in pr.get("statusCheckRollup") or []:
+        rows.append({
+            "name": c.get("name") or c.get("context") or "?",
+            "state": (c.get("conclusion") or c.get("state") or c.get("status") or "").upper(),
+            "url": c.get("detailsUrl") or c.get("targetUrl") or "",
+        })
+    return rows
+
+
+def mq_removals(repo, number):
+    owner, name = repo.split("/")
+    q = ("query($o:String!,$n:String!,$p:Int!){repository(owner:$o,name:$n){pullRequest(number:$p){"
+         "timelineItems(last:20,itemTypes:[REMOVED_FROM_MERGE_QUEUE_EVENT]){nodes{... on "
+         "RemovedFromMergeQueueEvent{createdAt reason}}}}}}")
+    p = run(["gh", "api", "graphql", "-f", f"query={q}", "-F", f"o={owner}", "-F", f"n={name}",
+             "-F", f"p={number}"], check=False)
+    if p.returncode != 0:
+        return []
+    nodes = json.loads(p.stdout)["data"]["repository"]["pullRequest"]["timelineItems"]["nodes"]
+    return [n for n in nodes if n]
+
+
+# ---------- local git ----------
+
+def base_remote(cwd):
+    p = run(["git", "remote", "-v"], cwd=cwd, check=False)
+    for line in p.stdout.splitlines():
+        name, url = line.split()[:2]
+        if re.search(r"github\.com[:/]10gen/", url):
+            return name, re.search(r"github\.com[:/](10gen/[^/\s]+?)(?:\.git)?$", url).group(1)
+    return None, None
+
+
+def local_context(cwd, base, fetch):
+    if run(["git", "rev-parse", "--git-dir"], cwd=cwd, check=False).returncode != 0:
+        return None
+    remote, _ = base_remote(cwd)
+    if not remote:
+        return None
+    if fetch:
+        run(["git", "fetch", "-q", remote, base], cwd=cwd, check=False, timeout=300)
+    upstream = f"{remote}/{base}"
+    git = lambda *a: run(["git", *a], cwd=cwd, check=False).stdout.strip()
+    ctx = {"cwd": cwd, "upstream": upstream, "head": git("rev-parse", "HEAD"),
+           "merge_base": git("merge-base", "HEAD", upstream),
+           "behind": git("rev-list", "--count", f"HEAD..{upstream}")}
+    mt = run(["git", "merge-tree", "--write-tree", "--name-only", "HEAD", upstream], cwd=cwd, check=False)
+    ctx["conflicts"] = [] if mt.returncode == 0 else [
+        l for l in mt.stdout.splitlines()[1:] if l and not l.startswith(("Auto-merging", "CONFLICT"))][:10]
+    changed = git("diff", "--name-only", ctx["merge_base"], "HEAD").splitlines()
+    ctx["build_files_changed"] = [f for f in changed if f.endswith(("BUILD.bazel", "BUILD", ".bzl"))]
+    return ctx
+
+
+def locate_test(ctx, test_file):
+    """Map a JUnit-style `pkg.Class.method` (or `pkg.Class`) to its file, origin and bazel target."""
+    parts = test_file.split(".")
+    cls_idx = next((i for i, p in enumerate(parts) if p[:1].isupper()), None)
+    if cls_idx is None:
+        return None
+    cls, method = parts[cls_idx], (parts[cls_idx + 1] if cls_idx + 1 < len(parts) else None)
+    method = method.split("(")[0].split("[")[0] if method else None
+    rel = "/".join(parts[:cls_idx + 1]) + ".java"
+    git = lambda *a: run(["git", *a], cwd=ctx["cwd"], check=False)
+    path = None
+    for ref in ("HEAD", ctx["upstream"]):
+        hit = [f for f in git("ls-tree", "-r", "--name-only", ref).stdout.splitlines() if f.endswith("/" + rel)]
+        if hit:
+            path = hit[0]
+            break
+    if not path:
+        return {"class": cls, "method": method, "path": None}
+    on_head = git("cat-file", "-e", f"HEAD:{path}").returncode == 0
+    info = {"class": cls, "method": method, "path": path, "on_head": on_head}
+    if not on_head:
+        info["added_by"] = git("log", "-1", "--format=%h %s", "--diff-filter=A", ctx["upstream"], "--",
+                               path).stdout.strip()
+    else:
+        info["touched_by_branch"] = git("diff", "--quiet", ctx["merge_base"], "HEAD", "--",
+                                        path).returncode != 0
+        info["changed_upstream"] = git("log", "-3", "--format=%h %s", f"{ctx['merge_base']}..{ctx['upstream']}",
+                                       "--", path).stdout.strip().splitlines()
+        if method and method not in git("show", f"HEAD:{path}").stdout:
+            info["method_added_by"] = git("log", "-1", "--format=%h %s", "-S", method, ctx["upstream"], "--",
+                                          path).stdout.strip() or "?"
+    d = os.path.dirname(path)
+    if os.path.exists(os.path.join(ctx["cwd"], d, "BUILD.bazel")):
+        info["target"] = f"//{d}:{cls}"
+    info["int_test"] = "/src/test/" in f"/{path}" or cls.endswith("IntTests")
+    return info
+
+
+# ---------- report ----------
+
+def resolve(target, cwd):
+    """-> dict(kind=pr|version|task, ...)."""
+    m = PR_URL_RE.search(target) or PR_REF_RE.match(target)
+    if m:
+        return {"kind": "pr", "repo": m.group(1), "number": int(m.group(2))}
+    if target.isdigit():
+        _, repo = base_remote(cwd)
+        if not repo:
+            raise Fail(f"bare PR number needs a 10gen remote in {cwd}; pass owner/repo#{target}")
+        return {"kind": "pr", "repo": repo, "number": int(target)}
+    m = VERSION_RE.search(target)
+    if m or re.fullmatch(VERSION_ID, target):
+        return {"kind": "version", "id": m.group(1) if m else target}
+    m = TASK_RE.search(target)
+    if m:
+        return {"kind": "task", "id": m.group(1)}
+    raise Fail(f"cannot parse target {target!r}")
+
+
+def describe_task(evg, task, ctx, max_tests, out):
+    name, bv, ex = task["display_name"], task["build_variant"], task.get("execution", 0)
+    hist = mainline_history(evg, task)
+    hist_s = f"mainline: {hist[0]}/{hist[1]} recent runs failed" if hist and hist[1] else "mainline: no recent runs"
+    out.append(f"- **{bv} / {name}** ({task.get('display_status')}, execution {ex}; {hist_s})")
+    out.append(f"  {SPRUCE}/task/{task['task_id']}?execution={ex}")
+    tests = []
+    if task.get("has_test_results") or task.get("test_info") or task.get("display_status") == "failed":
+        try:
+            tests = evg.get(f"tasks/{task['task_id']}/tests", {"status": "fail", "limit": max_tests,
+                                                               "execution": ex})
+        except Fail:
+            tests = []
+    if tests:
+        for t in tests[:max_tests]:
+            out.append(f"  - test `{t['test_file']}`")
+            url = (t.get("logs") or {}).get("url_raw")
+            lines = []
+            if url:
+                try:
+                    lines = test_excerpt(evg.raw(url))
+                except Fail as e:
+                    lines = [f"(log fetch failed: {e})"]
+            out += [f"    > {l}" for l in lines or ["(no assertion lines found; open the log above)"]]
+            if ctx:
+                loc = locate_test(ctx, t["test_file"])
+                out += [f"    {l}" for l in local_lines(loc, ctx)]
+        return
+    try:
+        log = evg.raw(f"tasks/{task['task_id']}/build/TaskLogs",
+                      {"type": "task_log", "execution": ex, "tail_limit": 5000})
+    except Fail as e:
+        log = ""
+        out.append(f"  (task log fetch failed: {e})")
+    lines = excerpt(log, COMPILE_LINE_RE, 15)
+    out.append("  no test results; error lines from the task log:" if lines else
+               "  no test results and no error lines in the last 5000 log lines; read the full log:")
+    out += [f"    > {l}" for l in lines]
+    if not lines:
+        out.append(f"    {EVG}/task_log_raw/{task['task_id']}/{ex}?type=T")
+
+
+def local_lines(loc, ctx):
+    if not loc:
+        return []
+    if not loc.get("path"):
+        return [f"local: no file for `{loc['class']}` on HEAD or {ctx['upstream']}"]
+    lines = [f"file: `{loc['path']}`"]
+    if not loc["on_head"]:
+        lines.append(f"**not on this branch**: exists only on {ctx['upstream']}, added by {loc['added_by']} "
+                     f"→ merge {ctx['upstream']} and rerun locally")
+    else:
+        if loc.get("method_added_by"):
+            lines.append(f"**test `{loc['method']}` is not on this branch**: added on {ctx['upstream']} by "
+                         f"{loc['method_added_by']} → merge {ctx['upstream']}, then rerun locally")
+        if loc.get("touched_by_branch"):
+            lines.append("this branch changes the test file")
+        if loc.get("changed_upstream"):
+            lines.append(f"changed on {ctx['upstream']} since the merge base: " + "; ".join(loc["changed_upstream"]))
+    if loc.get("target"):
+        filt = f" --test_filter='{loc['method']}'" if loc.get("method") else ""
+        lines.append(f"repro: `bazel test {loc['target']} --test_output=errors{filt}`")
+        if loc["int_test"]:
+            lines.append("int test: needs a local MongoDB (see the mms-dev-loop skill); run *IntTests targets one at a time")
+    return lines
+
+
+def triage_version(evg, vid, ctx, args, out, label):
+    v = evg.get(f"versions/{vid}")
+    out.append(f"\n## {label}: {v.get('status')}")
+    out.append(f"{SPRUCE}/version/{vid} · requester `{v.get('requester')}` · {(v.get('message') or '').splitlines()[0][:140] if v.get('message') else ''}")
+    if v.get("status") in RUNNING:
+        out.append("still running; `ci-triage wait` blocks until it finishes")
+    tasks, aborted = failed_tasks(evg, vid)
+    if not tasks:
+        out.append("no failed tasks" + (f" ({aborted} aborted)" if aborted else ""))
+        return 0
+    out.append(f"{len(tasks)} failed task(s)" + (f", {aborted} aborted after the failure (not failures)" if aborted else ""))
+    for t in tasks[:args.max_tasks]:
+        describe_task(evg, t, ctx, args.max_tests, out)
+    if len(tasks) > args.max_tasks:
+        out.append(f"- …{len(tasks) - args.max_tasks} more: " + ", ".join(t["display_name"] for t in tasks[args.max_tasks:]))
+    return len(tasks)
+
+
+def report(args):
+    evg, out, failures = Evergreen(), [], 0
+    tgt = resolve(args.target, args.C)
+    if tgt["kind"] == "task":
+        t = evg.get(f"tasks/{tgt['id']}")
+        tgt = {"kind": "version", "id": t["version_id"]}
+    if tgt["kind"] == "version":
+        v = evg.get(f"versions/{tgt['id']}")
+        ctx = local_context(args.C, "master", not args.no_fetch)
+        out.append(f"# ci-triage: version {tgt['id']} ({v.get('project')})")
+        out += local_header(ctx)
+        failures += triage_version(evg, tgt["id"], ctx, args, out, "Evergreen version")
+        print("\n".join(out))
+        return 1 if failures else 0
+
+    pr = gh_pr(tgt["repo"], tgt["number"])
+    ctx = local_context(args.C, pr["baseRefName"], not args.no_fetch)
+    out.append(f"# ci-triage: {tgt['repo']}#{pr['number']} {pr['title']}")
+    out.append(f"{pr['url']} · {pr['state']} · merge state {pr['mergeStateStatus']} · head `{pr['headRefOid'][:12]}`")
+    if ctx and ctx["head"] != pr["headRefOid"]:
+        out.append(f"note: local HEAD `{ctx['head'][:12]}` is not the PR head; local facts describe {ctx['cwd']}")
+    out += local_header(ctx)
+
+    rows = check_rows(pr)
+    evg_versions, projects = [], set()
+    for r in rows:
+        m = VERSION_RE.search(r["url"])
+        if m and m.group(1) not in evg_versions:
+            evg_versions.append(m.group(1))
+    pending = [r for r in rows if r["state"] in GH_PENDING]
+    native_bad = [r for r in rows if r["state"] in GH_FAILED and "evergreen" not in r["url"]]
+    out.append(f"\n## GitHub checks: {len(rows)} total, {len(pending)} pending, "
+               f"{sum(r['state'] in GH_FAILED for r in rows)} failed")
+    for r in native_bad:
+        run_id = re.search(r"/runs/(\d+)", r["url"])
+        hint = f" → `gh run view {run_id.group(1)} -R {tgt['repo']} --log-failed`" if run_id else ""
+        out.append(f"- {r['name']}: {r['state']} {r['url']}{hint}")
+
+    for vid in evg_versions:
+        v = evg.get(f"versions/{vid}")
+        projects.add(v["project"])
+        failures += triage_version(evg, vid, ctx, args, out, "PR Evergreen run")
+
+    since = max(pr["createdAt"], (dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=MQ_LOOKBACK_DAYS))
+                .strftime("%Y-%m-%dT%H:%M:%SZ"))
+    mqs = []
+    for p in sorted(projects or {"mms"}):
+        mqs += mq_versions(evg, p, pr["number"], since)
+    removals = mq_removals(tgt["repo"], pr["number"])
+    if mqs or removals:
+        out.append(f"\n## Merge queue: {len(mqs)} Evergreen attempt(s) since {since[:10]}, "
+                   f"{len(removals)} removal(s) from the queue")
+        for r in removals:
+            out.append(f"- removed {r['createdAt']}: {r['reason']}")
+        for v in mqs:
+            names = ""
+            if v.get("status") == "failed":
+                names = " · failed: " + (", ".join(t["display_name"] for t in failed_tasks(evg, v["version_id"])[0]) or "?")
+            out.append(f"- {v['create_time'][:16]} {v['status']} {SPRUCE}/version/{v['version_id']}{names}")
+        latest_failed = next((v for v in mqs if v.get("status") == "failed"), None)
+        if latest_failed:
+            failures += triage_version(evg, latest_failed["version_id"], ctx, args, out,
+                                       "Latest failed merge-queue attempt")
+    print("\n".join(out))
+    return 1 if failures or native_bad else 0
+
+
+def local_header(ctx):
+    if not ctx:
+        return ["local: no git checkout with a 10gen remote at -C; skipping branch facts"]
+    lines = [f"local: {ctx['cwd']} · {ctx['behind']} commits behind {ctx['upstream']}"]
+    if ctx["conflicts"]:
+        lines.append("merge with upstream conflicts in: " + ", ".join(ctx["conflicts"]))
+    elif ctx["behind"] != "0":
+        lines.append(f"merge with {ctx['upstream']} is clean (git merge-tree)")
+    if ctx["build_files_changed"]:
+        lines.append("BUILD files changed on this branch → before pushing run "
+                     "`bazel build --config=javac <targets>` (Evergreen enforces strict Java deps)")
+    return lines
+
+
+# ---------- wait ----------
+
+def wait(args):
+    evg = Evergreen()
+    tgt = resolve(args.target, args.C)
+    deadline, last = time.time() + args.timeout, None
+    while True:
+        if tgt["kind"] == "pr":
+            pr = gh_pr(tgt["repo"], tgt["number"])
+            rows = check_rows(pr)
+            pend = [r["name"] for r in rows if r["state"] in GH_PENDING]
+            bad = [r["name"] for r in rows if r["state"] in GH_FAILED]
+            since = (dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=6)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            vids = {m.group(1) for r in rows if (m := VERSION_RE.search(r["url"]))}
+            projects = {evg.get(f"versions/{v}")["project"] for v in vids}
+            mq = [v for p in projects for v in mq_versions(evg, p, pr["number"], since) if v["status"] in RUNNING]
+            pend += [f"merge-queue {v['version_id']}" for v in mq]
+        else:
+            vid = tgt["id"] if tgt["kind"] == "version" else evg.get(f"tasks/{tgt['id']}")["version_id"]
+            st = evg.get(f"versions/{vid}")["status"]
+            pend, bad = ([vid] if st in RUNNING else []), ([vid] if st == "failed" else [])
+        state = (len(pend), tuple(bad))
+        if state != last:
+            print(f"{dt.datetime.now().strftime('%H:%M:%S')} pending {len(pend)}, failed {len(bad)}"
+                  + (f": {', '.join(bad[:8])}" if bad else ""), flush=True)
+            last = state
+        if not pend:
+            print("done: " + ("failures → run `ci-triage report " + args.target + "`" if bad else "green"))
+            return 1 if bad else 0
+        if time.time() > deadline:
+            print(f"timeout after {args.timeout}s; still pending: {', '.join(pend[:8])}")
+            return 3
+        time.sleep(args.interval)
+
+
+# ---------- patch ----------
+
+# Generated tasks (UNIT_JAVA_*, INT_JAVA_*) are not in the project YAML, so `-t INT_JAVA_X` schedules
+# nothing. A patch must schedule the generator; these generators can be narrowed to one task def.
+INT_GENERATORS = {"GENERATE_INT_TESTS_BAZEL_COMBINED", "GENERATE_INT_TESTS_BAZEL"}
+INT_TASK_DEFS = "server/src/test/test_tasks.yml"
+
+
+def patch_plan(name, variant, generator):
+    """-> what to schedule for one failing task: variant, task, --param list, narrowed."""
+    if not generator:
+        return {"variant": variant, "task": name, "params": [], "narrowed": True}
+    if generator in INT_GENERATORS and name.startswith("INT_JAVA_"):
+        key = name[len("INT_JAVA_"):].lower()
+        params = [f"task_def_names={key}"]
+        if generator == "GENERATE_INT_TESTS_BAZEL_COMBINED":
+            # Its remote-execution path ignores task_def_names; only the host path filters.
+            params.insert(0, "int_use_rbe=false")
+        return {"variant": variant, "task": generator, "params": params, "narrowed": True, "task_def": key}
+    return {"variant": variant, "task": generator, "params": [], "narrowed": False}
+
+
+def task_identity(evg, args):
+    """-> (display name, variant, project, generator display name or None)."""
+    m = TASK_RE.search(args.target)
+    if m or not args.variant:
+        try:
+            t = evg.get(f"tasks/{m.group(1) if m else args.target}")
+        except Fail as e:
+            raise Fail(f"{e}\n(a bare task name needs --variant; or pass the task's Spruce URL from `report`)")
+    else:
+        runs = evg.get(f"projects/{args.project}/tasks/{urllib.parse.quote(args.target)}",
+                       {"build_variant": args.variant, "num_versions": 1})
+        if not runs:
+            raise Fail(f"no recent {args.target} run on {args.variant} in {args.project} to learn its generator from")
+        t = runs[0]
+    gen = evg.get(f"tasks/{t['generated_by']}")["display_name"] if t.get("generated_by") else None
+    return t["display_name"], t["build_variant"], t.get("project_id") or args.project, gen
+
+
+def patch(args):
+    evg = Evergreen()
+    name, variant, project, generator = task_identity(evg, args)
+    plan = patch_plan(name, variant, generator)
+    if plan.get("task_def"):
+        defs = os.path.join(args.C, INT_TASK_DEFS)
+        if not re.search(rf"^- {re.escape(plan['task_def'])}:", open(defs).read(), re.M):
+            raise Fail(f"`{plan['task_def']}` is not a top-level key in {defs}; cannot narrow {name}")
+    if not plan["narrowed"] and not args.whole_variant:
+        raise Fail(f"{name} is generated by {generator}, which cannot be narrowed: a patch runs every task it "
+                   f"generates on {variant}. Rerun it locally with the repro command from `report`, or pass "
+                   f"--whole-variant to patch the whole generator anyway.")
+
+    status = run(["git", "status", "--porcelain"], cwd=args.C).stdout.splitlines()
+    untracked = [l[3:] for l in status if l.startswith("??")]
+    if args.uncommitted and untracked and not args.allow_untracked:
+        raise Fail("--uncommitted does not send untracked files; track or remove these first "
+                   "(or --allow-untracked): " + ", ".join(untracked[:10]))
+    if not args.uncommitted and any(not l.startswith("??") for l in status):
+        print("note: the tree has uncommitted changes; they are not in the patch (pass --uncommitted)")
+
+    sha = run(["git", "rev-parse", "--short=10", "HEAD"], cwd=args.C).stdout.strip()
+    desc = args.description or f"ci-triage: {name} on {sha}"
+    cmd = ["evergreen", "patch", "-p", project, "-d", desc, "-y", "--finalize", "-v", plan["variant"],
+           "-t", plan["task"]] + [a for p in plan["params"] for a in ("--param", p)]
+    if args.uncommitted:
+        cmd.append("--uncommitted")
+    print("$ " + " ".join(f"'{a}'" if " " in a else a for a in cmd))
+    if not plan["narrowed"]:
+        print(f"warning: runs every task {generator} generates on {variant}")
+    if args.dry_run:
+        return 0
+
+    p = run(cmd, cwd=args.C, check=False, timeout=600)
+    m = re.search(r"ID : (\w+)", p.stdout)
+    if not m:
+        raise Fail(f"no patch id in evergreen output (exit {p.returncode}): {(p.stdout + p.stderr).strip()[-400:]}")
+    pid = m.group(1)
+    got = evg.get(f"patches/{pid}")
+    scheduled = {vt["name"]: vt["tasks"] for vt in got.get("variants_tasks") or []}
+    if not got.get("activated") or plan["task"] not in scheduled.get(plan["variant"], []):
+        raise Fail(f"patch {pid} was created but is not scheduled as planned: activated={got.get('activated')} "
+                   f"tasks={scheduled}")
+    print(f"patch {pid} finalized: {plan['variant']} / {plan['task']}"
+          + (f" with {', '.join(plan['params'])}" if plan["params"] else ""))
+    if generator and plan["narrowed"]:
+        print(f"{generator} runs first, then generates only {name}")
+    print(f"{SPRUCE}/version/{pid}")
+    print(f"next: ci-triage wait {pid}")
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    sub = ap.add_subparsers(dest="cmd", required=True)
+    r = sub.add_parser("report")
+    r.add_argument("target")
+    r.add_argument("-C", default=os.getcwd(), help="git checkout for local facts (default: cwd)")
+    r.add_argument("--no-fetch", action="store_true")
+    r.add_argument("--max-tasks", type=int, default=5)
+    r.add_argument("--max-tests", type=int, default=3)
+    w = sub.add_parser("wait")
+    w.add_argument("target")
+    w.add_argument("-C", default=os.getcwd())
+    w.add_argument("--interval", type=int, default=60)
+    w.add_argument("--timeout", type=int, default=3 * 3600)
+    p = sub.add_parser("patch")
+    p.add_argument("target", help="task Spruce URL or id (from `report`), or a task name with --variant")
+    p.add_argument("--variant")
+    p.add_argument("--project", default="mms")
+    p.add_argument("-C", default=os.getcwd(), help="checkout to submit from (default: cwd)")
+    p.add_argument("-d", "--description")
+    p.add_argument("--uncommitted", action="store_true", help="include tracked uncommitted changes")
+    p.add_argument("--allow-untracked", action="store_true")
+    p.add_argument("--whole-variant", action="store_true", help="patch a generator that cannot be narrowed")
+    p.add_argument("--dry-run", action="store_true", help="print the evergreen command, submit nothing")
+    args = ap.parse_args()
+    try:
+        sys.exit({"report": report, "wait": wait, "patch": patch}[args.cmd](args))
+    except Fail as e:
+        print(f"ci-triage: {e}", file=sys.stderr)
+        sys.exit(2)
+
+
+if __name__ == "__main__":
+    main()

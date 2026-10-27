@@ -30,6 +30,7 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | Skill | Invoked by | Purpose |
 |---|---|---|
 | **babysit-pr** | model + `/babysit-pr` | Babysit a PR to green — one full pass of sweep, triage, fix, push, report |
+| **ci-triage** | model + `/ci-triage` | `ci-triage report/wait/patch`: one-command CI brief for a PR or Evergreen run (merge queue included), blocking wait, scoped early-signal patches |
 | **blast-radius** | user (`/blast-radius`) | Find what a change could break beyond the diff, and prove the one fact it's safe because of by running real code |
 | **bruh** | user (`/bruh`) | Restate the last message in plain human language, with no jargon |
 | **cleanup-prs** | model + `/cleanup-prs` | Close out Jira tickets whose code is already merged, after you confirm |

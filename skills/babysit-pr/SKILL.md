@@ -43,7 +43,7 @@ Modes: `drive` (default) fixes what the pass can fix; `check` is one status swee
 2. **Sweep** — gather every signal before acting on any:
    - PR facts: `gh pr view <n> -R <owner>/<repo> --json state,isDraft,mergeable,mergeStateStatus,reviewDecision,headRefName,title,url`
    - Checks: `gh pr checks <n> -R <owner>/<repo>`
-   - Evergreen: for check names/URLs pointing at Evergreen/Spruce, follow the 3-step tool chain in [evergreen.md](evergreen.md): (1) get failed tasks, (2) get test results summary with `urlRaw` per test, (3) fetch each failing test's actual log. Do not stop at the task-level auto-triage — it misses assertion errors.
+   - Evergreen and merge queue: `ci-triage report <pr-url> -C <checkout>` (see [evergreen.md](evergreen.md)). It reads the failing tests' actual logs, not the task-level auto-triage, which misses assertion errors.
    - Comments: issue comments and review threads newer than the last pass in the state file; separate human reviewers from bots.
 3. **Triage** — write findings to the state file before fixing anything.
 4. **Fix in priority order**, loading a playbook only when its branch fires:
