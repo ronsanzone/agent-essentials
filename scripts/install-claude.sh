@@ -10,7 +10,6 @@
 #   ~/.claude/hooks/<name>.sh      -> $ROOT/config/claude/hooks/<name>.sh
 #   ~/.claude/CLAUDE.md, settings.json -> $ROOT/config/claude/...
 #   ~/.config/opencode/AGENTS.md, ~/.pi/agent/AGENTS.md -> $ROOT/config/shared/AGENTS.md
-#   ~/.config/opencode/commands/ship.md -> $ROOT/config/opencode/commands/ship.md
 #   ~/bin/shipctl                  -> $ROOT/skills/ship/scripts/shipctl
 #
 # Store entries from other sources (npx skills, plugins, other repos) are left
@@ -149,8 +148,6 @@ install_config() {
   # Shared global rules: Claude imports them from CLAUDE.md; OpenCode and Pi read AGENTS.md directly.
   link "$ROOT/config/shared/AGENTS.md" "$HOME/.config/opencode/AGENTS.md"
   link "$ROOT/config/shared/AGENTS.md" "$HOME/.pi/agent/AGENTS.md"
-  # OpenCode has no skill slash commands; this one gives it `/ship` (Pi has `/skill:ship`).
-  link "$ROOT/config/opencode/commands/ship.md" "$HOME/.config/opencode/commands/ship.md"
   # The ship skill's CLI, for every harness.
   link "$ROOT/skills/ship/scripts/shipctl" "$HOME/bin/shipctl"
   for f in settings.local.json.example mcp.json.example; do

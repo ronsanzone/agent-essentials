@@ -5,7 +5,7 @@ description: Load first for any question or action about a branch's or PR's stat
 
 # Ship
 
-This skill runs the same way in Claude Code (`/ship …`), OpenCode (`/ship …`) and Pi (`/skill:ship …`), and loads when the user asks to ship. Invoking it is approval to run the routine steps without per-step confirmation: branch, ticket, stage, commit, push, draft PR, fix pushes, and a re-run of the one task that flaked. Stop only for the hard stops below, an ambiguous choice, a failed command, or anything destructive.
+This skill runs the same way in Claude Code (`/ship …`), OpenCode (`$ship …`) and Pi (`/skill:ship …`), and loads when the user asks to ship. Invoking it is approval to run the routine steps without per-step confirmation: branch, ticket, stage, commit, push, draft PR, fix pushes, and a re-run of the one task that flaked. Stop only for the hard stops below, an ambiguous choice, a failed command, or anything destructive.
 
 ## Route first
 
@@ -68,4 +68,4 @@ This skill runs the same way in Claude Code (`/ship …`), OpenCode (`/ship …`
 
 ## Report
 
-Lead with the outcome: `OPENED`, `GREEN`/`READY`, `IN-FLIGHT`, `BLOCKED` or `LANDED`. Then give what changed, the decisions you made, any drafted replies, and the open items. Every state claim ends with `Evidence:`, meaning live state read back after the last action (`shipctl next` output, `gh pr view`, the pushed hash, Spruce task states). A signal you didn't observe this run is "unverified", never green. When stopping while the verdict is `WAITING` or `IN-FLIGHT`, give the user the command to resume: `/ship green <url>` (Pi: `/skill:ship green <url>`). In Claude Code, `/loop 20m /ship green <url>` repeats it on a schedule. When already running under a loop, say when it can stop.
+Lead with the outcome: `OPENED`, `GREEN`/`READY`, `IN-FLIGHT`, `BLOCKED` or `LANDED`. Then give what changed, the decisions you made, any drafted replies, and the open items. Every state claim ends with `Evidence:`, meaning live state read back after the last action (`shipctl next` output, `gh pr view`, the pushed hash, Spruce task states). A signal you didn't observe this run is "unverified", never green. When stopping while the verdict is `WAITING` or `IN-FLIGHT`, give the user the command to resume: `/ship green <url>` (OpenCode: `$ship green <url>`; Pi: `/skill:ship green <url>`). In Claude Code, `/loop 20m /ship green <url>` repeats it on a schedule. When already running under a loop, say when it can stop.
