@@ -6,6 +6,7 @@ usage:
   shipctl report <target> [-C DIR] [--no-fetch] [--max-tasks N] [--max-tests N]
   shipctl wait   <target> [-C DIR] [--interval S] [--timeout S]
   shipctl patch  <task url|task id|NAME --variant V> [-C DIR] [--uncommitted] [--dry-run]
+  shipctl restart <task url|task id> [--force]
 
 <target>: a GitHub PR URL, owner/repo#N, a bare PR number (repo from DIR's 10gen remote), an
 Evergreen/Spruce version, patch or task URL, or a 24-hex version id.
@@ -18,9 +19,9 @@ next prints one verdict for the branch or PR (NO_BRANCH, UNCOMMITTED, NO_PR, UNP
 THREADS, CI_RED, WAITING, READY, MERGED, CLOSED, NOTHING) and the ship playbook that handles it.
 
 Evergreen is read through its REST API with `evergreen client get-oauth-token` (corp host; static
-API keys are rejected). Read-only, except `git fetch` of the base remote unless --no-fetch.
+API keys are rejected). Read-only, except `restart`, `patch`, and `git fetch` of the base remote unless --no-fetch.
 Exit codes: report 0 nothing failing, 1 failures found, 2 usage/auth error. wait 0 green,
-1 something failed, 3 timeout.
+1 something failed, 3 timeout. restart 0 restarted, 2 refused or usage/auth error.
 """
 import argparse
 import datetime as dt
@@ -90,24 +91,28 @@ class Evergreen:
             self.token = lines[-1].strip()
         return self.token
 
-    def raw(self, path, params=None):
+    def raw(self, path, params=None, method="GET"):
         url = path if path.startswith("http") else f"{EVG}/rest/v2/{path}"
         if params:
             url += ("&" if "?" in url else "?") + urllib.parse.urlencode(params)
         url = url.replace("https://evergreen.mongodb.com/", f"{EVG}/")
         for attempt in (0, 1):
-            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {self._token(attempt == 1)}"})
+            req = urllib.request.Request(url, headers={"Authorization": f"Bearer {self._token(attempt == 1)}"},
+                                         method=method)
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
                     return r.read().decode("utf-8", "replace")
             except urllib.error.HTTPError as e:
                 if e.code == 401 and attempt == 0:
                     continue
-                raise Fail(f"GET {url}: HTTP {e.code} {e.read().decode('utf-8', 'replace')[:200]}")
+                raise Fail(f"{method} {url}: HTTP {e.code} {e.read().decode('utf-8', 'replace')[:200]}")
         raise AssertionError("unreachable")
 
     def get(self, path, params=None):
         return json.loads(self.raw(path, params))
+
+    def post(self, path):
+        return json.loads(self.raw(path, method="POST"))
 
 
 def failed_tasks(evg, version_id):
@@ -205,19 +210,20 @@ def check_rows(pr):
 
 def split_checks(evg, rows):
     """-> (failed, pending) check names. A red Evergreen check whose version is running again (a restarted
-    task) counts as pending: GitHub shows the old failure until the rerun finishes."""
+    task) counts as pending, or passed when the version succeeds: GitHub lags the rerun."""
     failed = [r["name"] for r in rows if r["state"] in GH_FAILED]
     pending = [r["name"] for r in rows if r["state"] in GH_PENDING]
-    running = {}
+    statuses = {}
     for r in rows:
         m = re.search(rf"/version/({VERSION_ID})|_([0-9a-f]{{24}})_\d\d_\d\d_\d\d", r["url"])
         vid = m and (m.group(1) or m.group(2))
         if r["name"] in failed and vid:
-            if vid not in running:
-                running[vid] = evg.get(f"versions/{vid}").get("status") in RUNNING
-            if running[vid]:
+            if vid not in statuses:
+                statuses[vid] = evg.get(f"versions/{vid}").get("status")
+            if statuses[vid] in RUNNING or statuses[vid] == "success":
                 failed.remove(r["name"])
-                pending.append(f"{r['name']} (rerunning)")
+                if statuses[vid] in RUNNING:
+                    pending.append(f"{r['name']} (rerunning)")
     return failed, pending
 
 
@@ -767,6 +773,21 @@ def patch(args):
     return 0
 
 
+def restart(args):
+    evg = Evergreen()
+    m = TASK_RE.search(args.target)
+    task_id = m.group(1) if m else args.target
+    task = evg.get(f"tasks/{task_id}")
+    if task.get("execution", 0) >= 1 and not args.force:
+        raise Fail(f"{task['display_name']} is already at execution {task['execution']}; "
+                   "one fresh run only. Read the logs; use --force to override.")
+    task = evg.post(f"tasks/{task_id}/restart")
+    execution = task["execution"]
+    print(f"{task['display_name']}: execution {execution}, {task['status']}")
+    print(f"{SPRUCE}/task/{task_id}?execution={execution}")
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
@@ -795,9 +816,13 @@ def main():
     n.add_argument("target", nargs="?", help="PR (default: the current branch's PR)")
     n.add_argument("-C", default=os.getcwd())
     n.add_argument("--json", action="store_true")
+    rs = sub.add_parser("restart")
+    rs.add_argument("target", help="task Spruce URL or id")
+    rs.add_argument("--force", action="store_true", help="allow more than one fresh run")
     args = ap.parse_args()
     try:
-        sys.exit({"report": report, "wait": wait, "patch": patch, "next": next_cmd}[args.cmd](args))
+        sys.exit({"report": report, "wait": wait, "patch": patch, "next": next_cmd,
+                  "restart": restart}[args.cmd](args))
     except Fail as e:
         print(f"shipctl: {e}", file=sys.stderr)
         sys.exit(2)

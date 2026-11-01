@@ -52,10 +52,11 @@ This skill runs the same way in Claude Code (`/ship …`), OpenCode (`$ship …`
 | Stage and next step | `shipctl next [<pr>] [-C dir] [--json]` |
 | Why CI is red (PR run, merge queue, assertions, staleness, repro) | `shipctl report <pr-url\|spruce-url> -C <checkout>`  Exit 1 means failures were found, not that the command failed |
 | Block until CI finishes | `shipctl wait <pr\|version>`. Never use `sleep` loops |
+| Rerun one flaked task | `shipctl restart <task-url>` (once; a second identical failure is real) |
 | Early-signal Evergreen patch | `shipctl patch <task-url> [--uncommitted]` (see [playbooks/patch.md](playbooks/patch.md)) |
 | Tickets whose PRs merged | `~/.agents/skills/ship/scripts/cleanup_prs.py scan` / `resolve … --apply` |
 
-`shipctl` is `scripts/shipctl` (on PATH as `~/bin/shipctl`). It needs `gh`, `git`, and `evergreen` logged in once (`evergreen client get-oauth-token` must print a token). Use the Evergreen MCP only when `shipctl` output doesn't answer the question. From the `evergreen` CLI use only `patch`, `finalize-patch` and `client get-oauth-token`. Never guess other subcommands (`list-tasks`, `version`, `task display` and `patch list` don't exist or do something else).
+`shipctl` is `scripts/shipctl` (on PATH as `~/bin/shipctl`). It needs `gh`, `git`, and `evergreen` logged in once (`evergreen client get-oauth-token` must print a token). Restarts go through `shipctl restart`, never the REST API by hand. Use the Evergreen MCP only when `shipctl` output doesn't answer the question. From the `evergreen` CLI use only `patch`, `finalize-patch` and `client get-oauth-token`. Never guess other subcommands (`list-tasks`, `version`, `task display` and `patch list` don't exist or do something else).
 
 ## State file
 

@@ -15,7 +15,7 @@ Mode, named in the report's first line:
 3. **Triage before any fix.** Write one entry per failure and per comment to the state file: what failed, the cause, and the evidence. Classify each CI failure:
    - **Caused by this diff.** Fix it.
    - **Staleness.** `report` says the test or method is "not on this branch", or `changed on master since the merge base`. Merge the base (step 4).
-   - **Flake or infra.** Mainline is also failing, or the error is environmental (e.g. a download 5xx). Allow one fresh run, never a second: an identical second failure is real, so read the logs. A failure in code this diff never touched is staleness, not flake.
+   - **Flake or infra.** Mainline is also failing, or the error is environmental (e.g. a download 5xx). Allow one fresh run through `shipctl restart <task-url>`, never a second: an identical second failure is real, so read the logs. A failure in code this diff never touched is staleness, not flake.
 4. **Conflicts or a stale base.** If the PR is stacked, use [stack.md](stack.md). Otherwise:
    - `git fetch "$UP" && git merge "$UP/<default>"` (never rebase a pushed branch).
    - Resolve hunk by hunk. Record every non-mechanical choice in Decisions: the file, what each side wanted, what you picked and why.
