@@ -165,7 +165,7 @@
       "effortLevel": "low"
     },
     "claude-opus-5-5": {
-      "effortLevel": "medium"
+      "effortLevel": "high"
     },
     "claude-odango-eap": {
       "effortLevel": "high"

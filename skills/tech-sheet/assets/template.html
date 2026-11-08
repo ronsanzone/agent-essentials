@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>[SHORT TITLE]</title>
+<style>
+  /* ---------- fonts (copy assets/fonts next to this file) ---------- */
+  /* Routed Gothic: Leroy-template lettering, for every label inside a drawing. */
+  @font-face { font-family: "Routed Gothic"; src: url("fonts/routed-gothic.ttf"); unicode-range: U+0000-0030, U+0032-FFFF; }
+  @font-face { font-family: "Routed Gothic Narrow"; src: url("fonts/routed-gothic-narrow.ttf"); unicode-range: U+0000-0030, U+0032-FFFF; }
+  /* Leroy's plain "1" reads as "I" (V1, T1); borrow a flagged one. */
+  @font-face { font-family: "Routed Gothic"; src: local("Helvetica Neue"), local("HelveticaNeue"), local("Arial"); unicode-range: U+0031; }
+  @font-face { font-family: "Routed Gothic Narrow"; src: local("Helvetica Neue"), local("HelveticaNeue"), local("Arial"); unicode-range: U+0031; }
+  /* Letter Gothic: procedures only, so the face itself means "do these steps". */
+  @font-face { font-family: "Letter Gothic"; src: url("fonts/LetterGothicCode-R.ttf"); font-weight: 400; }
+  @font-face { font-family: "Letter Gothic"; src: url("fonts/LetterGothicCode-B.ttf"); font-weight: 700; }
+
+  /* ---------- page: sheets with a running head and foot ---------- */
+  /* Chrome ignores string-set, so the head can't carry the section name. */
+  @page {
+    size: A4;
+    margin: 17mm 15mm 16mm 16mm;
+    @top-left  { content: "[DOCUMENT TITLE]"; font: 7.4pt "Iowan Old Style", Georgia, serif; letter-spacing: 0.1em; vertical-align: bottom; padding-bottom: 2.2mm; border-bottom: 1.2pt solid #000; }
+    @top-right { content: "[SUBTITLE]  ·  [DATE]"; font: 7.4pt "Iowan Old Style", Georgia, serif; letter-spacing: 0.1em; vertical-align: bottom; padding-bottom: 2.2mm; border-bottom: 1.2pt solid #000; }
+    @bottom-left  { content: "[PROVENANCE: code read at repo sha, ...]"; font: 6.8pt "Iowan Old Style", Georgia, serif; vertical-align: top; padding-top: 2mm; border-top: 0.6pt solid #000; }
+    @bottom-right { content: counter(page) " of " counter(pages); font: 6.8pt "Iowan Old Style", Georgia, serif; vertical-align: top; padding-top: 2mm; border-top: 0.6pt solid #000; }
+  }
+  * { box-sizing: border-box; }
+  :root {
+    --ink: #000000;
+    --paper: #ffffff;
+    --sub: #1f4f9a;   /* blue: the one subject of a figure */
+    --acc: #b02a17;   /* red: faults, defects, CAUTION */
+    --type: "Iowan Old Style", "Iowan", Georgia, serif;
+    --leroy: "Routed Gothic Narrow", "Routed Gothic", sans-serif;
+    --selectric: "Letter Gothic", "Courier", monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body { font-family: var(--type); font-size: 8.6pt; line-height: 1.42; letter-spacing: 0.01em; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { width: 179mm; margin: 0 auto; }
+  code { font-family: var(--selectric); font-size: 0.9em; }
+  .nowrap { white-space: nowrap; }
+
+  /* ---------- title block (first sheet only) and sections ---------- */
+  .docttl { margin: 1mm 0 5mm; padding-bottom: 3mm; border-bottom: 0.6pt solid var(--ink); }
+  .docttl .t { font-size: 11pt; letter-spacing: 0.12em; margin-bottom: 1.6mm; }
+  .docttl p { margin: 0; font-size: 8pt; line-height: 1.4; max-width: 150mm; }
+  .sec { break-before: page; }
+  .docttl + .sec { break-before: auto; }
+  .sheet { break-before: page; }   /* a section's second sheet */
+  h1, h2, h3, h4 { font: inherit; margin: 0 0 0.8mm; }
+  h1 { font-size: 10pt; letter-spacing: 0.14em; margin: 1mm 0 4mm; }
+  h2 { letter-spacing: 0.07em; }
+  h3 { text-decoration: underline; text-underline-offset: 1.6pt; text-decoration-thickness: 0.5pt; }
+
+  /* ---------- numbered row: number | text | margin ---------- */
+  /* The margin column is always there; it is also the handwriting space. */
+  .row { display: grid; grid-template-columns: 12mm 1fr 48mm; column-gap: 5mm; margin: 2.4mm 0 1.4mm; break-inside: avoid; }
+  .num { letter-spacing: 0.06em; }
+  .txt p { margin: 0 0 1mm; }
+  aside { font-size: 7.2pt; line-height: 1.32; border-left: 0.5pt solid var(--ink); padding-left: 2.6mm; align-self: start; }
+  aside:empty { border: 0; }
+  aside p { margin: 0 0 1mm; }
+  aside h4 { font-size: 7pt; letter-spacing: 0.14em; margin-bottom: 0.6mm; }
+  aside h4.tag { font-weight: 700; text-decoration: underline; text-underline-offset: 1.4pt; color: var(--acc); }
+  aside h4.tag.note { color: var(--ink); }
+  dl { display: grid; grid-template-columns: 1fr auto; column-gap: 2mm; margin: 0; }
+  dt, dd { margin: 0; padding: 0.25mm 0; border-bottom: 0.3pt dotted var(--ink); }
+  dd { text-align: right; white-space: nowrap; }
+
+  /* procedure: CONTROL - action, verify lines start with √ and carry no number */
+  .proc { list-style: none; margin: 0.6mm 0 0; padding: 0; font-family: var(--selectric); font-size: 7.6pt; line-height: 1.35; letter-spacing: 0; }
+  .proc li { display: grid; grid-template-columns: 4mm 1fr; }
+  aside .proc { font-size: 6.6pt; line-height: 1.3; }
+  aside .proc li { grid-template-columns: 3mm 1fr; }
+
+  /* ---------- figures and tables span text and margin ---------- */
+  figure { margin: 2.6mm 0 1mm; break-inside: avoid; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { text-align: center; margin-top: 0.6mm; font-size: 8pt; letter-spacing: 0.05em; }
+  figcaption .n { margin-right: 3mm; }
+  .tcap { text-align: center; letter-spacing: 0.05em; margin: 1.6mm 0 0.8mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 7.3pt; line-height: 1.2; break-inside: avoid; }
+  th, td { border: 0.6pt solid var(--ink); padding: 0.35mm 1.6mm; text-align: left; vertical-align: top; font-weight: 400; }
+  thead th { text-align: center; letter-spacing: 0.05em; padding: 0.5mm 1.6mm; border-bottom-width: 1.1pt; }
+  td.v { white-space: nowrap; }
+  .mk { color: var(--acc); font-size: 8.4pt; line-height: 0; margin-right: 0.8mm; vertical-align: -0.3pt; }   /* ● row marker */
+
+  /* ---------- drawing classes: SVG units are millimetres on paper (viewBox 0 0 180 H) ---------- */
+  svg text { font-family: var(--leroy); fill: var(--ink); letter-spacing: 0.04px; }
+  svg .o    { fill: none; stroke: var(--ink); stroke-width: 0.42; stroke-linejoin: round; stroke-linecap: round; } /* object line */
+  svg .of   { fill: var(--paper); stroke: var(--ink); stroke-width: 0.42; stroke-linejoin: round; }               /* object, opaque */
+  svg .t    { fill: none; stroke: var(--ink); stroke-width: 0.17; stroke-linecap: round; }                        /* thin detail */
+  svg .hid  { fill: none; stroke: var(--ink); stroke-width: 0.22; stroke-dasharray: 1.3 0.7; }                     /* hidden */
+  svg .cl   { fill: none; stroke: var(--ink); stroke-width: 0.16; stroke-dasharray: 5 0.8 0.9 0.8; }               /* centerline */
+  svg .cut  { fill: none; stroke: var(--ink); stroke-width: 0.5; stroke-dasharray: 5 1 1 1; }                      /* section cut */
+  svg .ld   { fill: none; stroke: var(--ink); stroke-width: 0.16; marker-end: url(#nh-leader); }                   /* leader */
+  svg .dim  { fill: none; stroke: var(--ink); stroke-width: 0.16; marker-start: url(#nh-dim); }                    /* dimension half */
+  svg .w    { fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-linejoin: round; }                         /* wire */
+  svg .wa   { fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-linejoin: round; marker-end: url(#nh-arrow); } /* wire with arrow */
+  svg .box  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.45; }
+  svg .panel{ fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-dasharray: 2 1; }
+  svg .ev   { fill: none; stroke: var(--ink); stroke-width: 0.18; stroke-dasharray: 1 0.7; }                       /* timeline event */
+  svg .vid  { fill: url(#nh-hatch); stroke: var(--ink); stroke-width: 0.35; }                                      /* hatched bar */
+  svg .aud  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.35; }                                        /* plain bar */
+  svg .gap  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.35; stroke-dasharray: 0.6 0.5; }             /* dotted bar: absent */
+  svg .grain{ fill: url(#nh-dots); stroke: var(--ink); stroke-width: 0.35; }                                       /* granular fill */
+  svg .dot  { fill: var(--ink); }
+  svg .lbl   { font-size: 2.35px; }                                         /* callouts, box titles */
+  svg .lbl-s { font-size: 2.05px; }                                         /* secondary lines, wire names */
+  svg .lbl-b { font-size: 2.5px; font-family: "Routed Gothic", sans-serif; } /* view titles, big letters */
+
+  /* two inks: always paired with a heavier stroke or a pattern, so grayscale still reads */
+  svg .sub-fill { fill: var(--sub); }
+  svg .acc-fill { fill: var(--acc); }
+  svg .sub-line { stroke: var(--sub); stroke-width: 0.3; }
+  svg .acc-line { stroke: var(--acc); stroke-width: 0.3; }
+  svg .wa.sub { stroke: var(--sub); stroke-width: 0.5; marker-end: url(#nh-arrow-sub); }   /* subject path */
+  svg .wa.acc { stroke: var(--acc); stroke-width: 0.5; marker-end: url(#nh-arrow-acc); }   /* fault path */
+  svg .box.sub, svg .sub-ring { stroke: var(--sub); stroke-width: 0.7; }                     /* subject box */
+  svg .acc-ring { stroke: var(--acc); stroke-width: 0.5; }
+  svg .stall { fill: url(#nh-hatch-acc); stroke: var(--acc); stroke-width: 0.45; }           /* fault state bar */
+  svg .ko { paint-order: stroke; stroke: var(--paper); stroke-width: 0.9; stroke-linejoin: round; } /* label knocked out of a hatch */
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="nh-leader" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.1" markerHeight="1.05" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M0,0 L6,2 L0,4 Z" fill="#000"/></marker>
+  <marker id="nh-arrow" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M0,0 L6,2 L0,4 Z" fill="#000"/></marker>
+  <marker id="nh-dim" viewBox="0 0 6 4" refX="0" refY="2" markerWidth="2.2" markerHeight="0.95" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M6,0 L0,2 L6,4 Z" fill="#000"/></marker>
+  <marker id="nh-arrow-sub" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path class="sub-fill" d="M0,0 L6,2 L0,4 Z"/></marker>
+  <marker id="nh-arrow-acc" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path class="acc-fill" d="M0,0 L6,2 L0,4 Z"/></marker>
+  <pattern id="nh-hatch" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.1" stroke="#000" stroke-width="0.2"/></pattern>
+  <pattern id="nh-hatch-acc" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="acc-line" x1="0" y1="0" x2="0" y2="1.1"/></pattern>
+  <pattern id="nh-hatch-sub" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="sub-line" x1="0" y1="0" x2="0" y2="1.1"/></pattern>
+  <pattern id="nh-bp" width="1.4" height="1.4" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="0.7" height="1.4" fill="#000"/></pattern>
+  <pattern id="nh-dots" width="1.3" height="1.3" patternUnits="userSpaceOnUse"><circle cx="0.32" cy="0.32" r="0.15" fill="#000"/><circle cx="0.97" cy="0.97" r="0.15" fill="#000"/></pattern>
+</defs></svg>
+
+<main>
+  <!-- Title block: first sheet only. Leave it out for a one-section sheet. -->
+  <header class="docttl">
+    <div class="t">[DOCUMENT TITLE IN CAPS]</div>
+    <p>[Two or three sentences: what the document explains, for whom, and what it was checked against.]</p>
+  </header>
+
+  <!-- ===== one section; every section starts a new sheet ===== -->
+  <section class="sec s1">
+    <h1>1 &nbsp;&middot;&nbsp; [SECTION NAME]</h1>
+
+    <section class="row">
+      <div class="num">1.1</div>
+      <div class="txt">
+        <h2>[THE CLAIM THIS PARAGRAPH MAKES.]</h2>
+        <p>[The section's one idea in two to four sentences. Points to the figure (figure 1-1).]</p>
+      </div>
+      <aside></aside>   <!-- empty unless something passes the margin test -->
+    </section>
+
+    <figure>
+      <svg viewBox="0 0 180 60" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="[What the figure shows]">
+        <rect class="panel" x="1.5" y="2.5" width="80" height="55"/>
+        <text class="lbl-s" x="3.4" y="5.6">[BOUNDARY NAME]</text>
+        <rect class="box" x="10" y="20" width="30" height="12"/>
+        <text class="lbl" x="25" y="25" text-anchor="middle">[COMPONENT]</text>
+        <text class="lbl-s" x="25" y="28.2" text-anchor="middle">[DETAIL LINE]</text>
+        <line class="wa sub" x1="40" y1="26" x2="99.6" y2="26"/>
+        <text class="lbl-s" x="70" y="24.6" text-anchor="middle">[SUBJECT PATH]</text>
+        <rect class="box" x="100" y="20" width="30" height="12"/>
+        <text class="lbl" x="115" y="25" text-anchor="middle">[COMPONENT]</text>
+      </svg>
+      <figcaption><span class="n">Figure 1-1.</span>[Title Case Caption]</figcaption>
+    </figure>
+
+    <section class="row">
+      <div class="num">1.2</div>
+      <div class="txt">
+        <h2>[HOW IT WORKS, IN THE ORDER THINGS HAPPEN.]</h2>
+        <p>[Mechanism, numbers with units, controls in caps as named, UI strings in quotes.]</p>
+      </div>
+      <aside>
+        <h4 class="tag">CAUTION</h4>
+        <p>[What protects data or the system. Three lines at most.]</p>
+      </aside>
+    </section>
+
+    <section class="row">
+      <div class="num">1.2.1</div>
+      <div class="txt">
+        <h3>[Mechanism Name.]</h3>
+        <p>[The rule or formula behind the most interesting mechanism: <span class="nowrap">[a ÷ b ≈ c]</span>.]</p>
+      </div>
+      <aside>
+        <h4>[TO DO THE THING]</h4>
+        <ol class="proc">
+          <li><span>1</span><span>[CONTROL - action]</span></li>
+          <li><span></span><span>√ [what to see]</span></li>
+          <li><span>2</span><span>[CONTROL - action]</span></li>
+        </ol>
+      </aside>
+    </section>
+
+    <div class="tcap">Table 1-1. [Title Case Caption]</div>
+    <table>
+      <thead><tr><th>[Parameter]</th><th>[Value]</th></tr></thead>
+      <tbody>
+        <tr><td>[Name, condition]</td><td class="v">[value unit]</td></tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<!-- A script that draws into a figure (ticks, bars) finds its group by an id prefixed with the
+     section (s1-axis), because a multi-section document repeats figure shapes. -->
+</body>
+</html>

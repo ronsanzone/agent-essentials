@@ -42,6 +42,7 @@ Shared by Claude Code (imported from `~/.claude/CLAUDE.md`), OpenCode (`~/.confi
 
 * Jira, Confluence, Evergreen, Glean and other SaaS tools live behind the **Executor** MCP server (one catalog). Load the `executor-usage` skill before the first call: it has the calling rules and known tool paths.
 * Grafana, Splunk and PagerDuty: use the adfa-tools obs CLIs (`grafq`, `splq`, `pdq`, `obsev`), not Executor.
+* Browser Control runs in background tabs: never call `page.bringToFront()` or start a recording unless the user asks; both pull Chrome to the front over their work.
 
 ## Context
 

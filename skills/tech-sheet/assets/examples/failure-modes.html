@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Failure Modes and Effects</title>
+<style>
+  /* ---------- fonts (copy assets/fonts next to this file) ---------- */
+  /* Routed Gothic: Leroy-template lettering, for every label inside a drawing. */
+  @font-face { font-family: "Routed Gothic"; src: url("fonts/routed-gothic.ttf"); unicode-range: U+0000-0030, U+0032-FFFF; }
+  @font-face { font-family: "Routed Gothic Narrow"; src: url("fonts/routed-gothic-narrow.ttf"); unicode-range: U+0000-0030, U+0032-FFFF; }
+  /* Leroy's plain "1" reads as "I" (V1, T1); borrow a flagged one. */
+  @font-face { font-family: "Routed Gothic"; src: local("Helvetica Neue"), local("HelveticaNeue"), local("Arial"); unicode-range: U+0031; }
+  @font-face { font-family: "Routed Gothic Narrow"; src: local("Helvetica Neue"), local("HelveticaNeue"), local("Arial"); unicode-range: U+0031; }
+  /* Letter Gothic: procedures only, so the face itself means "do these steps". */
+  @font-face { font-family: "Letter Gothic"; src: url("fonts/LetterGothicCode-R.ttf"); font-weight: 400; }
+  @font-face { font-family: "Letter Gothic"; src: url("fonts/LetterGothicCode-B.ttf"); font-weight: 700; }
+
+  /* ---------- page: sheets with a running head and foot ---------- */
+  /* Chrome ignores string-set, so the head can't carry the section name. */
+  @page {
+    size: A4;
+    margin: 17mm 15mm 16mm 16mm;
+    @top-left  { content: "LIFECYCLE MANAGEMENT AND COLD COLLECTIONS"; font: 7.4pt "Iowan Old Style", Georgia, serif; letter-spacing: 0.1em; vertical-align: bottom; padding-bottom: 2.2mm; border-bottom: 1.2pt solid #000; }
+    @top-right { content: "DESIGN AND RESILIENCY  ·  26 OCTOBER 2026"; font: 7.4pt "Iowan Old Style", Georgia, serif; letter-spacing: 0.1em; vertical-align: bottom; padding-bottom: 2.2mm; border-bottom: 1.2pt solid #000; }
+    @bottom-left  { content: "Code read at mms 9e77c72, mms-automation 7fdb911474, sls 7f455e7ad"; font: 6.8pt "Iowan Old Style", Georgia, serif; vertical-align: top; padding-top: 2mm; border-top: 0.6pt solid #000; }
+    @bottom-right { content: "6." counter(page); font: 6.8pt "Iowan Old Style", Georgia, serif; vertical-align: top; padding-top: 2mm; border-top: 0.6pt solid #000; }
+  }
+  * { box-sizing: border-box; }
+  :root {
+    --ink: #000000;
+    --paper: #ffffff;
+    --sub: #1f4f9a;   /* blue: the one subject of a figure */
+    --acc: #b02a17;   /* red: faults, defects, CAUTION */
+    --type: "Iowan Old Style", "Iowan", Georgia, serif;
+    --leroy: "Routed Gothic Narrow", "Routed Gothic", sans-serif;
+    --selectric: "Letter Gothic", "Courier", monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body { font-family: var(--type); font-size: 8.6pt; line-height: 1.42; letter-spacing: 0.01em; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { width: 179mm; margin: 0 auto; }
+  code { font-family: var(--selectric); font-size: 0.9em; }
+  .nowrap { white-space: nowrap; }
+
+  /* ---------- title block (first sheet only) and sections ---------- */
+  .docttl { margin: 1mm 0 5mm; padding-bottom: 3mm; border-bottom: 0.6pt solid var(--ink); }
+  .docttl .t { font-size: 11pt; letter-spacing: 0.12em; margin-bottom: 1.6mm; }
+  .docttl p { margin: 0; font-size: 8pt; line-height: 1.4; max-width: 150mm; }
+  .sec { break-before: page; }
+  .docttl + .sec { break-before: auto; }
+  .sheet { break-before: page; }   /* a section's second sheet */
+  h1, h2, h3, h4 { font: inherit; margin: 0 0 0.8mm; }
+  h1 { font-size: 10pt; letter-spacing: 0.14em; margin: 1mm 0 4mm; }
+  h2 { letter-spacing: 0.07em; }
+  h3 { text-decoration: underline; text-underline-offset: 1.6pt; text-decoration-thickness: 0.5pt; }
+
+  /* ---------- numbered row: number | text | margin ---------- */
+  /* The margin column is always there; it is also the handwriting space. */
+  .row { display: grid; grid-template-columns: 12mm 1fr 48mm; column-gap: 5mm; margin: 2.4mm 0 1.4mm; break-inside: avoid; }
+  .num { letter-spacing: 0.06em; }
+  .txt p { margin: 0 0 1mm; }
+  aside { font-size: 7.2pt; line-height: 1.32; border-left: 0.5pt solid var(--ink); padding-left: 2.6mm; align-self: start; }
+  aside:empty { border: 0; }
+  aside p { margin: 0 0 1mm; }
+  aside h4 { font-size: 7pt; letter-spacing: 0.14em; margin-bottom: 0.6mm; }
+  aside h4.tag { font-weight: 700; text-decoration: underline; text-underline-offset: 1.4pt; color: var(--acc); }
+  aside h4.tag.note { color: var(--ink); }
+  dl { display: grid; grid-template-columns: 1fr auto; column-gap: 2mm; margin: 0; }
+  dt, dd { margin: 0; padding: 0.25mm 0; border-bottom: 0.3pt dotted var(--ink); }
+  dd { text-align: right; white-space: nowrap; }
+
+  /* procedure: CONTROL - action, verify lines start with √ and carry no number */
+  .proc { list-style: none; margin: 0.6mm 0 0; padding: 0; font-family: var(--selectric); font-size: 7.6pt; line-height: 1.35; letter-spacing: 0; }
+  .proc li { display: grid; grid-template-columns: 4mm 1fr; }
+  aside .proc { font-size: 6.6pt; line-height: 1.3; }
+  aside .proc li { grid-template-columns: 3mm 1fr; }
+
+  /* ---------- figures and tables span text and margin ---------- */
+  figure { margin: 2.6mm 0 1mm; break-inside: avoid; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { text-align: center; margin-top: 0.6mm; font-size: 8pt; letter-spacing: 0.05em; }
+  figcaption .n { margin-right: 3mm; }
+  .tcap { text-align: center; letter-spacing: 0.05em; margin: 1.6mm 0 0.8mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 7.3pt; line-height: 1.2; break-inside: avoid; }
+  th, td { border: 0.6pt solid var(--ink); padding: 0.35mm 1.6mm; text-align: left; vertical-align: top; font-weight: 400; }
+  thead th { text-align: center; letter-spacing: 0.05em; padding: 0.5mm 1.6mm; border-bottom-width: 1.1pt; }
+  td.v { white-space: nowrap; }
+  .mk { color: var(--acc); font-size: 8.4pt; line-height: 0; margin-right: 0.8mm; vertical-align: -0.3pt; }   /* ● row marker */
+
+  /* ---------- drawing classes: SVG units are millimetres on paper (viewBox 0 0 180 H) ---------- */
+  svg text { font-family: var(--leroy); fill: var(--ink); letter-spacing: 0.04px; }
+  svg .o    { fill: none; stroke: var(--ink); stroke-width: 0.42; stroke-linejoin: round; stroke-linecap: round; } /* object line */
+  svg .of   { fill: var(--paper); stroke: var(--ink); stroke-width: 0.42; stroke-linejoin: round; }               /* object, opaque */
+  svg .t    { fill: none; stroke: var(--ink); stroke-width: 0.17; stroke-linecap: round; }                        /* thin detail */
+  svg .hid  { fill: none; stroke: var(--ink); stroke-width: 0.22; stroke-dasharray: 1.3 0.7; }                     /* hidden */
+  svg .cl   { fill: none; stroke: var(--ink); stroke-width: 0.16; stroke-dasharray: 5 0.8 0.9 0.8; }               /* centerline */
+  svg .cut  { fill: none; stroke: var(--ink); stroke-width: 0.5; stroke-dasharray: 5 1 1 1; }                      /* section cut */
+  svg .ld   { fill: none; stroke: var(--ink); stroke-width: 0.16; marker-end: url(#nh-leader); }                   /* leader */
+  svg .dim  { fill: none; stroke: var(--ink); stroke-width: 0.16; marker-start: url(#nh-dim); }                    /* dimension half */
+  svg .w    { fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-linejoin: round; }                         /* wire */
+  svg .wa   { fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-linejoin: round; marker-end: url(#nh-arrow); } /* wire with arrow */
+  svg .box  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.45; }
+  svg .panel{ fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-dasharray: 2 1; }
+  svg .ev   { fill: none; stroke: var(--ink); stroke-width: 0.18; stroke-dasharray: 1 0.7; }                       /* timeline event */
+  svg .vid  { fill: url(#nh-hatch); stroke: var(--ink); stroke-width: 0.35; }                                      /* hatched bar */
+  svg .aud  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.35; }                                        /* plain bar */
+  svg .gap  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.35; stroke-dasharray: 0.6 0.5; }             /* dotted bar: absent */
+  svg .grain{ fill: url(#nh-dots); stroke: var(--ink); stroke-width: 0.35; }                                       /* granular fill */
+  svg .dot  { fill: var(--ink); }
+  svg .lbl   { font-size: 2.35px; }                                         /* callouts, box titles */
+  svg .lbl-s { font-size: 2.05px; }                                         /* secondary lines, wire names */
+  svg .lbl-b { font-size: 2.5px; font-family: "Routed Gothic", sans-serif; } /* view titles, big letters */
+
+  /* two inks: always paired with a heavier stroke or a pattern, so grayscale still reads */
+  svg .sub-fill { fill: var(--sub); }
+  svg .acc-fill { fill: var(--acc); }
+  svg .sub-line { stroke: var(--sub); stroke-width: 0.3; }
+  svg .acc-line { stroke: var(--acc); stroke-width: 0.3; }
+  svg .wa.sub { stroke: var(--sub); stroke-width: 0.5; marker-end: url(#nh-arrow-sub); }   /* subject path */
+  svg .wa.acc { stroke: var(--acc); stroke-width: 0.5; marker-end: url(#nh-arrow-acc); }   /* fault path */
+  svg .box.sub, svg .sub-ring { stroke: var(--sub); stroke-width: 0.7; }                     /* subject box */
+  svg .acc-ring { stroke: var(--acc); stroke-width: 0.5; }
+  svg .stall { fill: url(#nh-hatch-acc); stroke: var(--acc); stroke-width: 0.45; }           /* fault state bar */
+  svg .ko { paint-order: stroke; stroke: var(--paper); stroke-width: 0.9; stroke-linejoin: round; } /* label knocked out of a hatch */
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="nh-leader" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.1" markerHeight="1.05" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M0,0 L6,2 L0,4 Z" fill="#000"/></marker>
+  <marker id="nh-arrow" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M0,0 L6,2 L0,4 Z" fill="#000"/></marker>
+  <marker id="nh-dim" viewBox="0 0 6 4" refX="0" refY="2" markerWidth="2.2" markerHeight="0.95" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M6,0 L0,2 L6,4 Z" fill="#000"/></marker>
+  <marker id="nh-arrow-sub" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path class="sub-fill" d="M0,0 L6,2 L0,4 Z"/></marker>
+  <marker id="nh-arrow-acc" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path class="acc-fill" d="M0,0 L6,2 L0,4 Z"/></marker>
+  <pattern id="nh-hatch" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.1" stroke="#000" stroke-width="0.2"/></pattern>
+  <pattern id="nh-hatch-acc" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="acc-line" x1="0" y1="0" x2="0" y2="1.1"/></pattern>
+  <pattern id="nh-hatch-sub" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="sub-line" x1="0" y1="0" x2="0" y2="1.1"/></pattern>
+  <pattern id="nh-bp" width="1.4" height="1.4" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="0.7" height="1.4" fill="#000"/></pattern>
+  <pattern id="nh-dots" width="1.3" height="1.3" patternUnits="userSpaceOnUse"><circle cx="0.32" cy="0.32" r="0.15" fill="#000"/><circle cx="0.97" cy="0.97" r="0.15" fill="#000"/></pattern>
+</defs></svg>
+
+<main>
+<style>
+  .s6 svg .box.core { stroke: var(--sub); stroke-width: 0.7; }
+  .s6 table.fmea { font-size: 7.1pt; line-height: 1.18; }
+  .s6 table.fmea td { padding: 0.25mm 1.2mm; }
+  .s6 table.fmea th { letter-spacing: 0.05em; padding: 0.4mm 1.2mm; }
+  .s6 table.fmea td.n { text-align: right; white-space: nowrap; }
+  .s6 table.fmea thead th { border-bottom-width: 1.1pt; }
+  .s6 .mk { color: var(--acc); font-size: 8.4pt; line-height: 0; margin-right: 0.8mm; vertical-align: -0.3pt; }
+  .s6 .tcap { margin-top: 1.6mm; }
+</style>
+<section class="sec s6">
+  <h1>6 &nbsp;&middot;&nbsp; FAILURE MODES AND EFFECTS</h1>
+
+  <section class="row">
+    <div class="num">6.1</div>
+    <div class="txt">
+      <h2>EACH FAULT STOPS AT THE SMALLEST BOUNDARY.</h2>
+      <p>A fault is contained by the smallest boundary that can abort it. The boundaries nest: a sub-batch transaction, a chunk, a run, a policy, the module, the lease and the control plane. Data loss needs a fault that escapes the transaction. None of the faults in table 6-1 does (figure 6-1).</p>
+    </div>
+    <aside>
+      <h4>TRIAGE A FAILING POLICY</h4>
+      <ol class="proc">
+        <li><span>1</span><span>POLICY - read errorMessage</span></li>
+        <li><span>2</span><span>RUN DOC - state, docsFailed</span></li>
+        <li><span>3</span><span>E11000 or 121 - fix doc</span></li>
+        <li><span>4</span><span>TARGET - exists, cold</span></li>
+        <li><span></span><span>√ storage_tier=cold</span></li>
+        <li><span>5</span><span>DATE FIELD - indexed</span></li>
+        <li><span>6</span><span>wait 5 min, rpt from 2</span></li>
+      </ol>
+    </aside>
+  </section>
+
+  <figure>
+    <svg viewBox="0 0 180 57" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nested fault containment boundaries from the control plane down to one transaction">
+      <g id="s6-rings"></g>
+    </svg>
+    <figcaption><span class="n">Figure 6-1.</span>Fault Containment Boundaries</figcaption>
+  </figure>
+
+  <section class="row">
+    <div class="num">6.2</div>
+    <div class="txt">
+      <h2>WHERE CONTAINMENT IS NOT ENOUGH.</h2>
+      <p>Six rows have no detection or no fix in place today (marked <span class="mk" style="margin:0">●</span>). None of them loses data. They cost time instead: a target that keeps filling as a hot collection, writes that stall behind an unreadable page, and runs or policies that need manual repair.</p>
+    </div>
+    <aside>
+      <h4>SOURCES</h4>
+      <p>Rows 1–10 and 13–15 come from MMS and agent code. Row 6 assumes the server creates a missing collection on insert. Rows 11 and 12 come from test measurements and older mongod code. Row 2's retry fix is unmerged.</p>
+    </aside>
+  </section>
+
+  <div class="tcap">Table 6-1. LM and Cold Collection Failure Modes</div>
+  <table class="fmea">
+    <colgroup><col style="width:8mm"><col style="width:27mm"><col style="width:28mm"><col style="width:31mm"><col style="width:43mm"><col></colgroup>
+    <thead><tr><th>No.</th><th>Failure</th><th>Detection</th><th>Effect on data</th><th>Effect on cluster or workflow</th><th>Recovery</th></tr></thead>
+    <tbody>
+      <tr><td class="n">1</td><td>Lease holder lost mid-run</td><td>Heartbeats stop</td><td>Open txn aborts; documents stay in source</td><td>Movement stops for up to 4 min</td><td>Next holder re-queries; scanner closes old run at 30 min</td></tr>
+      <tr><td class="n">2</td><td>MMS unreachable</td><td>Agent call errors; conf-stopped alert</td><td>None</td><td>No new runs; current run ends at cap; final stats may drop</td><td>Resumes on next poll; 502/503/504 retry pending</td></tr>
+      <tr><td class="n">3</td><td>Primary steps down mid-txn</td><td>Transient txn error</td><td>Txn retried up to 120 s, else documents stay</td><td>Chunk fails; run FAILED or partial</td><td>Next run re-queries</td></tr>
+      <tr><td class="n">4</td><td>Duplicate _id in target</td><td>Run error, E11000</td><td>Sub-batch aborts; documents stay</td><td>FAILED run every 5 min while it persists</td><td>Remove the conflict; no skip list exists</td></tr>
+      <tr><td class="n">5</td><td>Target validator rejects</td><td>Plain-language run error</td><td>Documents stay in source</td><td>Same as no. 4</td><td>Fix validator or document</td></tr>
+      <tr class="open"><td class="n"><span class="mk">●</span>6</td><td>Target dropped during run</td><td>None</td><td>Inserts create a hot collection</td><td>Policy keeps filling it</td><td>Pause, rebuild cold target, move back</td></tr>
+      <tr><td class="n">7</td><td>Target missing at run start</td><td>Preflight error on policy</td><td>None</td><td>Run FAILED each cycle</td><td>Recreate cold target</td></tr>
+      <tr><td class="n">8</td><td>Pause or delete during run</td><td>effectiveState PAUSING</td><td>Committed sub-batches stay moved</td><td>Run ends within 60 s</td><td>PAUSED once no run is RUNNING</td></tr>
+      <tr><td class="n">9</td><td>LM panic in agent</td><td>module_panics_total</td><td>Open txn aborts</td><td>LM stops on that host; agent runs on</td><td>Config change or agent restart</td></tr>
+      <tr><td class="n">10</td><td>Date field not indexed</td><td>id_discovery phase time</td><td>None</td><td>Scan and sort on primary every run</td><td>Index the date field</td></tr>
+      <tr class="open"><td class="n"><span class="mk">●</span>11</td><td>Cold page evicted early</td><td>Write latency only</td><td>None; durable in log</td><td>Writes stall 14–34 s, hot ones too</td><td>Open defect; none in LM</td></tr>
+      <tr class="open"><td class="n"><span class="mk">●</span>12</td><td>S3, ORP or OIS outage</td><td>None to the client</td><td>None</td><td>Cold reads hang and hold tickets</td><td>Retries; newer builds stop at 300 s</td></tr>
+      <tr class="open"><td class="n"><span class="mk">●</span>13</td><td>Agent lost, gov region</td><td>None; no scanner</td><td>None</td><td>Run stays RUNNING; PAUSING never ends</td><td>Manual repair of run and policy</td></tr>
+      <tr class="open"><td class="n"><span class="mk">●</span>14</td><td>Run history grows</td><td>None</td><td>None</td><td>No TTL on runs; UI summary slows (2.9 s at 1.73 M runs)</td><td>None in place</td></tr>
+      <tr class="open"><td class="n"><span class="mk">●</span>15</td><td>Cluster-delete cleanup fails</td><td>None</td><td>None</td><td>Policies attach to a later cluster of the same name</td><td>Best effort, not retried</td></tr>
+    </tbody>
+  </table>
+</section>
+<script>
+  ;(function () {
+    const ns = 'http://www.w3.org/2000/svg'
+    const el = (tag, attrs, parent, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent.append(e); return e }
+    const rings = [
+      ['MMS CONTROL PLANE', 'SCANNER CLOSES ORPHAN RUNS EVERY 5 MIN; ALERT ABOVE 5 % FAILED RUNS'],
+      ['CLUSTER LEASE', 'A LOST HOLDER IS REPLACED BY ANOTHER NODE AFTER 3 MIN'],
+      ['AUTOMATION AGENT', 'LM PANICS ARE RECOVERED BEFORE THEY REACH THE AGENT'],
+      ['LM MODULE', 'A MODULE PANIC STOPS LM ON THIS HOST; THE LEASE LAPSES'],
+      ['POLICY HANDLER', 'A FAILED OR EMPTY RUN WAITS 5 MIN; OTHER POLICIES CONTINUE'],
+      ['RUN', 'A WORKER PANIC FAILS THE RUN; THE 30 MIN CAP INTERRUPTS IT'],
+      ['CHUNK, 1,000 IDS', '3 ATTEMPTS ON TRANSIENT ERRORS, THEN THE CHUNK FAILS ALONE'],
+    ]
+    const g = document.getElementById('s6-rings')
+    const top = 4.4, side = 6, bot = 2.0
+    rings.forEach(([name, what], i) => {
+      const x = 2 + side * i, y = 1 + top * i, w = 176 - 2 * side * i, h = 55.6 - (top + bot) * i
+      el('rect', { class: i === 0 ? 'panel' : 'panel', x, y, width: w, height: h }, g)
+      el('text', { class: 'lbl', x: x + 1.8, y: y + 3.3 }, g, name)
+      el('text', { class: 'lbl-s', x: x + w - 1.8, y: y + 3.3, 'text-anchor': 'end' }, g, what)
+    })
+    const i = rings.length, x = 2 + side * i, y = 1 + top * i, w = 176 - 2 * side * i, h = 55.6 - (top + bot) * i
+    el('rect', { class: 'box core', x, y, width: w, height: h }, g)
+    el('text', { class: 'lbl', x: x + w / 2, y: y + h / 2 - 0.4, 'text-anchor': 'middle' }, g, 'SUB-BATCH TRANSACTION')
+    el('text', { class: 'lbl-s', x: x + w / 2, y: y + h / 2 + 2.4, 'text-anchor': 'middle' }, g, 'ABORT LEAVES NOTHING VISIBLE; COMMIT IS W:MAJORITY')
+  })()
+</script>
+</main>
+</body>
+</html>

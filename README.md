@@ -41,11 +41,12 @@ It never touches `~/.claude/.mcp.json`, `~/.claude/settings.local.json`, auth, p
 | **ship** | model + `/ship` | One entry point for the PR lifecycle: `shipctl next` picks the playbook (open a draft PR, get it to green incl. merge queue and comments, Graphite stacks, early-signal Evergreen patches, land and close out tickets) |
 | **show-me** | model + `/show-me` | Help the user understand the current topic visually with concise diagrams and focused HTML artifacts |
 | **software-design-philosophy** | model + `/software-design-philosophy` | Evaluate code and designs using *A Philosophy of Software Design* |
+| **tech-sheet** | model + `/tech-sheet` | Printable technical explainers: one A4 sheet per section, claim headings, Leroy-lettered drawings, a note margin and two inks that survive grayscale, rendered to PDF |
 | **why** | user (`/why`) | Design rationale from the historical record |
 
 Retired skills live in `deprecated-skills/`; `scripts/install-claude.sh --prune` removes them from the store.
 
-Structured research → design → implementation pipelines live in [context-engineering-workflows-v2](https://github.com/ronsanzone/context-engineering-workflows-v2); MMS-specific QA skills live in the employees repo. `vendor-skills.lock.json` records provenance for skills vendored from other repos (cursor/plugins pstack, dmmulroy).
+Structured research → design → implementation pipelines live in [context-engineering-workflows-v2](https://github.com/ronsanzone/context-engineering-workflows-v2); MMS-specific QA skills live in the employees repo. `vendor-skills.lock.json` records provenance for skills vendored from other repos (cursor/plugins pstack, mattpocock/skills, humanlayer/skills).
 
 ## Shared rules (`config/shared/AGENTS.md`)
 

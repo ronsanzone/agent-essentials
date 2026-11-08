@@ -1,0 +1,386 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Data Movement and Durability</title>
+<style>
+  /* ---------- fonts (copy assets/fonts next to this file) ---------- */
+  /* Routed Gothic: Leroy-template lettering, for every label inside a drawing. */
+  @font-face { font-family: "Routed Gothic"; src: url("fonts/routed-gothic.ttf"); unicode-range: U+0000-0030, U+0032-FFFF; }
+  @font-face { font-family: "Routed Gothic Narrow"; src: url("fonts/routed-gothic-narrow.ttf"); unicode-range: U+0000-0030, U+0032-FFFF; }
+  /* Leroy's plain "1" reads as "I" (V1, T1); borrow a flagged one. */
+  @font-face { font-family: "Routed Gothic"; src: local("Helvetica Neue"), local("HelveticaNeue"), local("Arial"); unicode-range: U+0031; }
+  @font-face { font-family: "Routed Gothic Narrow"; src: local("Helvetica Neue"), local("HelveticaNeue"), local("Arial"); unicode-range: U+0031; }
+  /* Letter Gothic: procedures only, so the face itself means "do these steps". */
+  @font-face { font-family: "Letter Gothic"; src: url("fonts/LetterGothicCode-R.ttf"); font-weight: 400; }
+  @font-face { font-family: "Letter Gothic"; src: url("fonts/LetterGothicCode-B.ttf"); font-weight: 700; }
+
+  /* ---------- page: sheets with a running head and foot ---------- */
+  /* Chrome ignores string-set, so the head can't carry the section name. */
+  @page {
+    size: A4;
+    margin: 17mm 15mm 16mm 16mm;
+    @top-left  { content: "LIFECYCLE MANAGEMENT AND COLD COLLECTIONS"; font: 7.4pt "Iowan Old Style", Georgia, serif; letter-spacing: 0.1em; vertical-align: bottom; padding-bottom: 2.2mm; border-bottom: 1.2pt solid #000; }
+    @top-right { content: "DESIGN AND RESILIENCY  ·  26 OCTOBER 2026"; font: 7.4pt "Iowan Old Style", Georgia, serif; letter-spacing: 0.1em; vertical-align: bottom; padding-bottom: 2.2mm; border-bottom: 1.2pt solid #000; }
+    @bottom-left  { content: "Code read at mms 9e77c72, mms-automation 7fdb911474, sls 7f455e7ad"; font: 6.8pt "Iowan Old Style", Georgia, serif; vertical-align: top; padding-top: 2mm; border-top: 0.6pt solid #000; }
+    @bottom-right { content: "2." counter(page); font: 6.8pt "Iowan Old Style", Georgia, serif; vertical-align: top; padding-top: 2mm; border-top: 0.6pt solid #000; }
+  }
+  * { box-sizing: border-box; }
+  :root {
+    --ink: #000000;
+    --paper: #ffffff;
+    --sub: #1f4f9a;   /* blue: the one subject of a figure */
+    --acc: #b02a17;   /* red: faults, defects, CAUTION */
+    --type: "Iowan Old Style", "Iowan", Georgia, serif;
+    --leroy: "Routed Gothic Narrow", "Routed Gothic", sans-serif;
+    --selectric: "Letter Gothic", "Courier", monospace;
+  }
+  html, body { margin: 0; padding: 0; background: var(--paper); }
+  body { font-family: var(--type); font-size: 8.6pt; line-height: 1.42; letter-spacing: 0.01em; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  main { width: 179mm; margin: 0 auto; }
+  code { font-family: var(--selectric); font-size: 0.9em; }
+  .nowrap { white-space: nowrap; }
+
+  /* ---------- title block (first sheet only) and sections ---------- */
+  .docttl { margin: 1mm 0 5mm; padding-bottom: 3mm; border-bottom: 0.6pt solid var(--ink); }
+  .docttl .t { font-size: 11pt; letter-spacing: 0.12em; margin-bottom: 1.6mm; }
+  .docttl p { margin: 0; font-size: 8pt; line-height: 1.4; max-width: 150mm; }
+  .sec { break-before: page; }
+  .docttl + .sec { break-before: auto; }
+  .sheet { break-before: page; }   /* a section's second sheet */
+  h1, h2, h3, h4 { font: inherit; margin: 0 0 0.8mm; }
+  h1 { font-size: 10pt; letter-spacing: 0.14em; margin: 1mm 0 4mm; }
+  h2 { letter-spacing: 0.07em; }
+  h3 { text-decoration: underline; text-underline-offset: 1.6pt; text-decoration-thickness: 0.5pt; }
+
+  /* ---------- numbered row: number | text | margin ---------- */
+  /* The margin column is always there; it is also the handwriting space. */
+  .row { display: grid; grid-template-columns: 12mm 1fr 48mm; column-gap: 5mm; margin: 2.4mm 0 1.4mm; break-inside: avoid; }
+  .num { letter-spacing: 0.06em; }
+  .txt p { margin: 0 0 1mm; }
+  aside { font-size: 7.2pt; line-height: 1.32; border-left: 0.5pt solid var(--ink); padding-left: 2.6mm; align-self: start; }
+  aside:empty { border: 0; }
+  aside p { margin: 0 0 1mm; }
+  aside h4 { font-size: 7pt; letter-spacing: 0.14em; margin-bottom: 0.6mm; }
+  aside h4.tag { font-weight: 700; text-decoration: underline; text-underline-offset: 1.4pt; color: var(--acc); }
+  aside h4.tag.note { color: var(--ink); }
+  dl { display: grid; grid-template-columns: 1fr auto; column-gap: 2mm; margin: 0; }
+  dt, dd { margin: 0; padding: 0.25mm 0; border-bottom: 0.3pt dotted var(--ink); }
+  dd { text-align: right; white-space: nowrap; }
+
+  /* procedure: CONTROL - action, verify lines start with √ and carry no number */
+  .proc { list-style: none; margin: 0.6mm 0 0; padding: 0; font-family: var(--selectric); font-size: 7.6pt; line-height: 1.35; letter-spacing: 0; }
+  .proc li { display: grid; grid-template-columns: 4mm 1fr; }
+  aside .proc { font-size: 6.6pt; line-height: 1.3; }
+  aside .proc li { grid-template-columns: 3mm 1fr; }
+
+  /* ---------- figures and tables span text and margin ---------- */
+  figure { margin: 2.6mm 0 1mm; break-inside: avoid; }
+  figure svg { display: block; width: 100%; height: auto; }
+  figcaption { text-align: center; margin-top: 0.6mm; font-size: 8pt; letter-spacing: 0.05em; }
+  figcaption .n { margin-right: 3mm; }
+  .tcap { text-align: center; letter-spacing: 0.05em; margin: 1.6mm 0 0.8mm; }
+  table { width: 100%; border-collapse: collapse; font-size: 7.3pt; line-height: 1.2; break-inside: avoid; }
+  th, td { border: 0.6pt solid var(--ink); padding: 0.35mm 1.6mm; text-align: left; vertical-align: top; font-weight: 400; }
+  thead th { text-align: center; letter-spacing: 0.05em; padding: 0.5mm 1.6mm; border-bottom-width: 1.1pt; }
+  td.v { white-space: nowrap; }
+  .mk { color: var(--acc); font-size: 8.4pt; line-height: 0; margin-right: 0.8mm; vertical-align: -0.3pt; }   /* ● row marker */
+
+  /* ---------- drawing classes: SVG units are millimetres on paper (viewBox 0 0 180 H) ---------- */
+  svg text { font-family: var(--leroy); fill: var(--ink); letter-spacing: 0.04px; }
+  svg .o    { fill: none; stroke: var(--ink); stroke-width: 0.42; stroke-linejoin: round; stroke-linecap: round; } /* object line */
+  svg .of   { fill: var(--paper); stroke: var(--ink); stroke-width: 0.42; stroke-linejoin: round; }               /* object, opaque */
+  svg .t    { fill: none; stroke: var(--ink); stroke-width: 0.17; stroke-linecap: round; }                        /* thin detail */
+  svg .hid  { fill: none; stroke: var(--ink); stroke-width: 0.22; stroke-dasharray: 1.3 0.7; }                     /* hidden */
+  svg .cl   { fill: none; stroke: var(--ink); stroke-width: 0.16; stroke-dasharray: 5 0.8 0.9 0.8; }               /* centerline */
+  svg .cut  { fill: none; stroke: var(--ink); stroke-width: 0.5; stroke-dasharray: 5 1 1 1; }                      /* section cut */
+  svg .ld   { fill: none; stroke: var(--ink); stroke-width: 0.16; marker-end: url(#nh-leader); }                   /* leader */
+  svg .dim  { fill: none; stroke: var(--ink); stroke-width: 0.16; marker-start: url(#nh-dim); }                    /* dimension half */
+  svg .w    { fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-linejoin: round; }                         /* wire */
+  svg .wa   { fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-linejoin: round; marker-end: url(#nh-arrow); } /* wire with arrow */
+  svg .box  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.45; }
+  svg .panel{ fill: none; stroke: var(--ink); stroke-width: 0.3; stroke-dasharray: 2 1; }
+  svg .ev   { fill: none; stroke: var(--ink); stroke-width: 0.18; stroke-dasharray: 1 0.7; }                       /* timeline event */
+  svg .vid  { fill: url(#nh-hatch); stroke: var(--ink); stroke-width: 0.35; }                                      /* hatched bar */
+  svg .aud  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.35; }                                        /* plain bar */
+  svg .gap  { fill: var(--paper); stroke: var(--ink); stroke-width: 0.35; stroke-dasharray: 0.6 0.5; }             /* dotted bar: absent */
+  svg .grain{ fill: url(#nh-dots); stroke: var(--ink); stroke-width: 0.35; }                                       /* granular fill */
+  svg .dot  { fill: var(--ink); }
+  svg .lbl   { font-size: 2.35px; }                                         /* callouts, box titles */
+  svg .lbl-s { font-size: 2.05px; }                                         /* secondary lines, wire names */
+  svg .lbl-b { font-size: 2.5px; font-family: "Routed Gothic", sans-serif; } /* view titles, big letters */
+
+  /* two inks: always paired with a heavier stroke or a pattern, so grayscale still reads */
+  svg .sub-fill { fill: var(--sub); }
+  svg .acc-fill { fill: var(--acc); }
+  svg .sub-line { stroke: var(--sub); stroke-width: 0.3; }
+  svg .acc-line { stroke: var(--acc); stroke-width: 0.3; }
+  svg .wa.sub { stroke: var(--sub); stroke-width: 0.5; marker-end: url(#nh-arrow-sub); }   /* subject path */
+  svg .wa.acc { stroke: var(--acc); stroke-width: 0.5; marker-end: url(#nh-arrow-acc); }   /* fault path */
+  svg .box.sub, svg .sub-ring { stroke: var(--sub); stroke-width: 0.7; }                     /* subject box */
+  svg .acc-ring { stroke: var(--acc); stroke-width: 0.5; }
+  svg .stall { fill: url(#nh-hatch-acc); stroke: var(--acc); stroke-width: 0.45; }           /* fault state bar */
+  svg .ko { paint-order: stroke; stroke: var(--paper); stroke-width: 0.9; stroke-linejoin: round; } /* label knocked out of a hatch */
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="nh-leader" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.1" markerHeight="1.05" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M0,0 L6,2 L0,4 Z" fill="#000"/></marker>
+  <marker id="nh-arrow" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M0,0 L6,2 L0,4 Z" fill="#000"/></marker>
+  <marker id="nh-dim" viewBox="0 0 6 4" refX="0" refY="2" markerWidth="2.2" markerHeight="0.95" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path d="M6,0 L0,2 L6,4 Z" fill="#000"/></marker>
+  <marker id="nh-arrow-sub" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path class="sub-fill" d="M0,0 L6,2 L0,4 Z"/></marker>
+  <marker id="nh-arrow-acc" viewBox="0 0 6 4" refX="5.6" refY="2" markerWidth="2.4" markerHeight="1.3" markerUnits="userSpaceOnUse" orient="auto" preserveAspectRatio="none"><path class="acc-fill" d="M0,0 L6,2 L0,4 Z"/></marker>
+  <pattern id="nh-hatch" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="1.1" stroke="#000" stroke-width="0.2"/></pattern>
+  <pattern id="nh-hatch-acc" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="acc-line" x1="0" y1="0" x2="0" y2="1.1"/></pattern>
+  <pattern id="nh-hatch-sub" width="1.1" height="1.1" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="sub-line" x1="0" y1="0" x2="0" y2="1.1"/></pattern>
+  <pattern id="nh-bp" width="1.4" height="1.4" patternUnits="userSpaceOnUse" patternTransform="rotate(-45)"><rect width="0.7" height="1.4" fill="#000"/></pattern>
+  <pattern id="nh-dots" width="1.3" height="1.3" patternUnits="userSpaceOnUse"><circle cx="0.32" cy="0.32" r="0.15" fill="#000"/><circle cx="0.97" cy="0.97" r="0.15" fill="#000"/></pattern>
+</defs></svg>
+
+<main>
+<section class="sec s2">
+  <style>
+    .s2 svg .txb { stroke: var(--sub); stroke-width: 0.5; stroke-dasharray: 2 1; }
+    .s2 svg .abrt { stroke: var(--acc); stroke-width: 0.45; }
+    .s2 svg .abrt-x { stroke: var(--acc); stroke-width: 0.5; }
+    .s2 svg .cmt { stroke: var(--sub); stroke-width: 0.5; }
+    .s2 table.tier { font-size: 7.4pt; }
+    .s2 table.tier td.v, .s2 table.tier th.v { text-align: right; white-space: nowrap; }
+    .s2 table.tier thead th { letter-spacing: 0.05em; }
+  </style>
+  <h1>2 &nbsp;&middot;&nbsp; DATA MOVEMENT AND DURABILITY</h1>
+
+  <section class="row">
+    <div class="num">2.1</div>
+    <div class="txt">
+      <h2>A DOCUMENT IS IN ONE COLLECTION AT EVERY COMMIT.</h2>
+      <p>The agent moves documents in sub-batches. Each sub-batch finds, inserts and deletes its documents inside one transaction committed with w:majority. No checkpoint is kept; each run asks again for what is still old and still in the source (figure 2-1).</p>
+    </div>
+    <aside>
+      <h4 class="tag">CAUTION</h4>
+      <p>Do not drop or rename the target of an ACTIVE policy. Preflight runs once per run; a later insert can create an ordinary hot collection and keep filling it.</p>
+    </aside>
+  </section>
+
+  <figure>
+    <svg viewBox="0 0 180 70" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data movement pipeline and the sub-batch transaction">
+
+      <!-- ===== upper row: one run ===== -->
+      <rect class="box" x="2" y="8" width="30" height="14"/>
+      <text class="lbl" x="17" y="12" text-anchor="middle">PREFLIGHT</text>
+      <text class="lbl-s" x="17" y="15.2" text-anchor="middle">NS ALLOWED, SRC ≠ TGT</text>
+      <text class="lbl-s" x="17" y="17.8" text-anchor="middle">BOTH EXIST, PLAIN TYPE</text>
+      <text class="lbl-s" x="17" y="20.4" text-anchor="middle">DATE FIELD AGEABLE</text>
+      <line class="wa" x1="32" y1="15" x2="37.6" y2="15"/>
+
+      <rect class="box" x="38" y="8" width="31" height="14"/>
+      <text class="lbl" x="53.5" y="12" text-anchor="middle">ID DISCOVERY</text>
+      <text class="lbl-s" x="53.5" y="15.2" text-anchor="middle">FIND _ID, DATE ≤ CUTOFF</text>
+      <text class="lbl-s" x="53.5" y="17.8" text-anchor="middle">OLDEST FIRST</text>
+      <text class="lbl-s" x="53.5" y="20.4" text-anchor="middle">STOP AT MAX DOCS / RUN</text>
+      <line class="wa" x1="69" y1="15" x2="74.6" y2="15"/>
+
+      <text class="lbl-s" x="87" y="10.8" text-anchor="middle">ID CHUNKS</text>
+      <rect class="aud" x="75" y="12.4" width="8" height="5.2"/>
+      <rect class="aud" x="83" y="12.4" width="8" height="5.2"/>
+      <rect class="aud" x="91" y="12.4" width="8" height="5.2"/>
+      <text class="lbl-s" x="79" y="15.75" text-anchor="middle">1000</text>
+      <text class="lbl-s" x="87" y="15.75" text-anchor="middle">1000</text>
+      <text class="lbl-s" x="95" y="15.75" text-anchor="middle">1000</text>
+      <text class="lbl-s" x="87" y="20.8" text-anchor="middle">QUEUE 2 × WORKERS</text>
+
+      <line class="w" x1="99" y1="15" x2="103" y2="15"/>
+      <line class="w" x1="103" y1="10" x2="103" y2="20"/>
+      <circle class="dot" cx="103" cy="15" r="0.5"/>
+      <line class="wa" x1="103" y1="10" x2="105.6" y2="10"/>
+      <line class="wa" x1="103" y1="15" x2="105.6" y2="15"/>
+      <line class="wa" x1="103" y1="20" x2="105.6" y2="20"/>
+      <rect class="box" x="106" y="8.2" width="18" height="3.6"/>
+      <rect class="box" x="106" y="13.2" width="18" height="3.6"/>
+      <rect class="box" x="106" y="18.2" width="18" height="3.6"/>
+      <text class="lbl-s" x="115" y="10.75" text-anchor="middle">WORKER 1</text>
+      <text class="lbl-s" x="115" y="15.75" text-anchor="middle">WORKER 2</text>
+      <text class="lbl-s" x="115" y="20.75" text-anchor="middle">WORKER 3</text>
+      <text class="lbl-s" x="115" y="6.4" text-anchor="middle">SEE VIEW A</text>
+
+      <line class="w" x1="124" y1="10" x2="128" y2="10"/>
+      <line class="w" x1="124" y1="15" x2="128" y2="15"/>
+      <line class="w" x1="124" y1="20" x2="128" y2="20"/>
+      <line class="w" x1="128" y1="10" x2="128" y2="20"/>
+      <circle class="dot" cx="128" cy="15" r="0.5"/>
+      <line class="wa" x1="128" y1="15" x2="131.6" y2="15"/>
+      <rect class="box" x="132" y="8" width="26" height="14"/>
+      <text class="lbl" x="145" y="12" text-anchor="middle">COLLECTOR</text>
+      <text class="lbl-s" x="145" y="15.2" text-anchor="middle">CREDITS EACH COMMIT</text>
+      <text class="lbl-s" x="145" y="17.8" text-anchor="middle">LIVE STATS TO HB</text>
+      <text class="lbl-s" x="145" y="20.4" text-anchor="middle">FINAL STATS, 30 S</text>
+      <line class="wa" x1="158" y1="15" x2="163.6" y2="15"/>
+      <rect class="box" x="164" y="10" width="14" height="10"/>
+      <text class="lbl" x="171" y="14.4" text-anchor="middle">MMS</text>
+      <text class="lbl-s" x="171" y="17.4" text-anchor="middle">RUN DOC</text>
+
+      <!-- ===== view A: one sub-batch ===== -->
+      <line class="t" x1="2" y1="25.6" x2="178" y2="25.6"/>
+
+      <!-- source drum -->
+      <path class="box" d="M4,33 L4,54 A11,1.8 0 0 0 26,54 L26,33"/>
+      <ellipse class="box" cx="15" cy="33" rx="11" ry="1.8"/>
+      <text class="lbl-b" x="15" y="40.8" text-anchor="middle">SOURCE</text>
+      <text class="lbl-s" x="15" y="43.6" text-anchor="middle">HOT</text>
+
+      <!-- target drum, hatched = cold -->
+      <path d="M154,33 L154,54 A11,1.8 0 0 0 176,54 L176,33" fill="url(#nh-hatch)" stroke="#000" stroke-width="0.45"/>
+      <ellipse class="box" cx="165" cy="33" rx="11" ry="1.8"/>
+      <rect x="157.6" y="37.8" width="14.8" height="6.6" style="fill: var(--paper)"/>
+      <text class="lbl-b" x="165" y="40.8" text-anchor="middle">TARGET</text>
+      <text class="lbl-s" x="165" y="43.6" text-anchor="middle">COLD</text>
+
+      <!-- transaction boundary -->
+      <rect class="panel txb" x="33" y="29" width="114" height="27"/>
+      <text class="lbl-s" x="34.9" y="32">ONE TRANSACTION, ONE SNAPSHOT</text>
+
+      <g id="s2-steps"></g>
+
+      <!-- data paths -->
+      <line class="wa" x1="26" y1="41.5" x2="36.6" y2="41.5"/>
+      <text class="lbl-s" x="27.4" y="40.6">READ</text>
+      <polyline class="wa" points="89,47 89,50.8 153.6,50.8"/>
+      <text class="lbl-s" x="132" y="50">INSERT</text>
+      <polyline class="wa" points="111,47 111,53.4 26.4,53.4"/>
+      <text class="lbl-s" x="40" y="52.6">DELETE BY _ID</text>
+
+      <text class="lbl-s" x="90" y="60" text-anchor="middle">ABORT OR CRASH BEFORE (5): NEITHER WRITE IS VISIBLE; DOCUMENTS STAY IN SOURCE</text>
+      <text class="lbl-s" x="90" y="62.6" text-anchor="middle">LOOP REPEATS UNTIL (1) FINDS NOTHING; THEN THE WORKER TAKES THE NEXT CHUNK</text>
+      <text class="lbl-b" x="90" y="67" text-anchor="middle">VIEW A: ONE SUB-BATCH (EACH WORKER, EACH CHUNK)</text>
+    </svg>
+    <figcaption><span class="n">Figure 2-1.</span>Data Movement Pipeline and Sub-Batch Transaction</figcaption>
+  </figure>
+
+  <section class="row">
+    <div class="num">2.2</div>
+    <div class="txt">
+      <h2>EACH RUN LOOPS UNTIL NOTHING OLD IS LEFT.</h2>
+      <p>Each run first checks that both namespaces are allowed, exist and are plain collections, and that the date field can be aged. Discovery reads only _id values at or past the cutoff, oldest first, and stops at maxDocumentsPerRun <span class="nowrap">(table 2-1)</span>. Chunks of 1,000 ids feed the workers; each worker loops sub-batch transactions until a re-find returns nothing (figure 2-2).</p>
+    </div>
+    <aside></aside>
+  </section>
+
+  <section class="row">
+    <div class="num">2.2.1</div>
+    <div class="txt">
+      <h3>Exactly-Once Placement.</h3>
+      <p class="flush">A sub-batch commits only when the insert count and the delete count both equal the re-found count; otherwise it aborts and its documents stay in the source. A duplicate _id aborts only its own sub-batch.</p>
+    </div>
+    <aside>
+      <h4>VERIFY A RUN</h4>
+      <ol class="proc">
+        <li><span>1</span><span>RUN DOC - read lastNRuns</span></li>
+        <li><span></span><span>√ state - SUCCESS</span></li>
+        <li><span>2</span><span>documentsFailed - read</span></li>
+        <li><span></span><span>√ documentsFailed - 0</span></li>
+        <li><span>3</span><span>TARGET - countDocuments</span></li>
+        <li><span></span><span>√ delta = documentsMoved</span></li>
+        <li><span>4</span><span>POLICY errorMessage - empty</span></li>
+      </ol>
+    </aside>
+  </section>
+
+  <figure>
+    <svg viewBox="0 -1 180 46" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Location of one document across an aborted and a committed transaction, and fault responses">
+      <polyline class="w" points="34,3.4 34,2.2 58,2.2 58,3.4"/>
+      <text class="lbl-s" x="46" y="1.2" text-anchor="middle">RUN N</text>
+      <polyline class="w" points="70,3.4 70,2.2 110,2.2 110,3.4"/>
+      <text class="lbl-s" x="90" y="1.2" text-anchor="middle">RUN N + 1</text>
+
+      <text class="lbl-s" x="2" y="8.4">DOC IN SOURCE</text>
+      <rect class="aud" x="30" y="6.2" width="66" height="2.6"/>
+      <text class="lbl-s" x="2" y="14">DOC IN TARGET</text>
+      <rect class="vid" x="96" y="11.8" width="14" height="2.6"/>
+      <text class="lbl-s" x="2" y="19.6">TXN 1, RUN N</text>
+      <rect class="gap abrt" x="38" y="17.4" width="14" height="2.6"/>
+      <g class="w abrt-x"><line x1="51" y1="16.4" x2="53" y2="21"/><line x1="51" y1="21" x2="53" y2="16.4"/></g>
+      <text class="lbl-s" x="2" y="25.2">TXN 2, RUN N + 1</text>
+      <rect class="aud cmt" x="76" y="23" width="20" height="2.6"/>
+      <text class="lbl-s" x="86" y="25.05" text-anchor="middle">RE-FIND, MOVE</text>
+      <text class="lbl-s" x="37.6" y="16.1">UNCOMMITTED</text>
+
+      <line class="ev" x1="52" y1="4.6" x2="52" y2="28"/>
+      <line class="ev" x1="74" y1="4.6" x2="74" y2="28"/>
+      <line class="ev" x1="96" y1="4.6" x2="96" y2="28"/>
+      <text class="lbl-s" x="52" y="31" text-anchor="middle">AGENT CRASH:</text>
+      <text class="lbl-s" x="52" y="33.4" text-anchor="middle">TXN ABORTS</text>
+      <text class="lbl-s" x="74" y="31" text-anchor="middle">NEXT RUN:</text>
+      <text class="lbl-s" x="74" y="33.4" text-anchor="middle">SAME QUERY</text>
+      <text class="lbl-s" x="96" y="31" text-anchor="middle">COMMIT,</text>
+      <text class="lbl-s" x="96" y="33.4" text-anchor="middle">W:MAJORITY</text>
+
+      <text class="lbl-s" x="2" y="39.4">INVARIANT: IN SOURCE + IN TARGET = 1 AT EVERY COMMIT; NO CHECKPOINT TO LOSE</text>
+      <rect class="aud" x="2" y="41.2" width="5" height="2.4"/><text class="lbl-s" x="8.2" y="43.2">HOT</text>
+      <rect class="vid" x="16" y="41.2" width="5" height="2.4"/><text class="lbl-s" x="22.2" y="43.2">COLD</text>
+      <rect class="gap" x="31" y="41.2" width="5" height="2.4"/><text class="lbl-s" x="37.2" y="43.2">NOT VISIBLE</text>
+
+      <!-- divider -->
+      <line class="t" x1="115" y1="-1" x2="115" y2="45"/>
+
+      <!-- DETAIL A -->
+      <text class="lbl-b" x="117.6" y="2">DETAIL A: FAULT RESPONSE</text>
+      <g id="s2-faults"></g>
+    </svg>
+    <figcaption><span class="n">Figure 2-2.</span>One Document Through a Crash, and Fault Responses</figcaption>
+  </figure>
+
+  <div class="tcap" style="margin-top:3mm">Table 2-1. Movement Settings by Cluster Tier</div>
+  <table class="tier">
+    <thead><tr><th>Setting</th><th class="v">M10</th><th class="v">M20</th><th class="v">M30–M50</th><th class="v">M60</th><th class="v">M80 and up</th></tr></thead>
+    <tbody>
+      <tr><td>Transaction bytes per sub-batch</td><td class="v">512 KB</td><td class="v">512 KB</td><td class="v">1 MiB</td><td class="v">1 MiB</td><td class="v">2 MiB</td></tr>
+      <tr><td>Max documents per run</td><td class="v">100,000</td><td class="v">250,000</td><td class="v">500,000</td><td class="v">750,000</td><td class="v">1,000,000</td></tr>
+    </tbody>
+  </table>
+</section>
+<script>
+  ;(function () {
+    const ns = 'http://www.w3.org/2000/svg'
+    const el = (tag, attrs, parent, text) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (text != null) e.textContent = text; parent.append(e); return e }
+    // view A steps
+    const steps = [
+      ['RE-FIND', '_ID IN CHUNK', 'AND CRITERIA'],
+      ['FILL', '≤ TXN BYTES', 'BIG DOC: ALONE'],
+      ['INSERTMANY', 'INTO TARGET', 'COUNT = FOUND'],
+      ['DELETEMANY', 'FROM SOURCE', 'COUNT = FOUND'],
+      ['COMMIT', 'W:MAJORITY', 'LOG 2 OF 3'],
+    ]
+    const g = document.getElementById('s2-steps')
+    steps.forEach(([a, b, c], i) => {
+      const x = 37 + i * 22
+      el('rect', { class: 'box', x, y: 36, width: 18, height: 11 }, g)
+      el('text', { class: 'lbl', x: x + 9, y: 40, 'text-anchor': 'middle' }, g, a)
+      el('text', { class: 'lbl-s', x: x + 9, y: 42.9, 'text-anchor': 'middle' }, g, b)
+      el('text', { class: 'lbl-s', x: x + 9, y: 45.4, 'text-anchor': 'middle' }, g, c)
+      const t = el('g', { transform: `translate(${x + 9} 34)` }, g)
+      el('circle', { class: 'of', r: 1.3 }, t)
+      el('text', { class: 'lbl-s', y: 0.65, 'text-anchor': 'middle', style: 'font-size:1.8px' }, t, i + 1)
+      if (i < 4) el('line', { class: 'wa', x1: x + 18, y1: 41.5, x2: x + 21.6, y2: 41.5 }, g)
+    })
+    // detail A: fault responses
+    const faults = [
+      ['TRANSIENT TXN ERROR', 'DRIVER RETRIES UP TO 120 S'],
+      ['TIMEOUT OR NETWORK LABEL', '3 ATTEMPTS, WAIT 1 S THEN 2 S'],
+      ['DUPLICATE _ID IN TARGET', 'SUB-BATCH ABORTS, DOCS STAY'],
+      ['SCHEMA VALIDATOR REJECTS', 'SAME; RUN FAILED, RETRY 5 MIN'],
+      ['INSERT OR DELETE COUNT ≠ FOUND', 'ABORT; CHUNK FAILS'],
+      ['CANCEL OR 30 MIN CAP', 'RUN INTERRUPTED; COMMITS KEPT'],
+    ]
+    const f = document.getElementById('s2-faults')
+    faults.forEach(([a, b], i) => {
+      const y = 7.6 + i * 6.2
+      el('text', { class: 'lbl', x: 117.6, y }, f, a)
+      el('line', { class: 'wa', x1: 118.4, y1: y + 1.75, x2: 122.4, y2: y + 1.75 }, f)
+      el('text', { class: 'lbl-s', x: 123.6, y: y + 2.5 }, f, b)
+    })
+  })()
+</script>
+</main>
+</body>
+</html>
